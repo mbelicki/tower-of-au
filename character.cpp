@@ -12,18 +12,18 @@
 
 using namespace warp;
 
-static const float AVATAR_MOVE_TIME = 0.1f;
+static const float CHAR_MOVE_TIME = 0.1f;
 
-enum avatar_state_t : unsigned int {
-    AVAT_IDLE = 0,
-    AVAT_MOVING,
+enum character_state_t : unsigned int {
+    CHAR_IDLE = 0,
+    CHAR_MOVING,
 };
 
-class avatar_controller_t final : public controller_impl_i {
+class character_controller_t final : public controller_impl_i {
     public:
         dynval_t get_property(const tag_t &name) const override {
             if (name == "avat.is_idle") {
-                return (int)(_state == AVAT_IDLE);
+                return (int)(_state == CHAR_IDLE);
             }
             return dynval_t::make_null();
         }
@@ -36,13 +36,13 @@ class avatar_controller_t final : public controller_impl_i {
         void update(float dt, const input_t &) override { 
             if (_timer <= 0) {
                 _timer = 0;
-                _state = AVAT_IDLE;
+                _state = CHAR_IDLE;
                 return;
             } 
 
             _timer -= dt;
 
-            if (_state == AVAT_MOVING) {
+            if (_state == CHAR_MOVING) {
                 update_movement();
             }
         }
@@ -63,22 +63,22 @@ class avatar_controller_t final : public controller_impl_i {
         entity_t *_owner;
         world_t *_world;
         float _timer;
-        avatar_state_t _state;
+        character_state_t _state;
 
         vec3_t _target_pos;
         vec3_t _old_pos;
 
         void start_moving(vec3_t position) {
-            _state = AVAT_MOVING;
-            _timer = AVATAR_MOVE_TIME;
+            _state = CHAR_MOVING;
+            _timer = CHAR_MOVE_TIME;
             _old_pos = _owner->get_position();
             _target_pos = position;
         }
 
         void update_movement() {
-            if (_state != AVAT_MOVING) return;
+            if (_state != CHAR_MOVING) return;
 
-            const float t = _timer / AVATAR_MOVE_TIME;
+            const float t = _timer / CHAR_MOVE_TIME;
             const vec3_t position = vec3_lerp(_target_pos, _old_pos, t);
 
             _owner->receive_message(MSG_PHYSICS_MOVE, position);
@@ -87,7 +87,7 @@ class avatar_controller_t final : public controller_impl_i {
 
 extern maybe_t<controller_comp_t *> create_character_controller(world_t *world) {
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new avatar_controller_t);
+    controller->initialize(new character_controller_t);
 
     return controller;
 }
