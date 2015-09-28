@@ -9,6 +9,7 @@
 #include "warp/direction.h"
 #include "warp/entity-helpers.h"
 
+#include "random.h"
 #include "level.h"
 #include "character.h"
 
@@ -86,6 +87,21 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
     }
 }
 
+static dir_t get_random_direction(random_t *random) {
+    const int dir = random->uniform_from_range(0, 3);
+    switch (dir) {
+        case 0:
+            return DIR_Z_MINUS;
+        case 1:
+            return DIR_Z_PLUS;
+        case 2:
+            return DIR_X_MINUS;
+        case 3:
+        default:
+            return DIR_X_PLUS;
+    }
+}
+
 class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(level_t *level)
@@ -151,6 +167,8 @@ class core_controller_t final : public controller_impl_i {
         character_t _player;
         character_t **_npcs;
         size_t _max_npc_count;
+
+        random_t _random;
 
         bool can_move_to(vec3_t position) {
             const size_t x = round(position.x);
@@ -259,6 +277,8 @@ class core_controller_t final : public controller_impl_i {
                 = vec3_add(npc->position, dir_to_vec3(npc->direction));
             if (can_move_to(position)) {
                 move_npc(npc, position);
+            } else {
+                npc->direction = get_random_direction(&_random);
             }
         }
 };
