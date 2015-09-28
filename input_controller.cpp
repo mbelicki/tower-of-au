@@ -71,13 +71,6 @@ class input_controller_t final : public controller_impl_i {
         void move(move_dir_t direction) {
             _world->broadcast_message(CORE_TRY_MOVE, (int)direction);
         }
-
-        /* TODO: should not be needed later... */
-        vec2_t normalize_screen_position(vec2_t mouse_pos) {
-            const float x = mouse_pos.x - _screen_size.x * 0.5f;
-            const float y = mouse_pos.y - _screen_size.y * 0.5f;
-            return vec2(x, y);
-        }
 };
 
 maybe_t<entity_t *> create_input_controller(world_t *world) {

@@ -7,10 +7,10 @@
 #include "warp/entity.h"
 #include "warp/components.h"
 #include "warp/direction.h"
+#include "warp/entity-helpers.h"
 
 #include "level.h"
-#include "avatar.h"
-#include "npc.h"
+#include "character.h"
 
 using namespace warp;
 
@@ -20,6 +20,15 @@ struct character_t {
     vec3_t position;
     dir_t direction;
 };
+
+static maybe_t<entity_t *> create_npc(vec3_t position, world_t *world) {
+    maybe_t<graphics_comp_t *> graphics
+        = create_single_model_graphics(world, "npc.obj", "missing.png");
+    maybe_t<controller_comp_t *> controller
+        = create_character_controller(world);
+
+    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+}
 
 static dir_t get_move_direction(move_dir_t move_dir) {
     switch (move_dir) {
@@ -100,7 +109,7 @@ class core_controller_t final : public controller_impl_i {
             _owner = owner;
             _world = world;
 
-            maybe_t<entity_t *> avatar = create_avatar(vec3(8, 0, 8), world);
+            maybe_t<entity_t *> avatar = create_npc(vec3(8, 0, 8), world);
             _player.entity = VALUE(avatar);
             _player.position = vec3(8, 0, 8);
             _player.direction = DIR_Z_MINUS;
@@ -184,6 +193,8 @@ class core_controller_t final : public controller_impl_i {
                     puts("attaque!");
                 }
             }
+
+            next_turn();
         }
 
         void handle_attack(character_t *c, attack_element_t element) {
@@ -200,6 +211,55 @@ class core_controller_t final : public controller_impl_i {
             _npcs[x + level_width * z] = nullptr;
             _world->destroy_later(c->entity);
             delete c;
+        }
+
+        void next_turn() {
+            const size_t width  = _level->get_width();
+            const size_t height = _level->get_height();
+            const size_t max_characters = width * height;
+            
+            size_t count = 0;
+            character_t **buffer = new character_t * [max_characters];
+
+            for (size_t x = 0; x < width; x++) {
+                for (size_t y = 0; y < height; y++) {
+                    character_t *npc = npc_at(x, y);
+                    if (npc != nullptr) {
+                        buffer[count] = npc;
+                        count++;
+                    }
+                }
+            }
+
+            for (size_t i = 0; i < count; i++) {
+                update_npc(buffer[i]);
+            }
+
+            delete buffer;
+        }
+
+        void move_npc(character_t *npc, vec3_t position) {
+            const vec3_t old_position = npc->position;
+            const size_t level_width = _level->get_width();
+
+            size_t x = round(old_position.x);
+            size_t z = round(old_position.z);
+            _npcs[x + level_width * z] = nullptr;
+
+            x = round(position.x);
+            z = round(position.z);
+            _npcs[x + level_width * z] = npc;
+
+            npc->position = position;
+            npc->entity->receive_message(CORE_DO_MOVE, position);
+        }
+
+        void update_npc(character_t *npc) {
+            const vec3_t position
+                = vec3_add(npc->position, dir_to_vec3(npc->direction));
+            if (can_move_to(position)) {
+                move_npc(npc, position);
+            }
         }
 };
 

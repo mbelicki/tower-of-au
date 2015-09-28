@@ -6,7 +6,7 @@
 namespace warp {
     class entity_t;
     class world_t;
+    class controller_comp_t;
 }
 
-warp::maybe_t<warp::entity_t *> create_npc
-    (warp::vec3_t initial_position, warp::world_t *world);
+warp::maybe_t<warp::controller_comp_t *> create_character_controller(warp::world_t *world);

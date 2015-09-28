@@ -1,4 +1,4 @@
-#include "avatar.h"
+#include "character.h"
 
 #include "warp/world.h"
 #include "warp/entity.h"
@@ -85,14 +85,9 @@ class avatar_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<entity_t *> create_avatar
-        (vec3_t initial_position, world_t *world) {
-    maybe_t<graphics_comp_t *> graphics = create_single_model_graphics(world, "npc.obj", "missing.png");
-    MAYBE_RETURN(graphics, entity_t *, "Failed to create avatar graphics:");
-
+extern maybe_t<controller_comp_t *> create_character_controller(world_t *world) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new avatar_controller_t);
-    entity_t *entity = world->create_entity(initial_position, VALUE(graphics), nullptr, controller);
 
-    return entity;
+    return controller;
 }

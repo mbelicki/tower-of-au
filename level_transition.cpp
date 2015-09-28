@@ -2,7 +2,6 @@
 
 #include "level.h"
 #include "core.h"
-#include "avatar.h"
 #include "input_controller.h"
 
 #include "warp/world.h"
