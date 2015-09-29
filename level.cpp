@@ -99,7 +99,8 @@ extern level_t *generate_test_level() {
     tiles[4 + width * 2].is_stairs = true;
 
     tiles[8 + width * 1].spawn_probablity = 1;
-    tiles[9 + width * 2].spawn_probablity = 1.5f;
+    tiles[9 + width * 2].spawn_probablity = 1;
+    tiles[3 + width * 5].spawn_probablity = 1;
 
     return new (std::nothrow) level_t(tiles, width, height);
 }

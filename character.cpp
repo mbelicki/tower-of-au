@@ -201,7 +201,7 @@ class health_controller_t final : public controller_impl_i {
         }
 
         void update_hurt(float t) {
-            const float scale = 1 - sin(t * PI) * 0.5f;
+            const float scale = 1 - sin(t * PI) * 0.3f;
             const vec3_t scales = vec3(scale, scale, scale);
             _owner->receive_message(MSG_PHYSICS_SCALE, scales);
         }

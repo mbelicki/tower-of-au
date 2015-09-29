@@ -210,8 +210,7 @@ class core_controller_t final : public controller_impl_i {
             _player.direction = get_move_direction(direction);
             const vec3_t position = move_character(_player, direction);
             if (can_move_to(position)) {
-                _player.position = position;
-                _player.entity->receive_message(CORE_DO_MOVE, position);
+                make_move(&_player, position);
             } else {
                 character_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
@@ -229,29 +228,37 @@ class core_controller_t final : public controller_impl_i {
                 , attack_element_t element
                 ) {
             const int damage = calculate_damage(*target, element);
-            hurt_character(target, *attacker, damage);
+            const bool alive = hurt_character(target, *attacker, damage);
             attacker->entity->receive_message(CORE_DO_ATTACK, target->position);
-            attacker->hold = false;//true;
+            if (alive) {
+                const vec3_t d = vec3_sub(target->position, attacker->position);
+                const vec3_t push_back = vec3_add(target->position, d);
+                if (can_move_to(push_back)) {
+                    make_move(target, push_back);
+                    target->attacked = true;
+                }
+            }
         }
 
-        void hurt_character
-                (character_t *c, const character_t &attacker, int damage) {
-            if (c == nullptr || damage <= 0) return;
-            const int health_left = c->health - 1;
+        bool hurt_character
+                (character_t *target, const character_t &attacker, int damage) {
+            if (target == nullptr || damage <= 0) return false;
+            const int health_left = target->health - 1;
             if (health_left <= 0) {
-                const size_t x = round(c->position.x);
-                const size_t z = round(c->position.z);
+                const size_t x = round(target->position.x);
+                const size_t z = round(target->position.z);
                 const size_t level_width = _level->get_width();
 
                 _npcs[x + level_width * z] = nullptr;
-                c->entity->receive_message(CORE_DO_DIE, attacker.position);
+                target->entity->receive_message(CORE_DO_DIE, attacker.position);
 
-                if (c != &_player) delete c;
+                if (target != &_player) delete target;
             } else {
-                c->health = health_left;
-                c->attacked = true;
-                c->entity->receive_message(CORE_DO_HURT, attacker.position);
+                target->health = health_left;
+                target->entity->receive_message(CORE_DO_HURT, attacker.position);
             }
+
+            return health_left > 0;
         }
 
         void next_turn() {
@@ -279,20 +286,22 @@ class core_controller_t final : public controller_impl_i {
             delete buffer;
         }
 
-        void move_npc(character_t *npc, vec3_t position) {
-            const vec3_t old_position = npc->position;
+        void make_move(character_t *target, vec3_t position) {
+            const vec3_t old_position = target->position;
             const size_t level_width = _level->get_width();
 
-            size_t x = round(old_position.x);
-            size_t z = round(old_position.z);
-            _npcs[x + level_width * z] = nullptr;
+            if (target != &_player) {
+                size_t x = round(old_position.x);
+                size_t z = round(old_position.z);
+                _npcs[x + level_width * z] = nullptr;
 
-            x = round(position.x);
-            z = round(position.z);
-            _npcs[x + level_width * z] = npc;
+                x = round(position.x);
+                z = round(position.z);
+                _npcs[x + level_width * z] = target;
+            }
 
-            npc->position = position;
-            npc->entity->receive_message(CORE_DO_MOVE, position);
+            target->position = position;
+            target->entity->receive_message(CORE_DO_MOVE, position);
         }
 
         dir_t pick_next_direction(const character_t &npc) {
@@ -338,7 +347,7 @@ class core_controller_t final : public controller_impl_i {
                     npc->direction = pick_next_direction(*npc);
                     position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 }
-                move_npc(npc, position);
+                make_move(npc, position);
             }
         }
 };
