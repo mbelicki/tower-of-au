@@ -128,7 +128,7 @@ class core_controller_t final : public controller_impl_i {
             _player.entity = VALUE(avatar);
             _player.position = vec3(8, 0, 8);
             _player.direction = DIR_Z_MINUS;
-            _player.health = 5;
+            _player.health = 2;
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
@@ -231,7 +231,7 @@ class core_controller_t final : public controller_impl_i {
             const int damage = calculate_damage(*target, element);
             hurt_character(target, *attacker, damage);
             attacker->entity->receive_message(CORE_DO_ATTACK, target->position);
-            attacker->hold = true;
+            attacker->hold = false;//true;
         }
 
         void hurt_character

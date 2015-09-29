@@ -9,6 +9,7 @@ namespace warp {
 
 struct tile_t {
     bool is_walkable;
+    bool is_stairs;
     float spawn_probablity;
 };
 

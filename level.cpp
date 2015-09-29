@@ -42,8 +42,10 @@ maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
 
 static maybe_t<entity_t *> create_tile
         (const tile_t &tile, size_t x, size_t y, world_t *world) {
-    const char *mesh_name = tile.is_walkable ? "floor.obj" : "wall.obj";
-    const char *tex_name  = "missing.png";//tile.is_walkable ? "wall.png" : "floor.png";
+    const char *mesh_name = tile.is_stairs 
+                          ? "stairs.obj" 
+                          : (tile.is_walkable ? "floor.obj" : "wall.obj");
+    const char *tex_name  = "missing.png";
 
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, mesh_name, tex_name);
@@ -83,7 +85,8 @@ extern level_t *generate_test_level() {
         for (size_t j = 0; j < height; j++) {
             bool is_wall = i == 0 || j == 0 || i == width - 1;
             const size_t index = i + width * j;
-			tiles[index].is_walkable = !is_wall;//not is_wall;
+			tiles[index].is_walkable = !is_wall;
+			tiles[index].is_stairs = false;
             tiles[index].spawn_probablity = 0;
         }
     }
@@ -91,10 +94,12 @@ extern level_t *generate_test_level() {
     tiles[2 + width * 3].is_walkable = false;
     tiles[2 + width * 2].is_walkable = false;
     tiles[3 + width * 2].is_walkable = false;
+
     tiles[4 + width * 2].is_walkable = false;
+    tiles[4 + width * 2].is_stairs = true;
 
     tiles[8 + width * 1].spawn_probablity = 1;
-    tiles[9 + width * 2].spawn_probablity = 0.5f;
+    tiles[9 + width * 2].spawn_probablity = 1.5f;
 
     return new (std::nothrow) level_t(tiles, width, height);
 }

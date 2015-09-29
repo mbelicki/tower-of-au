@@ -12,37 +12,48 @@
 
 using namespace warp;
 
-static const float CHAR_MOVE_TIME   = 0.1f;
-static const float CHAR_BOUNCE_TIME = 0.15f;
-static const float CHAR_ATTACK_TIME = 0.3f;
-static const float CHAR_DYING_TIME  = CHAR_ATTACK_TIME;
-static const float CHAR_HURT_TIME   = CHAR_ATTACK_TIME;
+static const float MOVE_MOVE_TIME   = 0.1f;
+static const float MOVE_BOUNCE_TIME = 0.15f;
+static const float MOVE_ATTACK_TIME = 0.3f;
 
-enum character_state_t : unsigned int {
-    CHAR_IDLE = 0,
-    CHAR_MOVING,
-    CHAR_BOUNCING,
-    CHAR_ATTACKING,
-    CHAR_DYING,
-    CHAR_HURT,
+static const float HEAL_DYING_TIME  = MOVE_ATTACK_TIME;
+static const float HEAL_HURT_TIME   = MOVE_ATTACK_TIME;
+
+enum movement_state_t : unsigned int {
+    MOVE_IDLE = 0,
+    MOVE_MOVING,
+    MOVE_BOUNCING,
+    MOVE_ATTACKING,
 };
 
-static float get_time_for_state(character_state_t state) {
+enum health_state_t : unsigned int {
+    HEAL_IDLE = 0,
+    HEAL_DYING,
+    HEAL_HURT,
+};
+
+static float get_time_for_char_state(movement_state_t state) {
     switch (state) {
-        case CHAR_MOVING:    return CHAR_MOVE_TIME;
-        case CHAR_BOUNCING:  return CHAR_BOUNCE_TIME;
-        case CHAR_ATTACKING: return CHAR_ATTACK_TIME;
-        case CHAR_DYING:     return CHAR_DYING_TIME;
-        case CHAR_HURT:      return CHAR_HURT_TIME;
+        case MOVE_MOVING:    return MOVE_MOVE_TIME;
+        case MOVE_BOUNCING:  return MOVE_BOUNCE_TIME;
+        case MOVE_ATTACKING: return MOVE_ATTACK_TIME;
         default: return 0;
     }
 }
 
-class character_controller_t final : public controller_impl_i {
+static float get_time_for_heal_state(health_state_t state) {
+    switch (state) {
+        case HEAL_DYING: return HEAL_DYING_TIME;
+        case HEAL_HURT:  return HEAL_HURT_TIME;
+        default: return 0;
+    }
+}
+
+class movement_controller_t final : public controller_impl_i {
     public:
         dynval_t get_property(const tag_t &name) const override {
             if (name == "avat.is_idle") {
-                return (int)(_state == CHAR_IDLE);
+                return (int)(_state == MOVE_IDLE);
             }
             return dynval_t::make_null();
         }
@@ -54,27 +65,20 @@ class character_controller_t final : public controller_impl_i {
 
         void update(float dt, const input_t &) override { 
             if (_timer <= 0) {
-                if (_state == CHAR_DYING) {
-                    _world->destroy_later(_owner);
-                }
                 _timer = 0;
-                _state = CHAR_IDLE;
+                _state = MOVE_IDLE;
                 return;
             } 
 
             _timer -= dt;
-            const float t = _timer / get_time_for_state(_state);
+            const float t = _timer / get_time_for_char_state(_state);
 
-            if (_state == CHAR_MOVING) {
+            if (_state == MOVE_MOVING) {
                 update_movement(t);
-            } else if (_state == CHAR_BOUNCING) {
+            } else if (_state == MOVE_BOUNCING) {
                 update_bouncing(t);
-            } else if (_state == CHAR_ATTACKING) {
+            } else if (_state == MOVE_ATTACKING) {
                 update_attacking(t);
-            } else if (_state == CHAR_DYING) {
-                update_dying(t);
-            } else if (_state == CHAR_HURT) {
-                update_hurt(t);
             }
         }
 
@@ -82,8 +86,6 @@ class character_controller_t final : public controller_impl_i {
             return type == CORE_DO_MOVE
                 || type == CORE_DO_ATTACK
                 || type == CORE_DO_BOUNCE
-                || type == CORE_DO_HURT
-                || type == CORE_DO_DIE
                 ;
         }
 
@@ -91,15 +93,11 @@ class character_controller_t final : public controller_impl_i {
             const messagetype_t type = message.type;
             maybe_t<vec3_t> maybe_pos = message.data.get_vec3();
             if (type == CORE_DO_MOVE) {
-                change_state(CHAR_MOVING, VALUE(maybe_pos));
+                change_state(MOVE_MOVING, VALUE(maybe_pos));
             } else if (type == CORE_DO_BOUNCE) {
-                change_state(CHAR_BOUNCING, VALUE(maybe_pos));
+                change_state(MOVE_BOUNCING, VALUE(maybe_pos));
             } else if (type == CORE_DO_ATTACK) {
-                change_state(CHAR_ATTACKING, VALUE(maybe_pos));
-            } else if (type == CORE_DO_DIE) {
-                change_state(CHAR_DYING, VALUE(maybe_pos));
-            } else if (type == CORE_DO_HURT) {
-                change_state(CHAR_HURT, VALUE(maybe_pos));
+                change_state(MOVE_ATTACKING, VALUE(maybe_pos));
             }
         }
 
@@ -107,14 +105,14 @@ class character_controller_t final : public controller_impl_i {
         entity_t *_owner;
         world_t *_world;
         float _timer;
-        character_state_t _state;
+        movement_state_t _state;
 
         vec3_t _target_pos;
         vec3_t _old_pos;
 
-        void change_state(character_state_t state, vec3_t target) {
+        void change_state(movement_state_t state, vec3_t target) {
             _state = state;
-            _timer = get_time_for_state(state);
+            _timer = get_time_for_char_state(state);
             _old_pos = _owner->get_position();
             _target_pos = target;
         }
@@ -137,6 +135,65 @@ class character_controller_t final : public controller_impl_i {
             _owner->receive_message(MSG_PHYSICS_MOVE, position);
         }
 
+};
+
+class health_controller_t final : public controller_impl_i {
+    public:
+        dynval_t get_property(const tag_t &) const override {
+            return dynval_t::make_null();
+        }
+
+        void initialize(entity_t *owner, world_t *world) override {
+            _owner = owner;
+            _world = world;
+        }
+
+        void update(float dt, const input_t &) override { 
+            if (_timer <= 0) {
+                if (_state == HEAL_DYING) {
+                    _world->destroy_later(_owner);
+                }
+                _timer = 0;
+                _state = HEAL_IDLE;
+                return;
+            } 
+
+            _timer -= dt;
+            const float t = _timer / get_time_for_heal_state(_state);
+
+            if (_state == HEAL_DYING) {
+                update_dying(t);
+            } else if (_state == HEAL_HURT) {
+                update_hurt(t);
+            }
+        }
+
+        bool accepts(messagetype_t type) const override {
+            return type == CORE_DO_HURT
+                || type == CORE_DO_DIE
+                ;
+        }
+
+        void handle_message(const message_t &message) override {
+            const messagetype_t type = message.type;
+            if (type == CORE_DO_DIE) {
+                change_state(HEAL_DYING);
+            } else if (type == CORE_DO_HURT) {
+                change_state(HEAL_HURT);
+            }
+        }
+
+    private:
+        entity_t *_owner;
+        world_t *_world;
+        float _timer;
+        health_state_t _state;
+
+        void change_state(health_state_t state) {
+            _state = state;
+            _timer = get_time_for_heal_state(state);
+        }
+
         void update_dying(float t) {
             const float scale = sin(t * PI * 0.5f);
             const vec3_t scales = vec3(scale, scale, scale);
@@ -152,6 +209,8 @@ class character_controller_t final : public controller_impl_i {
 
 extern maybe_t<controller_comp_t *> create_character_controller(world_t *world) {
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new character_controller_t);
+    controller->initialize(new movement_controller_t);
+    controller->add_controller(new health_controller_t);
     return controller;
 }
+
