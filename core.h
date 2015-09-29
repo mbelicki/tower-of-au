@@ -16,6 +16,8 @@ enum core_msgs_t : unsigned int {
     CORE_DO_MOVE,
     CORE_DO_ATTACK,
     CORE_DO_BOUNCE,
+    CORE_DO_HURT,
+    CORE_DO_DIE,
 };
 
 enum move_dir_t : int {

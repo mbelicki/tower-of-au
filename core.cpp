@@ -20,6 +20,8 @@ struct character_t {
 
     vec3_t position;
     dir_t direction;
+
+    int health;
 };
 
 static maybe_t<entity_t *> create_npc(vec3_t position, world_t *world) {
@@ -80,6 +82,7 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
                     character->position = position;
                     character->direction = DIR_Z_PLUS;
                     character->entity = VALUE(entity);
+                    character->health = 2;
                     npcs[i + width * j] = character;
                 }
             }
@@ -207,7 +210,7 @@ class core_controller_t final : public controller_impl_i {
             } else {
                 character_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
-                    handle_attack(npc, ATTACK_ELEM_STEEL);
+                    handle_attack(npc, _player, ATTACK_ELEM_STEEL);
                     _player.entity->receive_message(CORE_DO_ATTACK, position);
                 } else {
                     _player.entity->receive_message(CORE_DO_BOUNCE, position);
@@ -217,20 +220,31 @@ class core_controller_t final : public controller_impl_i {
             next_turn();
         }
 
-        void handle_attack(character_t *c, attack_element_t element) {
-            int damage = calculate_damage(*c, element);
-            hurt_character(c, damage);
+        void handle_attack
+                ( character_t *c, const character_t &attacker
+                , attack_element_t element
+                ) {
+            const int damage = calculate_damage(*c, element);
+            hurt_character(c, attacker, damage);
         }
 
-        void hurt_character(character_t *c, int damage) {
+        void hurt_character
+                (character_t *c, const character_t &attacker, int damage) {
             if (c == nullptr || damage <= 0) return;
-            const size_t x = round(c->position.x);
-            const size_t z = round(c->position.z);
-            const size_t level_width = _level->get_width();
+            const int health_left = c->health - 1;
+            if (health_left <= 0) {
+                const size_t x = round(c->position.x);
+                const size_t z = round(c->position.z);
+                const size_t level_width = _level->get_width();
 
-            _npcs[x + level_width * z] = nullptr;
-            _world->destroy_later(c->entity);
-            delete c;
+                _npcs[x + level_width * z] = nullptr;
+                c->entity->receive_message(CORE_DO_DIE, attacker.position);
+
+                delete c;
+            } else {
+                c->health = health_left;
+                c->entity->receive_message(CORE_DO_HURT, attacker.position);
+            }
         }
 
         void next_turn() {
