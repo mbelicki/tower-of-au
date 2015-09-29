@@ -22,6 +22,7 @@ struct character_t {
     dir_t direction;
 
     int health;
+    bool hold;
 };
 
 static void shuffle(dir_t *array, size_t n) {
@@ -99,21 +100,6 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
     }
 }
 
-static dir_t get_random_direction(random_t *random) {
-    const int dir = random->uniform_from_range(0, 3);
-    switch (dir) {
-        case 0:
-            return DIR_Z_MINUS;
-        case 1:
-            return DIR_Z_PLUS;
-        case 2:
-            return DIR_X_MINUS;
-        case 3:
-        default:
-            return DIR_X_PLUS;
-    }
-}
-
 class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(level_t *level)
@@ -141,6 +127,7 @@ class core_controller_t final : public controller_impl_i {
             _player.entity = VALUE(avatar);
             _player.position = vec3(8, 0, 8);
             _player.direction = DIR_Z_MINUS;
+            _player.health = 5;
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
@@ -222,7 +209,6 @@ class core_controller_t final : public controller_impl_i {
                 character_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
                     handle_attack(npc, _player, ATTACK_ELEM_STEEL);
-                    _player.entity->receive_message(CORE_DO_ATTACK, position);
                 } else {
                     _player.entity->receive_message(CORE_DO_BOUNCE, position);
                 }
@@ -237,6 +223,7 @@ class core_controller_t final : public controller_impl_i {
                 ) {
             const int damage = calculate_damage(*c, element);
             hurt_character(c, attacker, damage);
+            attacker.entity->receive_message(CORE_DO_ATTACK, c->position);
         }
 
         void hurt_character
@@ -251,9 +238,10 @@ class core_controller_t final : public controller_impl_i {
                 _npcs[x + level_width * z] = nullptr;
                 c->entity->receive_message(CORE_DO_DIE, attacker.position);
 
-                delete c;
+                if (c != &_player) delete c;
             } else {
                 c->health = health_left;
+                c->hold = true;
                 c->entity->receive_message(CORE_DO_HURT, attacker.position);
             }
         }
@@ -316,13 +304,33 @@ class core_controller_t final : public controller_impl_i {
             return npc.direction;
         }
 
+        bool can_attack_player(const character_t npc) {
+            const float dx = fabs(npc.position.x - _player.position.x);
+            const float dz = fabs(npc.position.z - _player.position.z);
+            if (dx > 1.1f || dz > 1.1f) return false;
+            
+            const bool close_x = epsilon_compare(dx, 1, 0.05f);
+            const bool close_z = epsilon_compare(dz, 1, 0.05f);
+
+            return close_x != close_z; /* xor */
+        }
+
         void update_npc(character_t *npc) {
-            vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
-            if (can_move_to(position) == false) {
-                npc->direction = pick_next_direction(*npc);
-                position = vec3_add(npc->position, dir_to_vec3(npc->direction));
+            if (npc->hold) {
+                npc->hold = false;
+                return;
             }
-            move_npc(npc, position);
+
+            if (can_attack_player(*npc)) {
+                handle_attack(&_player, *npc, ATTACK_ELEM_STEEL);
+            } else {
+                vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
+                if (can_move_to(position) == false) {
+                    npc->direction = pick_next_direction(*npc);
+                    position = vec3_add(npc->position, dir_to_vec3(npc->direction));
+                }
+                move_npc(npc, position);
+            }
         }
 };
 
