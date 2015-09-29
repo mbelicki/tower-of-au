@@ -24,6 +24,15 @@ struct character_t {
     int health;
 };
 
+static void shuffle(dir_t *array, size_t n) {
+    for (size_t i = 0; i < n - 1; i++) {
+        size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
+        dir_t tmp = array[j];
+        array[j] = array[i];
+        array[i] = tmp;
+    }
+}
+
 static maybe_t<entity_t *> create_npc(vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "npc.obj", "missing.png");
@@ -57,7 +66,7 @@ static int calculate_damage
     return 1;
 }
 
-static bool is_avatar_idle(const character_t &character) {
+static bool is_idle(const character_t &character) {
     const dynval_t is_idle = character.entity->get_property("avat.is_idle");
     return VALUE(is_idle.get_int()) == 1;
 }
@@ -152,8 +161,7 @@ class core_controller_t final : public controller_impl_i {
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            const bool avatar_is_idle = is_avatar_idle(_player);
-            if (avatar_is_idle) {
+            if (is_idle(_player)) {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
                     handle_move((move_dir_t)direction);
@@ -178,12 +186,15 @@ class core_controller_t final : public controller_impl_i {
             const size_t z = round(position.z);
 
             maybe_t<const tile_t *> maybe_tile = _level->get_tile_at(x, z);
-            if (maybe_tile.failed())
-                return false;
+            if (maybe_tile.failed()) return false;
 
             const tile_t *tile = VALUE(maybe_tile);
+            if (tile->is_walkable == false) return false;
+
             const character_t *npc = npc_at(x, z);
-            return tile->is_walkable && npc == nullptr;
+            if (npc != nullptr) return false;
+
+            return vec3_eps_compare(position, _player.position, 0.1f) == false;
         }
 
         character_t *npc_at_position(vec3_t position) {
@@ -258,7 +269,7 @@ class core_controller_t final : public controller_impl_i {
             for (size_t x = 0; x < width; x++) {
                 for (size_t y = 0; y < height; y++) {
                     character_t *npc = npc_at(x, y);
-                    if (npc != nullptr) {
+                    if (npc != nullptr && is_idle(*npc)) {
                         buffer[count] = npc;
                         count++;
                     }
@@ -288,14 +299,30 @@ class core_controller_t final : public controller_impl_i {
             npc->entity->receive_message(CORE_DO_MOVE, position);
         }
 
-        void update_npc(character_t *npc) {
-            const vec3_t position
-                = vec3_add(npc->position, dir_to_vec3(npc->direction));
-            if (can_move_to(position)) {
-                move_npc(npc, position);
-            } else {
-                npc->direction = get_random_direction(&_random);
+        dir_t pick_next_direction(const character_t &npc) {
+            dir_t directions[4] { 
+                DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
+            };
+            shuffle(directions, 4);
+            
+            const vec3_t position = npc.position;
+            for (size_t i = 0; i < 4; i++) {
+                const dir_t dir = directions[i];
+                const vec3_t target = vec3_add(position, dir_to_vec3(dir));
+                if (can_move_to(target))
+                    return dir;
             }
+
+            return npc.direction;
+        }
+
+        void update_npc(character_t *npc) {
+            vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
+            if (can_move_to(position) == false) {
+                npc->direction = pick_next_direction(*npc);
+                position = vec3_add(npc->position, dir_to_vec3(npc->direction));
+            }
+            move_npc(npc, position);
         }
 };
 

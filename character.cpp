@@ -139,7 +139,6 @@ class character_controller_t final : public controller_impl_i {
 
         void update_dying(float t) {
             const float scale = sin(t * PI * 0.5f);
-            //const float scale = ease_elastic(t);
             const vec3_t scales = vec3(scale, scale, scale);
             _owner->receive_message(MSG_PHYSICS_SCALE, scales);
         }
