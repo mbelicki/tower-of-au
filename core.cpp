@@ -208,7 +208,9 @@ class core_controller_t final : public controller_impl_i {
                 character_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
                     handle_attack(npc, ATTACK_ELEM_STEEL);
-                    puts("attaque!");
+                    _player.entity->receive_message(CORE_DO_ATTACK, position);
+                } else {
+                    _player.entity->receive_message(CORE_DO_BOUNCE, position);
                 }
             }
 

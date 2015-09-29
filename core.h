@@ -14,6 +14,8 @@ enum core_msgs_t : unsigned int {
     CORE_TRY_MOVE = warp::MSG_CUSTOM,
 
     CORE_DO_MOVE,
+    CORE_DO_ATTACK,
+    CORE_DO_BOUNCE,
 };
 
 enum move_dir_t : int {
