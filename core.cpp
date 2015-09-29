@@ -23,6 +23,7 @@ struct character_t {
 
     int health;
     bool hold;
+    bool attacked;
 };
 
 static void shuffle(dir_t *array, size_t n) {
@@ -200,6 +201,12 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_move(move_dir_t direction) {
+            if (_player.hold) {
+                _player.hold = false;
+                next_turn();
+                return;
+            }
+
             _player.direction = get_move_direction(direction);
             const vec3_t position = move_character(_player, direction);
             if (can_move_to(position)) {
@@ -208,7 +215,7 @@ class core_controller_t final : public controller_impl_i {
             } else {
                 character_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
-                    handle_attack(npc, _player, ATTACK_ELEM_STEEL);
+                    handle_attack(npc, &_player, ATTACK_ELEM_STEEL);
                 } else {
                     _player.entity->receive_message(CORE_DO_BOUNCE, position);
                 }
@@ -218,12 +225,13 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_attack
-                ( character_t *c, const character_t &attacker
+                ( character_t *target, character_t *attacker
                 , attack_element_t element
                 ) {
-            const int damage = calculate_damage(*c, element);
-            hurt_character(c, attacker, damage);
-            attacker.entity->receive_message(CORE_DO_ATTACK, c->position);
+            const int damage = calculate_damage(*target, element);
+            hurt_character(target, *attacker, damage);
+            attacker->entity->receive_message(CORE_DO_ATTACK, target->position);
+            attacker->hold = true;
         }
 
         void hurt_character
@@ -241,7 +249,7 @@ class core_controller_t final : public controller_impl_i {
                 if (c != &_player) delete c;
             } else {
                 c->health = health_left;
-                c->hold = true;
+                c->attacked = true;
                 c->entity->receive_message(CORE_DO_HURT, attacker.position);
             }
         }
@@ -316,13 +324,14 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void update_npc(character_t *npc) {
-            if (npc->hold) {
+            if (npc->hold || npc->attacked) {
                 npc->hold = false;
+                npc->attacked = false;
                 return;
             }
 
             if (can_attack_player(*npc)) {
-                handle_attack(&_player, *npc, ATTACK_ELEM_STEEL);
+                handle_attack(&_player, npc, ATTACK_ELEM_STEEL);
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 if (can_move_to(position) == false) {
