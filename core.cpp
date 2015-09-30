@@ -333,10 +333,13 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void update_npc(character_t *npc) {
-            if (npc->hold || npc->attacked) {
+            if (npc->hold) {
                 npc->hold = false;
-                npc->attacked = false;
                 return;
+            }
+            if (npc->attacked) {
+                npc->attacked = false;
+                npc->direction = opposite_dir(npc->direction);
             }
 
             if (can_attack_player(*npc)) {
