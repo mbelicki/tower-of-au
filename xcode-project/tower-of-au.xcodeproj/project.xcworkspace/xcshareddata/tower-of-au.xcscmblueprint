@@ -1,0 +1,37 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "5D9D6142E5B1A4C21D0BCCBBD28774917721BCC8",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "5D9D6142E5B1A4C21D0BCCBBD28774917721BCC8" : 0,
+    "6134CCD7053959D89208DB2702E6235A5114609C" : 0,
+    "90C00904F36E6ADB57A7313E998815D255B0DEAF" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "6587D071-2F15-4BCB-BC81-7255BD7279A5",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "5D9D6142E5B1A4C21D0BCCBBD28774917721BCC8" : "tower-of-au\/",
+    "6134CCD7053959D89208DB2702E6235A5114609C" : "tower-of-au\/warp\/",
+    "90C00904F36E6ADB57A7313E998815D255B0DEAF" : "tower-of-au\/warp\/tests\/catch\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "tower-of-au",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "xcode-project\/tower-of-au.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/mbelicki\/tower-of-au.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "5D9D6142E5B1A4C21D0BCCBBD28774917721BCC8"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/mbelicki\/warp",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "6134CCD7053959D89208DB2702E6235A5114609C"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/philsquared\/Catch",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "90C00904F36E6ADB57A7313E998815D255B0DEAF"
+    }
+  ]
+}
