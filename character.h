@@ -9,4 +9,5 @@ namespace warp {
     class controller_comp_t;
 }
 
-warp::maybe_t<warp::controller_comp_t *> create_character_controller(warp::world_t *world);
+warp::maybe_t<warp::controller_comp_t *> 
+    create_character_controller(warp::world_t *world, bool confirm_move);

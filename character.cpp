@@ -51,6 +51,10 @@ static float get_time_for_heal_state(health_state_t state) {
 
 class movement_controller_t final : public controller_impl_i {
     public:
+        movement_controller_t(bool confirm_move)
+            : _confirm(confirm_move)
+        { }
+
         dynval_t get_property(const tag_t &name) const override {
             if (name == "avat.is_idle") {
                 return (int)(_state == MOVE_IDLE);
@@ -66,6 +70,9 @@ class movement_controller_t final : public controller_impl_i {
         void update(float dt, const input_t &) override { 
             if (_timer <= 0) {
                 _timer = 0;
+                if (_state != MOVE_IDLE && _confirm) {
+                    _world->broadcast_message(CORE_MOVE_DONE, 0);
+                }
                 _state = MOVE_IDLE;
                 return;
             } 
@@ -106,6 +113,7 @@ class movement_controller_t final : public controller_impl_i {
         world_t *_world;
         float _timer;
         movement_state_t _state;
+        bool _confirm;
 
         vec3_t _target_pos;
         vec3_t _old_pos;
@@ -207,9 +215,10 @@ class health_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<controller_comp_t *> create_character_controller(world_t *world) {
+extern maybe_t<controller_comp_t *> create_character_controller
+        (world_t *world, bool confirm_move) {
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new movement_controller_t);
+    controller->initialize(new movement_controller_t(confirm_move));
     controller->add_controller(new health_controller_t);
     return controller;
 }

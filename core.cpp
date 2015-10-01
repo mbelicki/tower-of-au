@@ -35,11 +35,12 @@ static void shuffle(dir_t *array, size_t n) {
     }
 }
 
-static maybe_t<entity_t *> create_npc(vec3_t position, world_t *world) {
+static maybe_t<entity_t *> create_character_entity
+        (vec3_t position, world_t *world, bool confirm_moves) {
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "npc.obj", "missing.png");
     maybe_t<controller_comp_t *> controller
-        = create_character_controller(world);
+        = create_character_controller(world, confirm_moves);
 
     return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
 }
@@ -87,7 +88,8 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
                 const float r = rand() / (float)RAND_MAX;
                 if (r <= tile->spawn_probablity) {
                     const vec3_t position = vec3(i, 0, j);
-                    maybe_t<entity_t *> entity = create_npc(position, world);
+                    maybe_t<entity_t *> entity
+                        = create_character_entity(position, world, false);
 
                     character_t *character = new (std::nothrow) character_t;
                     character->position = position;
@@ -124,7 +126,8 @@ class core_controller_t final : public controller_impl_i {
             _owner = owner;
             _world = world;
 
-            maybe_t<entity_t *> avatar = create_npc(vec3(8, 0, 8), world);
+            maybe_t<entity_t *> avatar 
+                = create_character_entity(vec3(8, 0, 8), world, true);
             _player.entity = VALUE(avatar);
             _player.position = vec3(8, 0, 8);
             _player.direction = DIR_Z_MINUS;
@@ -144,12 +147,16 @@ class core_controller_t final : public controller_impl_i {
         void update(float, const input_t &) override { }
 
         bool accepts(messagetype_t type) const override {
-            return type == CORE_TRY_MOVE;
+            return type == CORE_TRY_MOVE
+                || type == CORE_MOVE_DONE
+                ;
         }
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            if (is_idle(_player)) {
+            if (type == CORE_MOVE_DONE) {
+                next_turn();
+            } else if (is_idle(_player)) {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
                     handle_move((move_dir_t)direction);
@@ -219,8 +226,6 @@ class core_controller_t final : public controller_impl_i {
                     _player.entity->receive_message(CORE_DO_BOUNCE, position);
                 }
             }
-
-            next_turn();
         }
 
         void handle_attack
