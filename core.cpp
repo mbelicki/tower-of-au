@@ -105,8 +105,8 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
 
 class core_controller_t final : public controller_impl_i {
     public:
-        core_controller_t(level_t *level)
-            : _level(level)
+        core_controller_t(level_t *initial_level)
+            : _level(initial_level)
             , _npcs(nullptr)
         {
         }
@@ -176,20 +176,23 @@ class core_controller_t final : public controller_impl_i {
 
         random_t _random;
 
-        bool can_move_to(vec3_t position) {
-            const size_t x = round(position.x);
-            const size_t z = round(position.z);
+        bool can_move_to(vec3_t new_position, vec3_t old_position) {
+            const size_t x = round(new_position.x);
+            const size_t z = round(new_position.z);
 
             maybe_t<const tile_t *> maybe_tile = _level->get_tile_at(x, z);
             if (maybe_tile.failed()) return false;
 
             const tile_t *tile = VALUE(maybe_tile);
+            if (tile->is_stairs) {
+                return old_position.x > new_position.x;
+            }
             if (tile->is_walkable == false) return false;
 
             const character_t *npc = npc_at(x, z);
             if (npc != nullptr) return false;
 
-            return vec3_eps_compare(position, _player.position, 0.1f) == false;
+            return vec3_eps_compare(new_position, _player.position, 0.1f) == false;
         }
 
         character_t *npc_at_position(vec3_t position) {
@@ -216,7 +219,7 @@ class core_controller_t final : public controller_impl_i {
 
             _player.direction = get_move_direction(direction);
             const vec3_t position = move_character(_player, direction);
-            if (can_move_to(position)) {
+            if (can_move_to(position, _player.position)) {
                 make_move(&_player, position);
             } else {
                 character_t *npc = npc_at_position(position);
@@ -238,7 +241,7 @@ class core_controller_t final : public controller_impl_i {
             if (alive) {
                 const vec3_t d = vec3_sub(target->position, attacker->position);
                 const vec3_t push_back = vec3_add(target->position, d);
-                if (can_move_to(push_back)) {
+                if (can_move_to(push_back, target->position)) {
                     make_move(target, push_back);
                     target->attacked = true;
                 }
@@ -319,7 +322,7 @@ class core_controller_t final : public controller_impl_i {
             for (size_t i = 0; i < 4; i++) {
                 const dir_t dir = directions[i];
                 const vec3_t target = vec3_add(position, dir_to_vec3(dir));
-                if (can_move_to(target))
+                if (can_move_to(target, position))
                     return dir;
             }
 
@@ -351,7 +354,7 @@ class core_controller_t final : public controller_impl_i {
                 handle_attack(&_player, npc, ATTACK_ELEM_STEEL);
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
-                if (can_move_to(position) == false) {
+                if (can_move_to(position, npc->position) == false) {
                     npc->direction = pick_next_direction(*npc);
                     position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 }

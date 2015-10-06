@@ -50,9 +50,13 @@ static maybe_t<entity_t *> create_tile
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, mesh_name, tex_name);
     MAYBE_RETURN(graphics, entity_t *, "Failed to create tile:");
-    
+
     const vec3_t position = vec3(x, 0, y);
     entity_t *entity = world->create_entity(position, VALUE(graphics), nullptr, nullptr);
+
+    if (tile.is_stairs) {
+        entity->receive_message(MSG_PHYSICS_ROTATE, quat_from_euler(0, PI, 0));
+    }
     
     return entity;
 }
