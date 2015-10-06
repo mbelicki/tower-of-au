@@ -2,7 +2,9 @@
 
 #include "warp/world.h"
 #include "warp/entity.h"
-#include "warp/entity-helpers.h"
+#include "warp/meshbuilder.h"
+#include "warp/meshmanager.h"
+#include "warp/components.h"
 
 using namespace warp;
 
@@ -10,7 +12,6 @@ level_t::level_t(const tile_t *tiles, size_t width, size_t height)
         : _initialized(false)
         , _width(width)
         , _height(height)
-        , _entities(nullptr)
         , _tiles(nullptr) {
     const size_t tiles_count = _width * _height;
     /* because memmove does not interact well with C++ constructors and
@@ -18,15 +19,10 @@ level_t::level_t(const tile_t *tiles, size_t width, size_t height)
     _tiles = new (std::nothrow) tile_t[tiles_count];
     for (size_t i = 0; i < tiles_count; i++)
         _tiles[i] = tiles[i];
-
-    _entities = new (std::nothrow) entity_t * [tiles_count]; 
-    for (size_t i = 0; i < tiles_count; i++)
-        _entities[i] = nullptr;
 }
 
 level_t::~level_t() {
     delete [] _tiles;
-    delete [] _entities;
 }
 
 maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
@@ -40,40 +36,60 @@ maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
     return _tiles + (x + _width * y);
 }
 
-static maybe_t<entity_t *> create_tile
-        (const tile_t &tile, size_t x, size_t y, world_t *world) {
+static maybeunit_t append_tile
+        ( meshbuilder_t *builder
+        , meshmanager_t *meshes
+        , const tile_t &tile
+        , size_t x, size_t y
+        ) {
+    transforms_t transforms;
+    transforms.change_position(vec3(x, 0, y));
+    if (tile.is_stairs) {
+        transforms.change_rotation(quat_from_euler(0, PI, 0));
+    } else if (tile.is_walkable) {
+        transforms.change_rotation(quat_from_euler(0, PI, 0));
+    }
+
     const char *mesh_name = tile.is_stairs 
                           ? "stairs.obj" 
                           : (tile.is_walkable ? "floor.obj" : "wall.obj");
-    const char *tex_name  = "missing.png";
+    const maybe_t<mesh_id_t> maybe_id = meshes->add_mesh(mesh_name);
+    MAYBE_RETURN(maybe_id, unit_t, "Failed to get tile mesh:");
 
-    maybe_t<graphics_comp_t *> graphics
-        = create_single_model_graphics(world, mesh_name, tex_name);
-    MAYBE_RETURN(graphics, entity_t *, "Failed to create tile:");
+    const mesh_id_t id = VALUE(maybe_id);
+    builder->append_mesh(*meshes, id, transforms);
 
-    const vec3_t position = vec3(x, 0, y);
-    entity_t *entity = world->create_entity(position, VALUE(graphics), nullptr, nullptr);
-
-    if (tile.is_stairs) {
-        entity->receive_message(MSG_PHYSICS_ROTATE, quat_from_euler(0, PI, 0));
-    }
-    
-    return entity;
+    return unit;
 }
 
 maybeunit_t level_t::initialize(world_t *world) {
     if (_initialized) return nothing<unit_t>("Already initialized.");
+    
+    meshmanager_t *meshes = world->get_resources().meshes;
+    meshbuilder_t builder;
 
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
             const size_t index = i + _width * j;
-            maybe_t<entity_t *> maybe_tile_entity
-                = create_tile(_tiles[index], i, j, world);
-            MAYBE_RETURN(maybe_tile_entity, unit_t, "Failed to initialize:");
-
-            _entities[index] = VALUE(maybe_tile_entity);
+            maybeunit_t result
+                = append_tile(&builder, meshes, _tiles[index], i, j);
+            MAYBE_RETURN(result, unit_t, "Failed to append a tile mesh:");
         }
     }
+
+    maybe_t<mesh_id_t> mesh_id = meshes->add_mesh_from_builder(builder);
+    MAYBE_RETURN(mesh_id, unit_t, "Failed to create level mesh:");
+
+    maybe_t<graphics_comp_t *> graphics = world->create_graphics();
+    MAYBE_RETURN(graphics, unit_t, "Failed to create level graphics:");
+
+    model_t model;
+    model.initialize(VALUE(mesh_id), 0);
+    
+    (VALUE(graphics))->add_model(model);
+
+    entity_t *entity = world->create_entity(vec3(0, 0, 0), VALUE(graphics), nullptr, nullptr);
+    entity->set_tag("level");
     
     _initialized = true;
     return unit;

@@ -32,7 +32,6 @@ class level_t {
         size_t _width;
         size_t _height;
 
-        warp::entity_t **_entities;
         tile_t *_tiles;
 };
 
