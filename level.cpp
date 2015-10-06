@@ -6,6 +6,8 @@
 #include "warp/meshmanager.h"
 #include "warp/components.h"
 
+#include "random.h"
+
 using namespace warp;
 
 level_t::level_t(const tile_t *tiles, size_t width, size_t height) 
@@ -88,8 +90,8 @@ maybeunit_t level_t::initialize(world_t *world) {
     
     (VALUE(graphics))->add_model(model);
 
-    entity_t *entity = world->create_entity(vec3(0, 0, 0), VALUE(graphics), nullptr, nullptr);
-    entity->set_tag("level");
+    _entity = world->create_entity(vec3(0, 0, 0), VALUE(graphics), nullptr, nullptr);
+    _entity->set_tag("level");
     
     _initialized = true;
     return unit;
@@ -105,7 +107,7 @@ extern level_t *generate_test_level() {
         for (size_t j = 0; j < height; j++) {
             bool is_wall = i == 0 || j == 0 || i == width - 1;
             const size_t index = i + width * j;
-			tiles[index].is_walkable = !is_wall;
+			tiles[index].is_walkable = is_wall == false;
 			tiles[index].is_stairs = false;
             tiles[index].spawn_probablity = 0;
         }
@@ -121,6 +123,44 @@ extern level_t *generate_test_level() {
     tiles[8 + width * 1].spawn_probablity = 1;
     tiles[9 + width * 2].spawn_probablity = 1;
     tiles[3 + width * 5].spawn_probablity = 1;
+
+    return new (std::nothrow) level_t(tiles, width, height);
+}
+
+extern level_t *generate_random_level(random_t *random) {
+    
+    const size_t width = 13;
+    const size_t height = 9;
+    const size_t count = width * height;
+
+    tile_t tiles[count];
+    for (size_t i = 0; i < width; i++) {
+        for (size_t j = 0; j < height; j++) {
+            bool is_wall = i == 0 || j == 0 || i == width - 1;
+            const size_t index = i + width * j;
+			tiles[index].is_walkable = false;
+			tiles[index].is_stairs = false;
+            tiles[index].spawn_probablity = 0;
+
+            if (is_wall == false) {
+                const bool is_floor = random->uniform_from_range(0, 10) >= 1; 
+                tiles[index].is_walkable = is_floor;
+                if (is_floor && random->uniform_zero_to_one() < 0.05f) {
+                    tiles[index].spawn_probablity
+                        = random->uniform_zero_to_one();
+                }
+            }
+        }
+    }
+
+    const int stair_x = random->uniform_from_range(1, width - 3);
+    const int stair_y = random->uniform_from_range(1, height - 2);
+    
+    tiles[stair_x + width * stair_y].is_stairs = true;
+    tiles[stair_x + width * stair_y].spawn_probablity = 0;
+
+    tiles[stair_x + 1 + width * stair_y].is_walkable = true;
+    tiles[stair_x + width * (stair_y + 1)].is_walkable = true;
 
     return new (std::nothrow) level_t(tiles, width, height);
 }

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <time.h>
+#include <vector>
 
 #include "warp/world.h"
 #include "warp/entity.h"
@@ -74,10 +75,17 @@ static bool is_idle(const character_t &character) {
     return VALUE(is_idle.get_int()) == 1;
 }
 
-static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world) {
+static void spawn_npcs
+        ( const level_t &level, character_t **npcs
+        , world_t *world, random_t *random
+        ) {
     const size_t width = level.get_width();
     const size_t height = level.get_height();
-    srand(time(NULL));
+
+    for (size_t i = 0; i < width * height; i++) {
+        npcs[i] = nullptr;
+    }
+
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
             maybe_t<const tile_t *> maybe_tile = level.get_tile_at(i, j);
@@ -85,7 +93,7 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
             const tile_t *tile = VALUE(maybe_tile);
 
             if (tile->spawn_probablity > 0) {
-                const float r = rand() / (float)RAND_MAX;
+                const float r = random->uniform_zero_to_one();
                 if (r <= tile->spawn_probablity) {
                     const vec3_t position = vec3(i, 0, j);
                     maybe_t<entity_t *> entity
@@ -95,6 +103,7 @@ static void spawn_npcs(const level_t &level, character_t **npcs, world_t *world)
                     character->position = position;
                     character->direction = DIR_Z_PLUS;
                     character->entity = VALUE(entity);
+                    character->entity->set_tag("npc");
                     character->health = 2;
                     npcs[i + width * j] = character;
                 }
@@ -137,11 +146,8 @@ class core_controller_t final : public controller_impl_i {
             const size_t height = _level->get_height();
             _max_npc_count = width * height;
             _npcs = new (std::nothrow) character_t * [_max_npc_count];
-            for (size_t i = 0; i < _max_npc_count; i++) {
-                _npcs[i] = nullptr;
-            }
 
-            spawn_npcs(*_level, _npcs, world);
+            spawn_npcs(*_level, _npcs, world, &_random);
         }
 
         void update(float, const input_t &) override { }
@@ -156,6 +162,11 @@ class core_controller_t final : public controller_impl_i {
             const messagetype_t type = message.type;
             if (type == CORE_MOVE_DONE) {
                 next_turn();
+                const size_t x = round(_player.position.x);
+                const size_t z = round(_player.position.z);
+                _level->get_tile_at(x, z).with_value([this](const tile_t *tile) {
+                    if (tile->is_stairs) this->next_level();
+                });
             } else if (is_idle(_player)) {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
@@ -175,6 +186,24 @@ class core_controller_t final : public controller_impl_i {
         size_t _max_npc_count;
 
         random_t _random;
+
+        void next_level() {
+            maybe_t<entity_t *> level = _world->find_entity("level");
+            if (level.failed()) return;
+            _world->destroy_later(VALUE(level));
+
+            std::vector<entity_t *> npcs;
+            _world->find_all_entities("npc", &npcs);
+            for (entity_t *npc : npcs) {
+                _world->destroy_later(npc);
+            }
+
+            delete _level;
+            _level = generate_random_level(&_random);
+            _level->initialize(_world);
+
+            spawn_npcs(*_level, _npcs, _world, &_random);
+        }
 
         bool can_move_to(vec3_t new_position, vec3_t old_position) {
             const size_t x = round(new_position.x);

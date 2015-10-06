@@ -2,6 +2,8 @@
 
 #include "warp/maybe.h"
 
+class random_t;
+
 namespace warp {
     class entity_t;
     class world_t;
@@ -33,7 +35,9 @@ class level_t {
         size_t _height;
 
         tile_t *_tiles;
+        warp::entity_t *_entity;
 };
 
 /// Generates uninitialized level instance.
 level_t *generate_test_level();
+level_t *generate_random_level(random_t *random);
