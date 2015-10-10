@@ -27,6 +27,23 @@ struct character_t {
     bool attacked;
 };
 
+static dir_t vec3_to_dir(const vec3_t v) {
+    const vec3_t absolutes = vec3(fabs(v.x), fabs(v.y), fabs(v.z));
+    if (absolutes.x > absolutes.y) {
+        if (absolutes.x > absolutes.z) {
+            return signum(v.x) > 0 ? DIR_X_PLUS : DIR_X_MINUS;
+        } else {
+            return signum(v.z) > 0 ? DIR_Z_PLUS : DIR_Z_MINUS;
+        }
+    } else {
+        if (absolutes.y > absolutes.z) {
+            return signum(v.y) > 0 ? DIR_Y_PLUS : DIR_Y_MINUS;
+        } else {
+            return signum(v.z) > 0 ? DIR_Z_PLUS : DIR_Z_MINUS;
+        }
+    }
+}
+
 static void shuffle(dir_t *array, size_t n) {
     for (size_t i = 0; i < n - 1; i++) {
         size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
@@ -86,6 +103,10 @@ static void spawn_npcs
         npcs[i] = nullptr;
     }
 
+    dir_t directions[4] { 
+        DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
+    };
+
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
             maybe_t<const tile_t *> maybe_tile = level.get_tile_at(i, j);
@@ -96,12 +117,14 @@ static void spawn_npcs
                 const float r = random->uniform_zero_to_one();
                 if (r <= tile->spawn_probablity) {
                     const vec3_t position = vec3(i, 0, j);
+                    const dir_t direction
+                        = directions[random->uniform_from_range(0, 3)];
                     maybe_t<entity_t *> entity
                         = create_character_entity(position, world, false);
 
                     character_t *character = new (std::nothrow) character_t;
                     character->position = position;
-                    character->direction = DIR_Z_PLUS;
+                    character->direction = direction;
                     character->entity = VALUE(entity);
                     character->entity->set_tag("npc");
                     character->health = 2;
@@ -342,17 +365,24 @@ class core_controller_t final : public controller_impl_i {
         }
 
         dir_t pick_next_direction(const character_t &npc) {
-            dir_t directions[4] { 
-                DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
-            };
-            shuffle(directions, 4);
-            
-            const vec3_t position = npc.position;
-            for (size_t i = 0; i < 4; i++) {
-                const dir_t dir = directions[i];
-                const vec3_t target = vec3_add(position, dir_to_vec3(dir));
-                if (can_move_to(target, position))
-                    return dir;
+            const vec3_t diff = vec3_sub(_player.position, npc.position);
+            const dir_t dir = vec3_to_dir(diff);
+            const vec3_t position = vec3_add(npc.position, dir_to_vec3(dir));
+            if (can_move_to(position, npc.position)) {
+                return dir;
+            } else {
+                dir_t directions[4] { 
+                    DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
+                };
+                shuffle(directions, 4);
+
+                const vec3_t position = npc.position;
+                for (size_t i = 0; i < 4; i++) {
+                    const dir_t dir = directions[i];
+                    const vec3_t target = vec3_add(position, dir_to_vec3(dir));
+                    if (can_move_to(target, position))
+                        return dir;
+                }
             }
 
             return npc.direction;
@@ -383,7 +413,8 @@ class core_controller_t final : public controller_impl_i {
                 handle_attack(&_player, npc, ATTACK_ELEM_STEEL);
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
-                if (can_move_to(position, npc->position) == false) {
+                const bool change_dir = _random.uniform_zero_to_one() > 0.6f;
+                if (change_dir || can_move_to(position, npc->position) == false) {
                     npc->direction = pick_next_direction(*npc);
                     position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 }
