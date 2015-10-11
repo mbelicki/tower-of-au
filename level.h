@@ -13,6 +13,7 @@ struct tile_t {
     bool is_walkable;
     bool is_stairs;
     float spawn_probablity;
+    float boulder_probability;
 };
 
 class level_t {

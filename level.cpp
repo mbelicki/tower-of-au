@@ -99,17 +99,18 @@ maybeunit_t level_t::initialize(world_t *world) {
 
 extern level_t *generate_test_level() {
     const size_t width = 13;
-    const size_t height = 9;
+    const size_t height = 11;
     const size_t count = width * height;
 
     tile_t tiles[count];
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
-            bool is_wall = i == 0 || j == 0 || i == width - 1;
+            bool is_wall = i == 0 || j == 0 || i == width - 1 || j == height - 1;
             const size_t index = i + width * j;
 			tiles[index].is_walkable = is_wall == false;
 			tiles[index].is_stairs = false;
             tiles[index].spawn_probablity = 0;
+            tiles[index].boulder_probability = 0;
         }
     }
 
@@ -124,23 +125,25 @@ extern level_t *generate_test_level() {
     tiles[9 + width * 2].spawn_probablity = 1;
     tiles[3 + width * 5].spawn_probablity = 1;
 
+    tiles[4 + width * 7].boulder_probability = 1;
+
     return new (std::nothrow) level_t(tiles, width, height);
 }
 
 extern level_t *generate_random_level(random_t *random) {
-    
     const size_t width = 13;
-    const size_t height = 9;
+    const size_t height = 11;
     const size_t count = width * height;
 
     tile_t tiles[count];
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
-            bool is_wall = i == 0 || j == 0 || i == width - 1;
+            bool is_wall = i == 0 || j == 0 || i == width - 1 || j == height - 1;
             const size_t index = i + width * j;
 			tiles[index].is_walkable = false;
 			tiles[index].is_stairs = false;
             tiles[index].spawn_probablity = 0;
+            tiles[index].boulder_probability = 0;
 
             if (is_wall == false) {
                 const bool is_floor = random->uniform_from_range(0, 10) >= 1; 

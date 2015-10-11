@@ -63,6 +63,16 @@ static maybe_t<entity_t *> create_character_entity
     return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
 }
 
+static maybe_t<entity_t *> create_boulder_entity
+        (vec3_t position, world_t *world) {
+    maybe_t<graphics_comp_t *> graphics
+        = create_single_model_graphics(world, "boulder.obj", "missing.png");
+    maybe_t<controller_comp_t *> controller
+        = create_character_controller(world, false);
+
+    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+}
+
 static dir_t get_move_direction(move_dir_t move_dir) {
     switch (move_dir) {
         case MOVE_UP:
@@ -120,7 +130,8 @@ static void spawn_npcs
                     const dir_t direction
                         = directions[random->uniform_from_range(0, 3)];
                     maybe_t<entity_t *> entity
-                        = create_character_entity(position, world, false);
+                        //= create_character_entity(position, world, false);
+                        = create_boulder_entity(position, world);
 
                     character_t *character = new (std::nothrow) character_t;
                     character->position = position;
