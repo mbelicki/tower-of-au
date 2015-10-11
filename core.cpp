@@ -128,14 +128,25 @@ static void spawn_objects
             if (maybe_tile.failed()) continue;
             const tile_t *tile = VALUE(maybe_tile);
 
-            if (tile->spawn_probablity > 0) {
+            if (tile->spawn_probablity > 0 || tile->boulder_probability > 0) {
                 const float r = random->uniform_zero_to_one();
+                const vec3_t position = vec3(i, 0, j);
+                const dir_t direction
+                    = directions[random->uniform_from_range(0, 3)];
                 if (r <= tile->spawn_probablity) {
-                    const vec3_t position = vec3(i, 0, j);
-                    const dir_t direction
-                        = directions[random->uniform_from_range(0, 3)];
                     maybe_t<entity_t *> entity
-                        //= create_character_entity(position, world, false);
+                        = create_character_entity(position, world, false);
+
+                    object_t *character = new (std::nothrow) object_t;
+                    character->type = OBJ_CHARACTER;
+                    character->position = position;
+                    character->direction = direction;
+                    character->entity = VALUE(entity);
+                    character->entity->set_tag("npc");
+                    character->health = 2;
+                    npcs[i + width * j] = character;
+                } else if (r <= tile->boulder_probability) {
+                    maybe_t<entity_t *> entity
                         = create_boulder_entity(position, world);
 
                     object_t *character = new (std::nothrow) object_t;

@@ -151,6 +151,9 @@ extern level_t *generate_random_level(random_t *random) {
                 if (is_floor && random->uniform_zero_to_one() < 0.05f) {
                     tiles[index].spawn_probablity
                         = random->uniform_zero_to_one();
+                } else if (is_floor && random->uniform_zero_to_one() < 0.06f) {
+                    tiles[index].boulder_probability
+                        = random->uniform_zero_to_one();
                 }
             }
         }
