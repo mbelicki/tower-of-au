@@ -16,7 +16,13 @@
 
 using namespace warp;
 
-struct character_t {
+enum object_type_t {
+    OBJ_CHARACTER,
+    OBJ_BOULDER,
+};
+
+struct object_t {
+    object_type_t type;
     entity_t *entity;
 
     vec3_t position;
@@ -86,24 +92,23 @@ static dir_t get_move_direction(move_dir_t move_dir) {
     }
 }
 
-static vec3_t move_character(const character_t &character, move_dir_t dir) {
+static vec3_t move_character(const object_t &character, move_dir_t dir) {
     const dir_t direction = get_move_direction(dir);
     const vec3_t step = dir_to_vec3(direction);
     return vec3_add(character.position, step);
 }
 
-static int calculate_damage 
-        (const character_t &, attack_element_t) {
-    return 1;
+static int calculate_damage(const object_t &target) {
+    return target.type == OBJ_BOULDER ? 0 : 1;
 }
 
-static bool is_idle(const character_t &character) {
+static bool is_idle(const object_t &character) {
     const dynval_t is_idle = character.entity->get_property("avat.is_idle");
     return VALUE(is_idle.get_int()) == 1;
 }
 
-static void spawn_npcs
-        ( const level_t &level, character_t **npcs
+static void spawn_objects
+        ( const level_t &level, object_t **npcs
         , world_t *world, random_t *random
         ) {
     const size_t width = level.get_width();
@@ -133,7 +138,8 @@ static void spawn_npcs
                         //= create_character_entity(position, world, false);
                         = create_boulder_entity(position, world);
 
-                    character_t *character = new (std::nothrow) character_t;
+                    object_t *character = new (std::nothrow) object_t;
+                    character->type = OBJ_BOULDER;
                     character->position = position;
                     character->direction = direction;
                     character->entity = VALUE(entity);
@@ -150,15 +156,15 @@ class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(level_t *initial_level)
             : _level(initial_level)
-            , _npcs(nullptr)
+            , _objects(nullptr)
         {
         }
 
         ~core_controller_t() {
             for (size_t i = 0; i < _max_npc_count; i++) {
-                delete _npcs[i];
+                delete _objects[i];
             }
-            delete _npcs;
+            delete _objects;
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -179,9 +185,9 @@ class core_controller_t final : public controller_impl_i {
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
             _max_npc_count = width * height;
-            _npcs = new (std::nothrow) character_t * [_max_npc_count];
+            _objects = new (std::nothrow) object_t * [_max_npc_count];
 
-            spawn_npcs(*_level, _npcs, world, &_random);
+            spawn_objects(*_level, _objects, world, &_random);
         }
 
         void update(float, const input_t &) override { }
@@ -215,8 +221,8 @@ class core_controller_t final : public controller_impl_i {
 
         level_t *_level;
 
-        character_t _player;
-        character_t **_npcs;
+        object_t _player;
+        object_t **_objects;
         size_t _max_npc_count;
 
         random_t _random;
@@ -236,7 +242,7 @@ class core_controller_t final : public controller_impl_i {
             _level = generate_random_level(&_random);
             _level->initialize(_world);
 
-            spawn_npcs(*_level, _npcs, _world, &_random);
+            spawn_objects(*_level, _objects, _world, &_random);
         }
 
         bool can_move_to(vec3_t new_position, vec3_t old_position) {
@@ -252,25 +258,25 @@ class core_controller_t final : public controller_impl_i {
             }
             if (tile->is_walkable == false) return false;
 
-            const character_t *npc = npc_at(x, z);
+            const object_t *npc = npc_at(x, z);
             if (npc != nullptr) return false;
 
             return vec3_eps_compare(new_position, _player.position, 0.1f) == false;
         }
 
-        character_t *npc_at_position(vec3_t position) {
+        object_t *npc_at_position(vec3_t position) {
             const size_t x = round(position.x);
             const size_t z = round(position.z);
             return npc_at(x, z);
         }
 
-        character_t *npc_at(size_t x, size_t y) {
+        object_t *npc_at(size_t x, size_t y) {
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
             if (x >= width || y >= height)
                 return nullptr;
 
-            return _npcs[x + width * y];
+            return _objects[x + width * y];
         }
 
         void handle_move(move_dir_t direction) {
@@ -285,9 +291,9 @@ class core_controller_t final : public controller_impl_i {
             if (can_move_to(position, _player.position)) {
                 make_move(&_player, position);
             } else {
-                character_t *npc = npc_at_position(position);
+                object_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
-                    handle_attack(npc, &_player, ATTACK_ELEM_STEEL);
+                    handle_attack(npc, &_player);
                 } else {
                     _player.entity->receive_message(CORE_DO_BOUNCE, position);
                 }
@@ -295,12 +301,10 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_attack
-                ( character_t *target, character_t *attacker
-                , attack_element_t element
-                ) {
-            const int damage = calculate_damage(*target, element);
+                (object_t *target, object_t *attacker) {
+            const int damage = calculate_damage(*target);
             const bool alive = hurt_character(target, *attacker, damage);
-            attacker->entity->receive_message(CORE_DO_ATTACK, target->position);
+            const vec3_t original_position = target->position;
             if (alive) {
                 const vec3_t d = vec3_sub(target->position, attacker->position);
                 const vec3_t push_back = vec3_add(target->position, d);
@@ -309,24 +313,34 @@ class core_controller_t final : public controller_impl_i {
                     target->attacked = true;
                 }
             }
+            if (target->type == OBJ_BOULDER) {
+                if (can_move_to(original_position, attacker->position))
+                    make_move(attacker, original_position);
+                else
+                    attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
+            } else {
+                attacker->entity->receive_message(CORE_DO_ATTACK, original_position);
+            }
         }
 
         bool hurt_character
-                (character_t *target, const character_t &attacker, int damage) {
-            if (target == nullptr || damage <= 0) return false;
-            const int health_left = target->health - 1;
+                (object_t *target, const object_t &attacker, int damage) {
+            if (target == nullptr || damage < 0) return false;
+            const int health_left = target->health - damage;
             if (health_left <= 0) {
                 const size_t x = round(target->position.x);
                 const size_t z = round(target->position.z);
                 const size_t level_width = _level->get_width();
 
-                _npcs[x + level_width * z] = nullptr;
+                _objects[x + level_width * z] = nullptr;
                 target->entity->receive_message(CORE_DO_DIE, attacker.position);
 
                 if (target != &_player) delete target;
             } else {
                 target->health = health_left;
-                target->entity->receive_message(CORE_DO_HURT, attacker.position);
+                if (target->type != OBJ_BOULDER) {
+                    target->entity->receive_message(CORE_DO_HURT, attacker.position);
+                }
             }
 
             return health_left > 0;
@@ -338,11 +352,11 @@ class core_controller_t final : public controller_impl_i {
             const size_t max_characters = width * height;
             
             size_t count = 0;
-            character_t **buffer = new character_t * [max_characters];
+            object_t **buffer = new object_t * [max_characters];
 
             for (size_t x = 0; x < width; x++) {
                 for (size_t y = 0; y < height; y++) {
-                    character_t *npc = npc_at(x, y);
+                    object_t *npc = npc_at(x, y);
                     if (npc != nullptr && is_idle(*npc)) {
                         buffer[count] = npc;
                         count++;
@@ -357,25 +371,25 @@ class core_controller_t final : public controller_impl_i {
             delete buffer;
         }
 
-        void make_move(character_t *target, vec3_t position) {
+        void make_move(object_t *target, vec3_t position) {
             const vec3_t old_position = target->position;
             const size_t level_width = _level->get_width();
 
             if (target != &_player) {
                 size_t x = round(old_position.x);
                 size_t z = round(old_position.z);
-                _npcs[x + level_width * z] = nullptr;
+                _objects[x + level_width * z] = nullptr;
 
                 x = round(position.x);
                 z = round(position.z);
-                _npcs[x + level_width * z] = target;
+                _objects[x + level_width * z] = target;
             }
 
             target->position = position;
             target->entity->receive_message(CORE_DO_MOVE, position);
         }
 
-        dir_t pick_next_direction(const character_t &npc) {
+        dir_t pick_next_direction(const object_t &npc) {
             const vec3_t diff = vec3_sub(_player.position, npc.position);
             const dir_t dir = vec3_to_dir(diff);
             const vec3_t position = vec3_add(npc.position, dir_to_vec3(dir));
@@ -399,7 +413,7 @@ class core_controller_t final : public controller_impl_i {
             return npc.direction;
         }
 
-        bool can_attack_player(const character_t npc) {
+        bool can_attack_player(const object_t npc) {
             const float dx = fabs(npc.position.x - _player.position.x);
             const float dz = fabs(npc.position.z - _player.position.z);
             if (dx > 1.1f || dz > 1.1f) return false;
@@ -410,7 +424,10 @@ class core_controller_t final : public controller_impl_i {
             return close_x != close_z; /* xor */
         }
 
-        void update_npc(character_t *npc) {
+        void update_npc(object_t *npc) {
+            if (npc->type != OBJ_CHARACTER) {
+                return;
+            }
             if (npc->hold) {
                 npc->hold = false;
                 return;
@@ -421,7 +438,7 @@ class core_controller_t final : public controller_impl_i {
             }
 
             if (can_attack_player(*npc)) {
-                handle_attack(&_player, npc, ATTACK_ELEM_STEEL);
+                handle_attack(&_player, npc);
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 const bool change_dir = _random.uniform_zero_to_one() > 0.6f;

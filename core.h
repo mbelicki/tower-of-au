@@ -29,13 +29,6 @@ enum move_dir_t : int {
     MOVE_RIGHT,
 };
 
-enum attack_element_t : unsigned char {
-    ATTACK_ELEM_FIRE,
-    ATTACK_ELEM_WATER,
-    ATTACK_ELEM_AIR,
-    ATTACK_ELEM_STEEL,
-};
-
 static inline bool operator==
         (const warp::messagetype_t &a, const core_msgs_t &b) {
     return static_cast<int>(a) == static_cast<int>(b);
