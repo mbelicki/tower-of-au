@@ -28,6 +28,14 @@ struct object_t {
     bool attacked;
 };
 
+struct feature_t {
+    feature_type_t type;
+    entity_t *entity;
+
+    vec3_t position;
+    size_t target_id;
+};
+
 static dir_t vec3_to_dir(const vec3_t v) {
     const vec3_t absolutes = vec3(fabs(v.x), fabs(v.y), fabs(v.z));
     if (absolutes.x > absolutes.y) {
@@ -52,6 +60,14 @@ static void shuffle(dir_t *array, size_t n) {
         array[j] = array[i];
         array[i] = tmp;
     }
+}
+
+static maybe_t<entity_t *> create_button_entity
+        (vec3_t position, world_t *world) {
+    maybe_t<graphics_comp_t *> graphics
+        = create_single_model_graphics(world, "button.obj", "missing.png");
+
+    return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
 }
 
 static maybe_t<entity_t *> create_character_entity
@@ -102,10 +118,25 @@ static bool is_idle(const object_t &character) {
     return VALUE(is_idle.get_int()) == 1;
 }
 
+static feature_t *create_feature
+        (world_t *world, feature_type_t type, size_t target, size_t x, size_t z) {
+    const vec3_t pos = vec3(x, 0, z);
+    const maybe_t<entity_t *> entity = create_button_entity(pos, world);
+
+    feature_t *feat = new (std::nothrow) feature_t;
+    feat->type = type;
+    feat->position = pos;
+    feat->target_id = target;
+    feat->entity = VALUE(entity);
+    feat->entity->set_tag("feature");
+
+    return feat;
+}
+
 static object_t *create_object
         (world_t *world, object_type_t type, dir_t dir, size_t x, size_t z) {
     const vec3_t pos = vec3(x, 0, z);
-    maybe_t<entity_t *> entity
+    const maybe_t<entity_t *> entity
         = type == OBJ_CHARACTER
         ? create_character_entity(pos, world, false)
         : create_boulder_entity(pos, world)
@@ -118,13 +149,14 @@ static object_t *create_object
     object->health = 2;
 
     object->entity = VALUE(entity);
-    object->entity->set_tag("npc");
+    object->entity->set_tag("object");
 
     return object;
 }
 
 static void spawn_objects
-        ( const level_t &level, object_t **objs
+        ( const level_t &level
+        , object_t **objs, feature_t **feats
         , world_t *world, random_t *random
         ) {
     const size_t width = level.get_width();
@@ -132,6 +164,7 @@ static void spawn_objects
 
     for (size_t i = 0; i < width * height; i++) {
         objs[i] = nullptr;
+        feats[i] = nullptr;
     }
 
     dir_t directions[4] { 
@@ -141,21 +174,25 @@ static void spawn_objects
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
             maybe_t<const tile_t *> maybe_tile = level.get_tile_at(i, j);
-            if (maybe_tile.failed())
-                continue;
-            const tile_t *tile = VALUE(maybe_tile);
+            if (maybe_tile.failed()) continue;
             
-            if (tile->spawned_object == OBJ_NONE || tile->spawn_probablity <= 0) 
-                continue;
+            const size_t index = i + width * j;
+            const tile_t *tile = VALUE(maybe_tile);
+            const object_type_t obj_type = tile->spawned_object;
+            const feature_type_t feat_type = tile->feature;
 
-            const float r = random->uniform_zero_to_one();
-            if (r > tile->spawn_probablity)
-                continue;
+            if (obj_type != OBJ_NONE || tile->spawn_probablity > 0) {
+                const float r = random->uniform_zero_to_one();
+                if (r <= tile->spawn_probablity) {
+                    const dir_t dir = directions[random->uniform_from_range(0, 3)];
+                    objs[index] = create_object(world, obj_type, dir, i, j);
+                }
+            }
 
-            const dir_t dir = directions[random->uniform_from_range(0, 3)];
-            object_t *object
-                = create_object(world, tile->spawned_object, dir, i, j);
-            objs[i + width * j] = object;
+            if (feat_type != FEAT_NONE) {
+                const size_t target = tile->feat_target_id;
+                feats[index] = create_feature(world, feat_type, target, i, j);
+            }
         }
     }
 }
@@ -169,10 +206,12 @@ class core_controller_t final : public controller_impl_i {
         }
 
         ~core_controller_t() {
-            for (size_t i = 0; i < _max_npc_count; i++) {
+            for (size_t i = 0; i < _tiles_count; i++) {
                 delete _objects[i];
+                delete _features[i];
             }
             delete _objects;
+            delete _features;
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -192,10 +231,11 @@ class core_controller_t final : public controller_impl_i {
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
-            _max_npc_count = width * height;
-            _objects = new (std::nothrow) object_t * [_max_npc_count];
+            _tiles_count = width * height;
+            _objects  = new (std::nothrow) object_t  * [_tiles_count];
+            _features = new (std::nothrow) feature_t * [_tiles_count];
 
-            spawn_objects(*_level, _objects, world, &_random);
+            spawn_objects(*_level, _objects, _features, world, &_random);
         }
 
         void update(float, const input_t &) override { }
@@ -230,8 +270,9 @@ class core_controller_t final : public controller_impl_i {
         level_t *_level;
 
         object_t _player;
-        object_t **_objects;
-        size_t _max_npc_count;
+        object_t  **_objects;
+        feature_t **_features;
+        size_t _tiles_count;
 
         random_t _random;
 
@@ -240,9 +281,13 @@ class core_controller_t final : public controller_impl_i {
             if (level.failed()) return;
             _world->destroy_later(VALUE(level));
 
-            std::vector<entity_t *> npcs;
-            _world->find_all_entities("npc", &npcs);
-            for (entity_t *npc : npcs) {
+            std::vector<entity_t *> buffer;
+            _world->find_all_entities("object", &buffer);
+            for (entity_t *npc : buffer) {
+                _world->destroy_later(npc);
+            }
+            _world->find_all_entities("feature", &buffer);
+            for (entity_t *npc : buffer) {
                 _world->destroy_later(npc);
             }
 
@@ -250,7 +295,12 @@ class core_controller_t final : public controller_impl_i {
             _level = generate_random_level(&_random);
             _level->initialize(_world);
 
-            spawn_objects(*_level, _objects, _world, &_random);
+            for (size_t i = 0; i < _tiles_count; i++) {
+                delete _objects[i];
+                delete _features[i];
+            }
+
+            spawn_objects(*_level, _objects, _features, _world, &_random);
         }
 
         bool can_move_to(vec3_t new_position, vec3_t old_position) {

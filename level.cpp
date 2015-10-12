@@ -137,6 +137,8 @@ extern level_t *generate_test_level() {
     tiles[4 + width * 7].spawn_probablity = 1;
     tiles[4 + width * 7].spawned_object = OBJ_BOULDER;
 
+    tiles[7 + width * 7].feature = FEAT_BUTTON;
+
     return new (std::nothrow) level_t(tiles, width, height);
 }
 
