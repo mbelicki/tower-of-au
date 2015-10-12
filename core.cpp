@@ -16,11 +16,6 @@
 
 using namespace warp;
 
-enum object_type_t {
-    OBJ_CHARACTER,
-    OBJ_BOULDER,
-};
-
 struct object_t {
     object_type_t type;
     entity_t *entity;
@@ -107,15 +102,36 @@ static bool is_idle(const object_t &character) {
     return VALUE(is_idle.get_int()) == 1;
 }
 
+static object_t *create_object
+        (world_t *world, object_type_t type, dir_t dir, size_t x, size_t z) {
+    const vec3_t pos = vec3(x, 0, z);
+    maybe_t<entity_t *> entity
+        = type == OBJ_CHARACTER
+        ? create_character_entity(pos, world, false)
+        : create_boulder_entity(pos, world)
+        ;
+
+    object_t *object = new (std::nothrow) object_t;
+    object->type = type;
+    object->position = pos;
+    object->direction = dir;
+    object->health = 2;
+
+    object->entity = VALUE(entity);
+    object->entity->set_tag("npc");
+
+    return object;
+}
+
 static void spawn_objects
-        ( const level_t &level, object_t **npcs
+        ( const level_t &level, object_t **objs
         , world_t *world, random_t *random
         ) {
     const size_t width = level.get_width();
     const size_t height = level.get_height();
 
     for (size_t i = 0; i < width * height; i++) {
-        npcs[i] = nullptr;
+        objs[i] = nullptr;
     }
 
     dir_t directions[4] { 
@@ -125,40 +141,21 @@ static void spawn_objects
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
             maybe_t<const tile_t *> maybe_tile = level.get_tile_at(i, j);
-            if (maybe_tile.failed()) continue;
+            if (maybe_tile.failed())
+                continue;
             const tile_t *tile = VALUE(maybe_tile);
+            
+            if (tile->spawned_object == OBJ_NONE || tile->spawn_probablity <= 0) 
+                continue;
 
-            if (tile->spawn_probablity > 0 || tile->boulder_probability > 0) {
-                const float r = random->uniform_zero_to_one();
-                const vec3_t position = vec3(i, 0, j);
-                const dir_t direction
-                    = directions[random->uniform_from_range(0, 3)];
-                if (r <= tile->spawn_probablity) {
-                    maybe_t<entity_t *> entity
-                        = create_character_entity(position, world, false);
+            const float r = random->uniform_zero_to_one();
+            if (r > tile->spawn_probablity)
+                continue;
 
-                    object_t *character = new (std::nothrow) object_t;
-                    character->type = OBJ_CHARACTER;
-                    character->position = position;
-                    character->direction = direction;
-                    character->entity = VALUE(entity);
-                    character->entity->set_tag("npc");
-                    character->health = 2;
-                    npcs[i + width * j] = character;
-                } else if (r <= tile->boulder_probability) {
-                    maybe_t<entity_t *> entity
-                        = create_boulder_entity(position, world);
-
-                    object_t *character = new (std::nothrow) object_t;
-                    character->type = OBJ_BOULDER;
-                    character->position = position;
-                    character->direction = direction;
-                    character->entity = VALUE(entity);
-                    character->entity->set_tag("npc");
-                    character->health = 2;
-                    npcs[i + width * j] = character;
-                }
-            }
+            const dir_t dir = directions[random->uniform_from_range(0, 3)];
+            object_t *object
+                = create_object(world, tile->spawned_object, dir, i, j);
+            objs[i + width * j] = object;
         }
     }
 }

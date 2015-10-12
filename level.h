@@ -9,11 +9,24 @@ namespace warp {
     class world_t;
 }
 
+enum tile_feature_t : int {
+    FEAT_NONE = 0,
+    FEAT_BUTTON,
+    FEAT_DOOR,
+};
+
+enum object_type_t {
+    OBJ_NONE = 0,
+    OBJ_CHARACTER,
+    OBJ_BOULDER,
+};
+
 struct tile_t {
     bool is_walkable;
     bool is_stairs;
     float spawn_probablity;
-    float boulder_probability;
+    object_type_t spawned_object;
+    tile_feature_t feature;
 };
 
 class level_t {
