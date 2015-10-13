@@ -20,6 +20,8 @@ enum core_msgs_t : unsigned int {
     CORE_DO_DIE,
 
     CORE_MOVE_DONE,
+
+    CORE_FEAT_STATE_CHANGE,
 };
 
 enum move_dir_t : int {

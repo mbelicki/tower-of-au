@@ -13,6 +13,7 @@
 #include "random.h"
 #include "level.h"
 #include "character.h"
+#include "features.h"
 
 using namespace warp;
 
@@ -80,8 +81,9 @@ static maybe_t<entity_t *> create_door_entity
         (vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "door.obj", "missing.png");
+    maybe_t<controller_comp_t *> controller = create_door_controller(world);
 
-    return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
+    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
 }
 
 static maybe_t<entity_t *> create_character_entity
@@ -483,8 +485,11 @@ class core_controller_t final : public controller_impl_i {
                 if (old_feat->type == FEAT_BUTTON) {
                     old_feat->state = FSTATE_INACTIVE;
                     feature_t *target = _features[old_feat->target_id];
-                    if (target != nullptr)
+                    if (target != nullptr) {
                         target->state = FSTATE_INACTIVE;
+                        target->entity->receive_message
+                            (CORE_FEAT_STATE_CHANGE, target->state);
+                    }
                 }
             }
 
@@ -495,6 +500,8 @@ class core_controller_t final : public controller_impl_i {
                     feature_t *target = _features[new_feat->target_id];
                     if (target != nullptr)
                         target->state = FSTATE_ACTIVE;
+                        target->entity->receive_message
+                            (CORE_FEAT_STATE_CHANGE, target->state);
                 }
             }
 
