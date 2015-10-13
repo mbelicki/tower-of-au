@@ -28,12 +28,18 @@ struct object_t {
     bool attacked;
 };
 
+enum feat_state_t : int {
+    FSTATE_INACTIVE = 0,
+    FSTATE_ACTIVE = 1,
+};
+
 struct feature_t {
     feature_type_t type;
     entity_t *entity;
 
     vec3_t position;
     size_t target_id;
+    feat_state_t state;
 };
 
 static dir_t vec3_to_dir(const vec3_t v) {
@@ -66,6 +72,14 @@ static maybe_t<entity_t *> create_button_entity
         (vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "button.obj", "missing.png");
+
+    return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
+}
+
+static maybe_t<entity_t *> create_door_entity
+        (vec3_t position, world_t *world) {
+    maybe_t<graphics_comp_t *> graphics
+        = create_single_model_graphics(world, "door.obj", "missing.png");
 
     return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
 }
@@ -121,7 +135,11 @@ static bool is_idle(const object_t &character) {
 static feature_t *create_feature
         (world_t *world, feature_type_t type, size_t target, size_t x, size_t z) {
     const vec3_t pos = vec3(x, 0, z);
-    const maybe_t<entity_t *> entity = create_button_entity(pos, world);
+    const maybe_t<entity_t *> entity 
+        = type == FEAT_BUTTON 
+        ? create_button_entity(pos, world)
+        : create_door_entity(pos, world)
+        ;
 
     feature_t *feat = new (std::nothrow) feature_t;
     feat->type = type;
@@ -129,6 +147,7 @@ static feature_t *create_feature
     feat->target_id = target;
     feat->entity = VALUE(entity);
     feat->entity->set_tag("feature");
+    feat->state = FSTATE_INACTIVE;
 
     return feat;
 }
@@ -315,9 +334,17 @@ class core_controller_t final : public controller_impl_i {
                 return old_position.x > new_position.x;
             }
             if (tile->is_walkable == false) return false;
+            
+            const object_t *object = object_at(x, z);
+            if (object != nullptr) return false;
 
-            const object_t *npc = npc_at(x, z);
-            if (npc != nullptr) return false;
+            const feature_t *feature = feature_at(x, z);
+            if (feature != nullptr) {
+                if (feature->type == FEAT_DOOR 
+                        && feature->state == FSTATE_INACTIVE) {
+                    return false;
+                }
+            }
 
             return vec3_eps_compare(new_position, _player.position, 0.1f) == false;
         }
@@ -325,16 +352,25 @@ class core_controller_t final : public controller_impl_i {
         object_t *npc_at_position(vec3_t position) {
             const size_t x = round(position.x);
             const size_t z = round(position.z);
-            return npc_at(x, z);
+            return object_at(x, z);
         }
 
-        object_t *npc_at(size_t x, size_t y) {
+        object_t *object_at(size_t x, size_t y) {
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
             if (x >= width || y >= height)
                 return nullptr;
 
             return _objects[x + width * y];
+        }
+
+        feature_t *feature_at(size_t x, size_t y) {
+            const size_t width  = _level->get_width();
+            const size_t height = _level->get_height();
+            if (x >= width || y >= height)
+                return nullptr;
+
+            return _features[x + width * y];
         }
 
         void handle_move(move_dir_t direction) {
@@ -414,7 +450,7 @@ class core_controller_t final : public controller_impl_i {
 
             for (size_t x = 0; x < width; x++) {
                 for (size_t y = 0; y < height; y++) {
-                    object_t *npc = npc_at(x, y);
+                    object_t *npc = object_at(x, y);
                     if (npc != nullptr && is_idle(*npc)) {
                         buffer[count] = npc;
                         count++;
@@ -432,15 +468,34 @@ class core_controller_t final : public controller_impl_i {
         void make_move(object_t *target, vec3_t position) {
             const vec3_t old_position = target->position;
             const size_t level_width = _level->get_width();
+            const size_t old_x = round(old_position.x);
+            const size_t old_z = round(old_position.z);
+            const size_t new_x = round(position.x);
+            const size_t new_z = round(position.z);
 
             if (target != &_player) {
-                size_t x = round(old_position.x);
-                size_t z = round(old_position.z);
-                _objects[x + level_width * z] = nullptr;
+                _objects[old_x + level_width * old_z] = nullptr;
+                _objects[new_x + level_width * new_z] = target;
+            }
 
-                x = round(position.x);
-                z = round(position.z);
-                _objects[x + level_width * z] = target;
+            feature_t *old_feat = feature_at(old_x, old_z);
+            if (old_feat != nullptr) {
+                if (old_feat->type == FEAT_BUTTON) {
+                    old_feat->state = FSTATE_INACTIVE;
+                    feature_t *target = _features[old_feat->target_id];
+                    if (target != nullptr)
+                        target->state = FSTATE_INACTIVE;
+                }
+            }
+
+            feature_t *new_feat = feature_at(new_x, new_z);
+            if (new_feat != nullptr) {
+                if (new_feat->type == FEAT_BUTTON) {
+                    new_feat->state = FSTATE_ACTIVE;
+                    feature_t *target = _features[new_feat->target_id];
+                    if (target != nullptr)
+                        target->state = FSTATE_ACTIVE;
+                }
             }
 
             target->position = position;

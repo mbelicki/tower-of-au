@@ -123,6 +123,8 @@ extern level_t *generate_test_level() {
     tiles[2 + width * 3].is_walkable = false;
     tiles[2 + width * 2].is_walkable = false;
     tiles[3 + width * 2].is_walkable = false;
+    tiles[6 + width * 4].is_walkable = false;
+    tiles[8 + width * 4].is_walkable = false;
 
     tiles[4 + width * 2].is_walkable = false;
     tiles[4 + width * 2].is_stairs = true;
@@ -138,6 +140,9 @@ extern level_t *generate_test_level() {
     tiles[4 + width * 7].spawned_object = OBJ_BOULDER;
 
     tiles[7 + width * 7].feature = FEAT_BUTTON;
+    tiles[7 + width * 7].feat_target_id = 7 + width * 4;
+
+    tiles[7 + width * 4].feature = FEAT_DOOR;
 
     return new (std::nothrow) level_t(tiles, width, height);
 }
