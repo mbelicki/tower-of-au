@@ -68,14 +68,14 @@ class door_controller_t final : public controller_impl_i {
         }
 
         void update_closing(float t) {
-            const float scale = -ease_cubic(t);
+            const float scale = -0.85f * ease_cubic(t);
             const vec3_t position = _owner->get_position();
             const vec3_t pos = vec3(position.x, scale, position.z);
             _owner->receive_message(MSG_PHYSICS_MOVE, pos);
         }
 
         void update_opening(float t) {
-            const float scale = -0.9f * ease_cubic(1 - t) + 0.1f;
+            const float scale = -0.85f * ease_cubic(1 - t);
             const vec3_t position = _owner->get_position();
             const vec3_t pos = vec3(position.x, scale, position.z);
             _owner->receive_message(MSG_PHYSICS_MOVE, pos);
