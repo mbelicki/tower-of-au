@@ -37,6 +37,9 @@
 		61F98E051BCD970300EEF945 /* boulder.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E021BCD970300EEF945 /* boulder.obj */; settings = {ASSET_TAGS = (); }; };
 		61F98E061BCD970300EEF945 /* button.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E031BCD970300EEF945 /* button.obj */; settings = {ASSET_TAGS = (); }; };
 		61F98E071BCD970300EEF945 /* door.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E041BCD970300EEF945 /* door.obj */; settings = {ASSET_TAGS = (); }; };
+		61F98E0A1BCEE4CF00EEF945 /* bullets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61F98E081BCEE4CF00EEF945 /* bullets.cpp */; settings = {ASSET_TAGS = (); }; };
+		61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E0B1BCEE55200EEF945 /* arrow.obj */; settings = {ASSET_TAGS = (); }; };
+		61F98E0E1BCEE58D00EEF945 /* button.png in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E0D1BCEE58D00EEF945 /* button.png */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,6 +92,10 @@
 		61F98E021BCD970300EEF945 /* boulder.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = boulder.obj; sourceTree = "<group>"; };
 		61F98E031BCD970300EEF945 /* button.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = button.obj; sourceTree = "<group>"; };
 		61F98E041BCD970300EEF945 /* door.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = door.obj; sourceTree = "<group>"; };
+		61F98E081BCEE4CF00EEF945 /* bullets.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = bullets.cpp; sourceTree = "<group>"; };
+		61F98E091BCEE4CF00EEF945 /* bullets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bullets.h; sourceTree = "<group>"; };
+		61F98E0B1BCEE55200EEF945 /* arrow.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = arrow.obj; sourceTree = "<group>"; };
+		61F98E0D1BCEE58D00EEF945 /* button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = button.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +155,8 @@
 		6154D8881BBC66C800B4D95B /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				61F98E081BCEE4CF00EEF945 /* bullets.cpp */,
+				61F98E091BCEE4CF00EEF945 /* bullets.h */,
 				61F98DFE1BCD96EB00EEF945 /* features.cpp */,
 				61F98DFF1BCD96EB00EEF945 /* features.h */,
 				6154D8891BBC66FF00B4D95B /* character.cpp */,
@@ -217,6 +226,7 @@
 		6154D8DD1BBC6B4A00B4D95B /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				61F98E0D1BCEE58D00EEF945 /* button.png */,
 				6154D8DF1BBC6B6D00B4D95B /* missing.png */,
 			);
 			name = Images;
@@ -226,6 +236,7 @@
 		6154D8DE1BBC6B5100B4D95B /* Meshes */ = {
 			isa = PBXGroup;
 			children = (
+				61F98E0B1BCEE55200EEF945 /* arrow.obj */,
 				61F98E021BCD970300EEF945 /* boulder.obj */,
 				61F98E031BCD970300EEF945 /* button.obj */,
 				61F98E041BCD970300EEF945 /* door.obj */,
@@ -312,9 +323,11 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				61F98E0E1BCEE58D00EEF945 /* button.png in Resources */,
 				61F98E051BCD970300EEF945 /* boulder.obj in Resources */,
 				6154D8E61BBC6B7B00B4D95B /* npc.obj in Resources */,
 				6154D8E81BBC6B7B00B4D95B /* wall.obj in Resources */,
+				61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */,
 				6154D8E71BBC6B7B00B4D95B /* stairs.obj in Resources */,
 				6154D8EA1BBC6C3400B4D95B /* Images.xcassets in Resources */,
 				6154D8E51BBC6B7B00B4D95B /* floor.obj in Resources */,
@@ -338,6 +351,7 @@
 				6154D8951BBC66FF00B4D95B /* character.cpp in Sources */,
 				6154D8981BBC66FF00B4D95B /* level_transition.cpp in Sources */,
 				6154D8991BBC66FF00B4D95B /* level.cpp in Sources */,
+				61F98E0A1BCEE4CF00EEF945 /* bullets.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
