@@ -59,6 +59,8 @@ class input_controller_t final : public controller_impl_i {
                     move(MOVE_LEFT);
                 } else if (code == SDLK_d) {
                     move(MOVE_RIGHT);
+                } else if (code == SDLK_SPACE) {
+                    shoot(MOVE_LEFT);
                 }
             }
         }
@@ -70,6 +72,10 @@ class input_controller_t final : public controller_impl_i {
         
         void move(move_dir_t direction) {
             _world->broadcast_message(CORE_TRY_MOVE, (int)direction);
+        }
+
+        void shoot(move_dir_t direction) {
+            _world->broadcast_message(CORE_TRY_SHOOT, (int)direction);
         }
 };
 

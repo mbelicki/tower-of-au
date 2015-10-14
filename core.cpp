@@ -14,6 +14,7 @@
 #include "level.h"
 #include "character.h"
 #include "features.h"
+#include "bullets.h"
 
 using namespace warp;
 
@@ -69,6 +70,17 @@ static void shuffle(dir_t *array, size_t n) {
     }
 }
 
+static physics_comp_t *create_object_physics(world_t *world, vec2_t size) {
+    physics_comp_t *physics = world->create_physics();
+    if (physics != nullptr) {
+        physics->_flags = PHYSFLAGS_FIXED;
+        physics->_velocity = vec2(0, 0);
+        physics->_bounds = rectangle_t(vec2(0, 0), size);
+    }
+
+    return physics;
+}
+
 static maybe_t<entity_t *> create_button_entity
         (vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
@@ -92,8 +104,9 @@ static maybe_t<entity_t *> create_character_entity
         = create_single_model_graphics(world, "npc.obj", "missing.png");
     maybe_t<controller_comp_t *> controller
         = create_character_controller(world, confirm_moves);
+    physics_comp_t *physics = create_object_physics(world, vec2(0.4f, 0.4f));
 
-    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
 }
 
 static maybe_t<entity_t *> create_boulder_entity
@@ -102,8 +115,9 @@ static maybe_t<entity_t *> create_boulder_entity
         = create_single_model_graphics(world, "boulder.obj", "missing.png");
     maybe_t<controller_comp_t *> controller
         = create_character_controller(world, false);
+    physics_comp_t *physics = create_object_physics(world, vec2(0.6f, 0.6f));
 
-    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
 }
 
 static dir_t get_move_direction(move_dir_t move_dir) {
@@ -222,7 +236,9 @@ class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(level_t *initial_level)
             : _level(initial_level)
+            , _bullets(nullptr)
             , _objects(nullptr)
+            , _features(nullptr)
         {
         }
 
@@ -233,6 +249,8 @@ class core_controller_t final : public controller_impl_i {
             }
             delete _objects;
             delete _features;
+
+            delete _bullets;
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -242,6 +260,9 @@ class core_controller_t final : public controller_impl_i {
         void initialize(entity_t *owner, world_t *world) override {
             _owner = owner;
             _world = world;
+
+            _bullets = new bullet_factory_t(world);
+            _bullets->initialize();
 
             maybe_t<entity_t *> avatar 
                 = create_character_entity(vec3(8, 0, 8), world, true);
@@ -263,6 +284,7 @@ class core_controller_t final : public controller_impl_i {
 
         bool accepts(messagetype_t type) const override {
             return type == CORE_TRY_MOVE
+                || type == CORE_TRY_SHOOT
                 || type == CORE_MOVE_DONE
                 ;
         }
@@ -280,6 +302,9 @@ class core_controller_t final : public controller_impl_i {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
                     handle_move((move_dir_t)direction);
+                } else if (type == CORE_TRY_SHOOT) {
+                    const int direction = VALUE(message.data.get_int());
+                    handle_shooting((move_dir_t)direction);
                 }
             }
         }
@@ -289,6 +314,7 @@ class core_controller_t final : public controller_impl_i {
         world_t *_world;
 
         level_t *_level;
+        bullet_factory_t *_bullets;
 
         object_t _player;
         object_t  **_objects;
@@ -373,6 +399,12 @@ class core_controller_t final : public controller_impl_i {
                 return nullptr;
 
             return _features[x + width * y];
+        }
+
+        void handle_shooting(move_dir_t direction) {
+            (void)direction;
+            const vec3_t pos = vec3_add(_player.position, vec3(-0.5f, 0, 0));
+            _bullets->create_bullet(pos, vec3(-1.5f, 0, 0.001f), BULLET_ARROW);
         }
 
         void handle_move(move_dir_t direction) {

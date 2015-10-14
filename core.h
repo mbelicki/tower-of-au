@@ -12,6 +12,7 @@ class level_t;
 
 enum core_msgs_t : unsigned int {
     CORE_TRY_MOVE = warp::MSG_CUSTOM,
+    CORE_TRY_SHOOT,
 
     CORE_DO_MOVE,
     CORE_DO_ATTACK,
@@ -22,6 +23,7 @@ enum core_msgs_t : unsigned int {
     CORE_MOVE_DONE,
 
     CORE_FEAT_STATE_CHANGE,
+    CORE_BULLET_HIT,
 };
 
 enum move_dir_t : int {
