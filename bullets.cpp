@@ -8,11 +8,16 @@
 #include "warp/geometry.h"
 
 #include "core.h"
+#include "level.h"
 
 using namespace warp;
 
 class bullet_controller_t final : public controller_impl_i {
     public:
+        bullet_controller_t(const level_t *level)
+            : _level(level)
+        { }
+
         dynval_t get_property(const tag_t &) const override {
             return dynval_t::make_null();
         }
@@ -22,7 +27,12 @@ class bullet_controller_t final : public controller_impl_i {
             _world = world;
         }
 
-        void update(float, const input_t &) override { }
+        void update(float, const input_t &) override { 
+            const vec3_t pos = _owner->get_position();
+            if (_level->is_point_walkable(pos) == false) {
+                _world->destroy_later(_owner);
+            }
+        }
 
         bool accepts(messagetype_t type) const override {
             return type == MSG_PHYSICS_COLLISION_DETECTED;
@@ -40,6 +50,8 @@ class bullet_controller_t final : public controller_impl_i {
     private:
         world_t  *_world;
         entity_t *_owner;
+
+        const level_t *_level;
 };
 
 maybeunit_t bullet_factory_t::initialize() {
@@ -75,7 +87,9 @@ static const char *get_texture_name(bullet_type_t type) {
 }
 
 maybe_t<entity_t *> bullet_factory_t::create_bullet
-        (vec3_t position, vec3_t velocity, bullet_type_t type) {
+        ( vec3_t position, vec3_t velocity, bullet_type_t type
+        , const level_t *level
+        ) {
     if (_initialized == false) {
         return nothing<entity_t *>("Not initialized.");
     }
@@ -104,7 +118,7 @@ maybe_t<entity_t *> bullet_factory_t::create_bullet
     physics->_velocity = vec2(velocity.x, velocity.z);
 
     controller_comp_t *controller = _world->create_controller();
-    controller->initialize(new bullet_controller_t);
+    controller->initialize(new bullet_controller_t(level));
 
     entity_t *entity = _world->create_entity(position, graphics, physics, controller);
     if (entity == nullptr) {

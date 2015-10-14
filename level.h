@@ -1,6 +1,7 @@
 #pragma once
 
 #include "warp/maybe.h"
+#include "warp/vec3.h"
 
 class random_t;
 
@@ -44,6 +45,8 @@ class level_t {
 
         size_t get_width() const { return _width; }
         size_t get_height() const { return _height; }
+
+        bool is_point_walkable(const warp::vec3_t point) const;
 
     private:
         bool _initialized;

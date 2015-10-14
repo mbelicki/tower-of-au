@@ -38,6 +38,16 @@ maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
     return _tiles + (x + _width * y);
 }
 
+bool level_t::is_point_walkable(const vec3_t point) const {
+    const size_t x = round(point.x);
+    const size_t z = round(point.z);
+    maybe_t<const tile_t *> maybe_tile = get_tile_at(x, z);
+    if (maybe_tile.failed()) return true;
+
+    const tile_t *tile = VALUE(maybe_tile);
+    return tile->is_walkable;
+}
+
 static maybeunit_t append_tile
         ( meshbuilder_t *builder
         , meshmanager_t *meshes

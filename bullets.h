@@ -6,6 +6,8 @@
 #include "warp/textures.h"
 #include "warp/meshmanager.h"
 
+class level_t;
+
 namespace warp {
     class entity_t;
     class world_t;
@@ -27,7 +29,9 @@ class bullet_factory_t {
         warp::maybeunit_t initialize();
 
         warp::maybe_t<warp::entity_t *> create_bullet
-            (warp::vec3_t initial_position, warp::vec3_t velocity, bullet_type_t type);
+            ( warp::vec3_t initial_position, warp::vec3_t velocity
+            , bullet_type_t type, const level_t *level
+            );
 
     private:
         bool _initialized;

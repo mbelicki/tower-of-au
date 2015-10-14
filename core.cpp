@@ -413,8 +413,10 @@ class core_controller_t final : public controller_impl_i {
             const vec3_t d = dir_to_vec3(dir);
             const vec3_t pos = vec3_add(_player.position, vec3_scale(d, 0.5f));
             const vec3_t v = vec3_add(vec3_scale(d, speed), vec3(0.001f, 0, 0.001f));
-            _bullets->create_bullet(pos, v, BULLET_ARROW);
-            _player.entity->receive_message(CORE_DO_BOUNCE, pos);
+            _bullets->create_bullet(pos, v, BULLET_ARROW, _level);
+
+            const vec3_t recoil = vec3_add(_player.position, vec3_scale(d, -1));
+            _player.entity->receive_message(CORE_DO_BOUNCE, recoil);
         }
 
         void handle_move(move_dir_t direction) {
