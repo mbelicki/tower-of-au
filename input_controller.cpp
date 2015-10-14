@@ -59,8 +59,14 @@ class input_controller_t final : public controller_impl_i {
                     move(MOVE_LEFT);
                 } else if (code == SDLK_d) {
                     move(MOVE_RIGHT);
-                } else if (code == SDLK_SPACE) {
+                } else if (code == SDLK_LEFT) {
                     shoot(MOVE_LEFT);
+                } else if (code == SDLK_RIGHT) {
+                    shoot(MOVE_RIGHT);
+                } else if (code == SDLK_UP) {
+                    shoot(MOVE_UP);
+                } else if (code == SDLK_DOWN) {
+                    shoot(MOVE_DOWN);
                 }
             }
         }

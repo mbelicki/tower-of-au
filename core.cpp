@@ -286,12 +286,17 @@ class core_controller_t final : public controller_impl_i {
             return type == CORE_TRY_MOVE
                 || type == CORE_TRY_SHOOT
                 || type == CORE_MOVE_DONE
+                || type == CORE_BULLET_HIT
                 ;
         }
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            if (type == CORE_MOVE_DONE) {
+            if (type == CORE_BULLET_HIT) {
+                const vec3_t target_pos = VALUE(message.data.get_vec3());
+                object_t *object = npc_at_position(target_pos);
+                hurt_character(object, 1);
+            } else if (type == CORE_MOVE_DONE) {
                 next_turn();
                 const size_t x = round(_player.position.x);
                 const size_t z = round(_player.position.z);
@@ -402,9 +407,14 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_shooting(move_dir_t direction) {
-            (void)direction;
-            const vec3_t pos = vec3_add(_player.position, vec3(-0.5f, 0, 0));
-            _bullets->create_bullet(pos, vec3(-1.5f, 0, 0.001f), BULLET_ARROW);
+            const float speed = 4.5f;
+
+            const dir_t dir = get_move_direction(direction);
+            const vec3_t d = dir_to_vec3(dir);
+            const vec3_t pos = vec3_add(_player.position, vec3_scale(d, 0.5f));
+            const vec3_t v = vec3_add(vec3_scale(d, speed), vec3(0.001f, 0, 0.001f));
+            _bullets->create_bullet(pos, v, BULLET_ARROW);
+            _player.entity->receive_message(CORE_DO_BOUNCE, pos);
         }
 
         void handle_move(move_dir_t direction) {
@@ -431,7 +441,7 @@ class core_controller_t final : public controller_impl_i {
         void handle_attack
                 (object_t *target, object_t *attacker) {
             const int damage = calculate_damage(*target);
-            const bool alive = hurt_character(target, *attacker, damage);
+            const bool alive = hurt_character(target, damage);
             const vec3_t original_position = target->position;
             if (alive) {
                 const vec3_t d = vec3_sub(target->position, attacker->position);
@@ -451,8 +461,7 @@ class core_controller_t final : public controller_impl_i {
             }
         }
 
-        bool hurt_character
-                (object_t *target, const object_t &attacker, int damage) {
+        bool hurt_character(object_t *target, int damage) {
             if (target == nullptr || damage < 0) return false;
             const int health_left = target->health - damage;
             if (health_left <= 0) {
@@ -461,13 +470,13 @@ class core_controller_t final : public controller_impl_i {
                 const size_t level_width = _level->get_width();
 
                 _objects[x + level_width * z] = nullptr;
-                target->entity->receive_message(CORE_DO_DIE, attacker.position);
+                target->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
 
                 if (target != &_player) delete target;
             } else {
                 target->health = health_left;
                 if (target->type != OBJ_BOULDER) {
-                    target->entity->receive_message(CORE_DO_HURT, attacker.position);
+                    target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
                 }
             }
 

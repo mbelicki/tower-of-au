@@ -32,9 +32,8 @@ class bullet_controller_t final : public controller_impl_i {
             messagetype_t type = message.type;
             if (type == MSG_PHYSICS_COLLISION_DETECTED) {
                 entity_t *other = VALUE(message.data.get_entity());
-                other->receive_message(CORE_BULLET_HIT, 1);
+                _world->broadcast_message(CORE_BULLET_HIT, other->get_position());
                 _world->destroy_later(_owner);
-                puts(other->get_tag().get_text());
             }
         }
 
