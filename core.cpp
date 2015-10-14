@@ -94,8 +94,9 @@ static maybe_t<entity_t *> create_door_entity
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "door.obj", "missing.png");
     maybe_t<controller_comp_t *> controller = create_door_controller(world);
+    physics_comp_t *physics = create_object_physics(world, vec2(1.0f, 0.4f));
 
-    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
 }
 
 static maybe_t<entity_t *> create_character_entity
@@ -296,7 +297,8 @@ class core_controller_t final : public controller_impl_i {
             if (type == CORE_BULLET_HIT) {
                 const vec3_t target_pos = VALUE(message.data.get_vec3());
                 object_t *object = npc_at_position(target_pos);
-                hurt_character(object, 1);
+                //hurt_character(object, 1);
+                handle_attack(object, nullptr);
             } else if (type == CORE_MOVE_DONE) {
                 next_turn();
                 const size_t x = round(_player.position.x);
@@ -443,24 +445,32 @@ class core_controller_t final : public controller_impl_i {
 
         void handle_attack
                 (object_t *target, object_t *attacker) {
+            if (target == nullptr) return;
+
             const int damage = calculate_damage(*target);
             const bool alive = hurt_character(target, damage);
             const vec3_t original_position = target->position;
             if (alive) {
-                const vec3_t d = vec3_sub(target->position, attacker->position);
+                const vec3_t d
+                    = attacker == nullptr 
+                    ? vec3(0, 0, 0)
+                    : vec3_sub(target->position, attacker->position)
+                    ;
                 const vec3_t push_back = vec3_add(target->position, d);
                 if (can_move_to(push_back, target->position)) {
                     make_move(target, push_back);
                     target->attacked = true;
                 }
             }
-            if (target->type == OBJ_BOULDER) {
-                if (can_move_to(original_position, attacker->position))
-                    make_move(attacker, original_position);
-                else
-                    attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
-            } else {
-                attacker->entity->receive_message(CORE_DO_ATTACK, original_position);
+            if (attacker != nullptr) {
+                if (target->type == OBJ_BOULDER) {
+                    if (can_move_to(original_position, attacker->position))
+                        make_move(attacker, original_position);
+                    else
+                        attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
+                } else {
+                    attacker->entity->receive_message(CORE_DO_ATTACK, original_position);
+                }
             }
         }
 

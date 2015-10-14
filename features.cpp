@@ -65,6 +65,7 @@ class door_controller_t final : public controller_impl_i {
         void change_state(bool state) {
             _state = state;
             _timer = DOOR_MOVE_TIME;
+            _owner->receive_message(MSG_PHYSICS_TOGGLE_ENABLED, 1 - (int)state);
         }
 
         void update_closing(float t) {
