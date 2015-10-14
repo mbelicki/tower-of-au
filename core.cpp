@@ -122,6 +122,7 @@ static maybe_t<entity_t *> create_boulder_entity
 
 static dir_t get_move_direction(move_dir_t move_dir) {
     switch (move_dir) {
+        case MOVE_NONE:
         case MOVE_UP:
             return DIR_Z_MINUS;
         case MOVE_DOWN:

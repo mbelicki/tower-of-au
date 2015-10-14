@@ -27,6 +27,7 @@ enum core_msgs_t : unsigned int {
 };
 
 enum move_dir_t : int {
+    MOVE_NONE,
     MOVE_UP,
     MOVE_DOWN,
     MOVE_LEFT,
