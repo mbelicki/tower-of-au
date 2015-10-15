@@ -603,8 +603,8 @@ class core_controller_t final : public controller_impl_i {
         }
 
         dir_t can_shoot_player(const object_t &npc) {
-            const float dx = fabs(npc.position.x - _player.position.x);
-            const float dz = fabs(npc.position.z - _player.position.z);
+            const float dx = npc.position.x - _player.position.x;
+            const float dz = npc.position.z - _player.position.z;
 
             const bool zero_x = epsilon_compare(dx, 0, 0.05f);
             const bool zero_z = epsilon_compare(dz, 0, 0.05f);
@@ -617,12 +617,14 @@ class core_controller_t final : public controller_impl_i {
             };
 
             if (zero_x) {
-                dir_t result = dz < 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
-                if (_level->scan_if_any(pred, x, z, result, dz))
+                dir_t result = dz > 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
+                const size_t dist = round(fabs(dz) - 1);
+                if (_level->scan_if_all(pred, x, z, result, dist))
                     return result;
             } else if (zero_z) {
-                dir_t result = dx < 0 ? DIR_X_MINUS : DIR_X_PLUS;
-                if (_level->scan_if_any(pred, x, z, result, dx))
+                dir_t result = dx > 0 ? DIR_X_MINUS : DIR_X_PLUS;
+                const size_t dist = round(fabs(dx) - 1);
+                if (_level->scan_if_all(pred, x, z, result, dist))
                     return result;
             }
             return DIR_NONE;
@@ -644,7 +646,8 @@ class core_controller_t final : public controller_impl_i {
             dir_t shoot_dir = DIR_NONE;
             if (can_attack_player(*npc)) {
                 handle_attack(&_player, npc);
-            } else if ((shoot_dir = can_shoot_player(*npc)) != DIR_NONE) {
+            } else if (npc->can_shoot 
+                    && (shoot_dir = can_shoot_player(*npc)) != DIR_NONE) {
                 handle_shooting(npc, shoot_dir);               
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));

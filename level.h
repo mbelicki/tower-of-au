@@ -51,7 +51,7 @@ class level_t {
 
         bool is_point_walkable(const warp::vec3_t point) const;
 
-        bool scan_if_any
+        bool scan_if_all
             ( std::function<bool(const tile_t *)> predicate
             , size_t x, size_t y, warp::dir_t direction, size_t distance
             );

@@ -48,7 +48,7 @@ bool level_t::is_point_walkable(const vec3_t point) const {
     return tile->is_walkable;
 }
 
-bool level_t::scan_if_any
+bool level_t::scan_if_all
         ( std::function<bool(const tile_t *)> predicate
         , size_t initial_x, size_t initial_z
         , warp::dir_t direction, size_t distance
@@ -59,10 +59,10 @@ bool level_t::scan_if_any
     int x = initial_x;
     int z = initial_z;
 
-    bool accumulator = false;
+    bool accumulator = true;
     for (size_t i = 0; i < distance; i++) {
         get_tile_at(x, z).with_value([&](const tile_t *t) {
-            accumulator = predicate(t) || accumulator;
+            accumulator = predicate(t) && accumulator;
         });
         x += dx;
         z += dz;
