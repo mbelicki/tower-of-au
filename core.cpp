@@ -28,6 +28,7 @@ struct object_t {
     int health;
     bool hold;
     bool attacked;
+    bool can_shoot;
 };
 
 enum feat_state_t : int {
@@ -184,6 +185,7 @@ static object_t *create_object
     object->position = pos;
     object->direction = dir;
     object->health = 2;
+    object->can_shoot = true;
 
     object->entity = VALUE(entity);
     object->entity->set_tag("object");
@@ -297,7 +299,9 @@ class core_controller_t final : public controller_impl_i {
             if (type == CORE_BULLET_HIT) {
                 const vec3_t target_pos = VALUE(message.data.get_vec3());
                 object_t *object = npc_at_position(target_pos);
-                //hurt_character(object, 1);
+                if (vec3_eps_compare(target_pos, _player.position, 0.05f)) {
+                    object = &_player;
+                }
                 handle_attack(object, nullptr);
             } else if (type == CORE_MOVE_DONE) {
                 next_turn();
@@ -311,8 +315,9 @@ class core_controller_t final : public controller_impl_i {
                     const int direction = VALUE(message.data.get_int());
                     handle_move((move_dir_t)direction);
                 } else if (type == CORE_TRY_SHOOT) {
-                    const int direction = VALUE(message.data.get_int());
-                    handle_shooting((move_dir_t)direction);
+                    const move_dir_t direction
+                        = (move_dir_t) VALUE(message.data.get_int());
+                    handle_shooting(&_player, get_move_direction(direction));
                 }
             }
         }
@@ -409,17 +414,16 @@ class core_controller_t final : public controller_impl_i {
             return _features[x + width * y];
         }
 
-        void handle_shooting(move_dir_t direction) {
+        void handle_shooting(object_t *shooter, dir_t dir) {
             const float speed = 4.5f;
 
-            const dir_t dir = get_move_direction(direction);
             const vec3_t d = dir_to_vec3(dir);
-            const vec3_t pos = vec3_add(_player.position, vec3_scale(d, 0.5f));
+            const vec3_t pos = vec3_add(shooter->position, vec3_scale(d, 0.5f));
             const vec3_t v = vec3_add(vec3_scale(d, speed), vec3(0.001f, 0, 0.001f));
             _bullets->create_bullet(pos, v, BULLET_ARROW, _level);
 
-            const vec3_t recoil = vec3_add(_player.position, vec3_scale(d, -1));
-            _player.entity->receive_message(CORE_DO_BOUNCE, recoil);
+            const vec3_t recoil = vec3_add(shooter->position, vec3_scale(d, -1));
+            shooter->entity->receive_message(CORE_DO_BOUNCE, recoil);
         }
 
         void handle_move(move_dir_t direction) {
@@ -587,7 +591,7 @@ class core_controller_t final : public controller_impl_i {
             return npc.direction;
         }
 
-        bool can_attack_player(const object_t npc) {
+        bool can_attack_player(const object_t &npc) {
             const float dx = fabs(npc.position.x - _player.position.x);
             const float dz = fabs(npc.position.z - _player.position.z);
             if (dx > 1.1f || dz > 1.1f) return false;
@@ -596,6 +600,32 @@ class core_controller_t final : public controller_impl_i {
             const bool close_z = epsilon_compare(dz, 1, 0.05f);
 
             return close_x != close_z; /* xor */
+        }
+
+        dir_t can_shoot_player(const object_t &npc) {
+            const float dx = fabs(npc.position.x - _player.position.x);
+            const float dz = fabs(npc.position.z - _player.position.z);
+
+            const bool zero_x = epsilon_compare(dx, 0, 0.05f);
+            const bool zero_z = epsilon_compare(dz, 0, 0.05f);
+            if ((zero_x || zero_z) == false) return DIR_NONE;
+
+            const size_t x = round(npc.position.x);
+            const size_t z = round(npc.position.z);
+            std::function<bool(const tile_t *)> pred = [](const tile_t *t) {
+                return t->is_walkable;
+            };
+
+            if (zero_x) {
+                dir_t result = dz < 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
+                if (_level->scan_if_any(pred, x, z, result, dz))
+                    return result;
+            } else if (zero_z) {
+                dir_t result = dx < 0 ? DIR_X_MINUS : DIR_X_PLUS;
+                if (_level->scan_if_any(pred, x, z, result, dx))
+                    return result;
+            }
+            return DIR_NONE;
         }
 
         void update_npc(object_t *npc) {
@@ -611,8 +641,11 @@ class core_controller_t final : public controller_impl_i {
                 npc->direction = opposite_dir(npc->direction);
             }
 
+            dir_t shoot_dir = DIR_NONE;
             if (can_attack_player(*npc)) {
                 handle_attack(&_player, npc);
+            } else if ((shoot_dir = can_shoot_player(*npc)) != DIR_NONE) {
+                handle_shooting(npc, shoot_dir);               
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 const bool change_dir = _random.uniform_zero_to_one() > 0.6f;

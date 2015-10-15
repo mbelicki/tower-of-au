@@ -48,6 +48,28 @@ bool level_t::is_point_walkable(const vec3_t point) const {
     return tile->is_walkable;
 }
 
+bool level_t::scan_if_any
+        ( std::function<bool(const tile_t *)> predicate
+        , size_t initial_x, size_t initial_z
+        , warp::dir_t direction, size_t distance
+        ) {
+    const vec3_t dir = dir_to_vec3(direction);
+    const int dx = round(dir.x);
+    const int dz = round(dir.z);
+    int x = initial_x;
+    int z = initial_z;
+
+    bool accumulator = false;
+    for (size_t i = 0; i < distance; i++) {
+        get_tile_at(x, z).with_value([&](const tile_t *t) {
+            accumulator = predicate(t) || accumulator;
+        });
+        x += dx;
+        z += dz;
+    }
+    return accumulator;
+}
+
 static maybeunit_t append_tile
         ( meshbuilder_t *builder
         , meshmanager_t *meshes

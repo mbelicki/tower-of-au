@@ -2,6 +2,9 @@
 
 #include "warp/maybe.h"
 #include "warp/vec3.h"
+#include "warp/direction.h"
+
+#include <functional>
 
 class random_t;
 
@@ -47,6 +50,11 @@ class level_t {
         size_t get_height() const { return _height; }
 
         bool is_point_walkable(const warp::vec3_t point) const;
+
+        bool scan_if_any
+            ( std::function<bool(const tile_t *)> predicate
+            , size_t x, size_t y, warp::dir_t direction, size_t distance
+            );
 
     private:
         bool _initialized;
