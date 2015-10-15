@@ -12,8 +12,8 @@
 
 using namespace warp;
 
-static const vec3_t ATTACK_POSITION = vec3(-330, -230, 0);
-static const vec2_t ATTACK_SIZE = vec2(100, 100);
+static const vec3_t ATTACK_POSITION = vec3(-300, -200, 0);
+static const vec2_t ATTACK_SIZE = vec2(120, 120);
 
 static move_dir_t gesture_kind_to_move(gesture_kind_t kind) {
     switch (kind) {
@@ -73,7 +73,7 @@ class input_controller_t final : public controller_impl_i {
             _is_move_touched = any_touched_elswhere;
 
             if (_is_button_touched) {
-                if (_button_scale < 2.5f) {
+                if (_button_scale < 3.0f) {
                     _button_scale += _button_scale * 0.1f;
                 }
             } else {
