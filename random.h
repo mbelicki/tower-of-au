@@ -14,6 +14,10 @@ class random_t {
             return distribution(_generator);
         }
 
+        bool boolean(float true_probability) { 
+            return uniform_zero_to_one() < true_probability; 
+        }
+
     private:
         std::default_random_engine _generator;
 };

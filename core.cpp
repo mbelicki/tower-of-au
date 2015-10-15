@@ -185,7 +185,7 @@ static object_t *create_object
     object->position = pos;
     object->direction = dir;
     object->health = 2;
-    object->can_shoot = true;
+    object->can_shoot = false;
 
     object->entity = VALUE(entity);
     object->entity->set_tag("object");
@@ -225,6 +225,7 @@ static void spawn_objects
                 if (r <= tile->spawn_probablity) {
                     const dir_t dir = directions[random->uniform_from_range(0, 3)];
                     objs[index] = create_object(world, obj_type, dir, i, j);
+                    objs[index]->can_shoot = random->boolean(0.2f);
                 }
             }
 
