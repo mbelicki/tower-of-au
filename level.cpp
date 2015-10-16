@@ -27,6 +27,11 @@ level_t::~level_t() {
     delete [] _tiles;
 }
 
+void level_t::set_display_position(const warp::vec3_t pos) {
+    if (_initialized == false) return;
+    _entity->receive_message(MSG_PHYSICS_MOVE, pos);
+}
+
 maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
     if (x >= _width) {
         return nothing<const tile_t *>("Illegal x value.");
@@ -42,7 +47,7 @@ bool level_t::is_point_walkable(const vec3_t point) const {
     const size_t x = round(point.x);
     const size_t z = round(point.z);
     maybe_t<const tile_t *> maybe_tile = get_tile_at(x, z);
-    if (maybe_tile.failed()) return true;
+    if (maybe_tile.failed()) return false;
 
     const tile_t *tile = VALUE(maybe_tile);
     return tile->is_walkable;
@@ -52,7 +57,7 @@ bool level_t::scan_if_all
         ( std::function<bool(const tile_t *)> predicate
         , size_t initial_x, size_t initial_z
         , warp::dir_t direction, size_t distance
-        ) {
+        ) const {
     const vec3_t dir = dir_to_vec3(direction);
     const int dx = round(dir.x);
     const int dz = round(dir.z);

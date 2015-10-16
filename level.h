@@ -42,19 +42,20 @@ class level_t {
         ~level_t();
 
         warp::maybeunit_t initialize(warp::world_t *world);
+        void set_display_position(const warp::vec3_t pos);
 
         inline bool is_initialized() const { return _initialized; }
-        warp::maybe_t<const tile_t *> get_tile_at(size_t x, size_t y) const;
+        inline size_t get_width() const { return _width; }
+        inline size_t get_height() const { return _height; }
 
-        size_t get_width() const { return _width; }
-        size_t get_height() const { return _height; }
+        warp::maybe_t<const tile_t *> get_tile_at(size_t x, size_t y) const;
 
         bool is_point_walkable(const warp::vec3_t point) const;
 
         bool scan_if_all
             ( std::function<bool(const tile_t *)> predicate
             , size_t x, size_t y, warp::dir_t direction, size_t distance
-            );
+            ) const;
 
     private:
         bool _initialized;

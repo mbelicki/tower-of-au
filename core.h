@@ -8,7 +8,7 @@ namespace warp {
     class world_t;
 }
 
-class level_t;
+class region_t;
 
 enum core_msgs_t : unsigned int {
     CORE_TRY_MOVE = warp::MSG_CUSTOM,
@@ -40,4 +40,4 @@ static inline bool operator==
 }
 
 warp::maybe_t<warp::entity_t *> create_core
-        (warp::world_t *world, level_t *level);
+        (warp::world_t *world, region_t *region_t);

@@ -11,6 +11,7 @@
 #include "warp/entity-helpers.h"
 
 #include "random.h"
+#include "region.h"
 #include "level.h"
 #include "character.h"
 #include "features.h"
@@ -239,8 +240,9 @@ static void spawn_objects
 
 class core_controller_t final : public controller_impl_i {
     public:
-        core_controller_t(level_t *initial_level)
-            : _level(initial_level)
+        core_controller_t(region_t *initial_region)
+            : _region(initial_region)
+            , _level(nullptr)
             , _bullets(nullptr)
             , _objects(nullptr)
             , _features(nullptr)
@@ -268,6 +270,8 @@ class core_controller_t final : public controller_impl_i {
 
             _bullets = new bullet_factory_t(world);
             _bullets->initialize();
+
+            _level = VALUE(_region->get_level_at(0, 0));
 
             maybe_t<entity_t *> avatar 
                 = create_character_entity(vec3(8, 0, 8), world, true);
@@ -327,6 +331,7 @@ class core_controller_t final : public controller_impl_i {
         entity_t *_owner;
         world_t *_world;
 
+        region_t *_region;
         level_t *_level;
         bullet_factory_t *_bullets;
 
@@ -662,13 +667,13 @@ class core_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<entity_t *> create_core(world_t *world, level_t * level) {
-    if (level == nullptr) {
-        return nothing<entity_t *>("Level is null.");
+extern maybe_t<entity_t *> create_core(world_t *world, region_t *region) {
+    if (region == nullptr) {
+        return nothing<entity_t *>("Region is null.");
     }
 
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new core_controller_t(level));
+    controller->initialize(new core_controller_t(region));
 
     entity_t *entity = world->create_entity(vec3(0, 0, 0), nullptr, nullptr, controller);
 

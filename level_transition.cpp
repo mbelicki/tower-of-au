@@ -1,6 +1,7 @@
 #include "level_transition.h"
 
 #include "level.h"
+#include "region.h"
 #include "core.h"
 #include "input_controller.h"
 
@@ -38,9 +39,11 @@ void level_transition_t::initialize_state
         printf("%s\n", reset_result.get_message().c_str());
     }
 
-    level_t *level = generate_test_level();
-    level->initialize(world);
+    //level_t *level = generate_test_level();
+    //level->initialize(world);
+    region_t *region = generate_random_region(nullptr);
+    region->initialize(world);
 
-    create_core(world, level);
+    create_core(world, region);
     create_input_controller(world);
 }
