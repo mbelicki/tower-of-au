@@ -212,14 +212,17 @@ extern level_t *generate_random_level(random_t *random) {
         }
     }
 
-    const int stair_x = random->uniform_from_range(1, width - 3);
-    const int stair_y = random->uniform_from_range(1, height - 2);
-    
-    tiles[stair_x + width * stair_y].is_stairs = true;
-    tiles[stair_x + width * stair_y].spawn_probablity = 0;
+    tiles[6 + width * 0].is_walkable = true;
+    tiles[6 + width * 1].is_walkable = true;
 
-    tiles[stair_x + 1 + width * stair_y].is_walkable = true;
-    tiles[stair_x + width * (stair_y + 1)].is_walkable = true;
+    tiles[6 + width * 10].is_walkable = true;
+    tiles[6 + width *  9].is_walkable = true;
+
+    tiles[0 + width * 5].is_walkable = true;
+    tiles[1 + width * 5].is_walkable = true;
+
+    tiles[12 + width * 5].is_walkable = true;
+    tiles[11 + width * 5].is_walkable = true;
 
     return new (std::nothrow) level_t(tiles, width, height);
 }

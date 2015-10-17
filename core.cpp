@@ -271,12 +271,15 @@ class core_controller_t final : public controller_impl_i {
             _bullets = new bullet_factory_t(world);
             _bullets->initialize();
 
-            _level = VALUE(_region->get_level_at(0, 0));
+            _level_x = 0;
+            _level_z = 0;
+            _level = VALUE(_region->get_level_at(_level_x, _level_z));
 
             maybe_t<entity_t *> avatar 
-                = create_character_entity(vec3(8, 0, 8), world, true);
+                = create_character_entity(vec3(8, 0, 5), world, true);
             _player.entity = VALUE(avatar);
-            _player.position = vec3(8, 0, 8);
+            _player.entity->set_tag("player");
+            _player.position = vec3(6, 0, 5);
             _player.direction = DIR_Z_MINUS;
             _player.health = 2;
 
@@ -310,11 +313,20 @@ class core_controller_t final : public controller_impl_i {
                 handle_attack(object, nullptr);
             } else if (type == CORE_MOVE_DONE) {
                 next_turn();
-                const size_t x = round(_player.position.x);
-                const size_t z = round(_player.position.z);
-                _level->get_tile_at(x, z).with_value([this](const tile_t *tile) {
-                    if (tile->is_stairs) this->next_level();
-                });
+                const int x = round(_player.position.x);
+                const int z = round(_player.position.z);
+                if (x < 0) {
+                    this->change_level(_level_x - 1, _level_z);
+                } else if (x >= 13) {
+                    this->change_level(_level_x + 1, _level_z);
+                } else if (z < 0) {
+                    this->change_level(_level_x, _level_z - 1);
+                } else if (z >= 11) {
+                    this->change_level(_level_x, _level_z + 1);
+                }
+                //_level->get_tile_at(x, z).with_value([this](const tile_t *tile) {
+                //    if (tile->is_stairs) this->change_region();
+                //});
             } else if (is_idle(_player)) {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
@@ -333,6 +345,9 @@ class core_controller_t final : public controller_impl_i {
 
         region_t *_region;
         level_t *_level;
+        size_t _level_x;
+        size_t _level_z;
+
         bullet_factory_t *_bullets;
 
         object_t _player;
@@ -342,11 +357,7 @@ class core_controller_t final : public controller_impl_i {
 
         random_t _random;
 
-        void next_level() {
-            maybe_t<entity_t *> level = _world->find_entity("level");
-            if (level.failed()) return;
-            _world->destroy_later(VALUE(level));
-
+        void remove_objects_and_feateures() {
             std::vector<entity_t *> buffer;
             _world->find_all_entities("object", &buffer);
             for (entity_t *npc : buffer) {
@@ -356,17 +367,32 @@ class core_controller_t final : public controller_impl_i {
             for (entity_t *npc : buffer) {
                 _world->destroy_later(npc);
             }
-
-            delete _level;
-            _level = generate_random_level(&_random);
-            _level->initialize(_world);
-
+            
             for (size_t i = 0; i < _tiles_count; i++) {
                 delete _objects[i];
                 delete _features[i];
             }
+        }
 
+        void change_level(size_t x, size_t z) {
+            const maybe_t<level_t *> maybe_level = _region->get_level_at(x, z);
+            if (maybe_level.failed()) return;
+
+            _level = VALUE(maybe_level);
+            _region->change_display_positions(x, z);
+            
+            remove_objects_and_feateures();
             spawn_objects(*_level, _objects, _features, _world, &_random);
+
+            const int dx = x - _level_x;
+            const int dz = z - _level_z;
+            _level_x = x;
+            _level_z = z;
+
+            vec3_t player_pos = _player.position;
+            player_pos.x -= dx * 13;
+            player_pos.z -= dz * 11;
+            make_move(&_player, player_pos);
         }
 
         bool can_move_to(vec3_t new_position, vec3_t old_position) {
@@ -374,7 +400,7 @@ class core_controller_t final : public controller_impl_i {
             const size_t z = round(new_position.z);
 
             maybe_t<const tile_t *> maybe_tile = _level->get_tile_at(x, z);
-            if (maybe_tile.failed()) return false;
+            if (maybe_tile.failed()) return true;
 
             const tile_t *tile = VALUE(maybe_tile);
             if (tile->is_stairs) {

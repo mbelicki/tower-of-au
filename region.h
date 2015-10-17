@@ -16,6 +16,7 @@ class region_t {
         ~region_t();
 
         warp::maybeunit_t initialize(warp::world_t *world);
+        void change_display_positions(size_t current_x, size_t current_z);
 
         inline bool is_initialized() const { return _initialized; }
         inline size_t get_width() const { return _width; }

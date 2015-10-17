@@ -31,6 +31,18 @@ maybeunit_t region_t::initialize(world_t *world) {
     return unit;
 }
 
+
+void region_t::change_display_positions(size_t current_x, size_t current_z) {
+    for (size_t i = 0; i < _width; i++) {
+        for (size_t j = 0; j < _height; j++) {
+            level_t *level = _levels[i + _width * j];
+            const int x = 13 * ((int)i - (int)current_x);
+            const int z = 11 * ((int)j - (int)current_z);
+            level->set_display_position(vec3(x, 0, z));
+        }
+    }
+}
+
 maybe_t<level_t *> region_t::get_level_at(size_t x, size_t y) const {
     if (x >= _width)  return nothing<level_t *>("Illegal x value.");
     if (y >= _height) return nothing<level_t *>("Illegal y value.");
