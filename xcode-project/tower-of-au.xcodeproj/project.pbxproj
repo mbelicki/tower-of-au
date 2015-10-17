@@ -40,6 +40,7 @@
 		61F98E0A1BCEE4CF00EEF945 /* bullets.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61F98E081BCEE4CF00EEF945 /* bullets.cpp */; settings = {ASSET_TAGS = (); }; };
 		61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E0B1BCEE55200EEF945 /* arrow.obj */; settings = {ASSET_TAGS = (); }; };
 		61F98E0E1BCEE58D00EEF945 /* button.png in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E0D1BCEE58D00EEF945 /* button.png */; settings = {ASSET_TAGS = (); }; };
+		61F98E111BD2F6EA00EEF945 /* region.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61F98E0F1BD2F6EA00EEF945 /* region.cpp */; settings = {ASSET_TAGS = (); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +97,8 @@
 		61F98E091BCEE4CF00EEF945 /* bullets.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bullets.h; sourceTree = "<group>"; };
 		61F98E0B1BCEE55200EEF945 /* arrow.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = arrow.obj; sourceTree = "<group>"; };
 		61F98E0D1BCEE58D00EEF945 /* button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = button.png; sourceTree = "<group>"; };
+		61F98E0F1BD2F6EA00EEF945 /* region.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = region.cpp; sourceTree = "<group>"; };
+		61F98E101BD2F6EA00EEF945 /* region.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = region.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -155,6 +158,8 @@
 		6154D8881BBC66C800B4D95B /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				61F98E0F1BD2F6EA00EEF945 /* region.cpp */,
+				61F98E101BD2F6EA00EEF945 /* region.h */,
 				61F98E081BCEE4CF00EEF945 /* bullets.cpp */,
 				61F98E091BCEE4CF00EEF945 /* bullets.h */,
 				61F98DFE1BCD96EB00EEF945 /* features.cpp */,
@@ -349,6 +354,7 @@
 				61F98E001BCD96EB00EEF945 /* features.cpp in Sources */,
 				6154D89A1BBC66FF00B4D95B /* main.cpp in Sources */,
 				6154D8951BBC66FF00B4D95B /* character.cpp in Sources */,
+				61F98E111BD2F6EA00EEF945 /* region.cpp in Sources */,
 				6154D8981BBC66FF00B4D95B /* level_transition.cpp in Sources */,
 				6154D8991BBC66FF00B4D95B /* level.cpp in Sources */,
 				61F98E0A1BCEE4CF00EEF945 /* bullets.cpp in Sources */,

@@ -588,10 +588,11 @@ class core_controller_t final : public controller_impl_i {
                 if (new_feat->type == FEAT_BUTTON) {
                     new_feat->state = FSTATE_ACTIVE;
                     feature_t *target = _features[new_feat->target_id];
-                    if (target != nullptr)
+                    if (target != nullptr) {
                         target->state = FSTATE_ACTIVE;
                         target->entity->receive_message
                             (CORE_FEAT_STATE_CHANGE, target->state);
+                    }
                 }
             }
 
