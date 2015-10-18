@@ -91,6 +91,7 @@ class movement_controller_t final : public controller_impl_i {
 
         bool accepts(messagetype_t type) const override {
             return type == CORE_DO_MOVE
+                || type == CORE_DO_MOVE_IMMEDIATE
                 || type == CORE_DO_ATTACK
                 || type == CORE_DO_BOUNCE
                 ;
@@ -98,9 +99,11 @@ class movement_controller_t final : public controller_impl_i {
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            maybe_t<vec3_t> maybe_pos = message.data.get_vec3();
+            const maybe_t<vec3_t> maybe_pos = message.data.get_vec3();
             if (type == CORE_DO_MOVE) {
                 change_state(MOVE_MOVING, VALUE(maybe_pos));
+            } else if (type == CORE_DO_MOVE_IMMEDIATE) {
+                move_immediate(VALUE(maybe_pos));
             } else if (type == CORE_DO_BOUNCE) {
                 change_state(MOVE_BOUNCING, VALUE(maybe_pos));
             } else if (type == CORE_DO_ATTACK) {
@@ -117,6 +120,13 @@ class movement_controller_t final : public controller_impl_i {
 
         vec3_t _target_pos;
         vec3_t _old_pos;
+
+        void move_immediate(vec3_t pos) {
+            _owner->receive_message(MSG_PHYSICS_MOVE, pos);
+            _target_pos = pos;
+            _old_pos = pos;
+            _timer = 0;
+        }
 
         void change_state(movement_state_t state, vec3_t target) {
             _state = state;

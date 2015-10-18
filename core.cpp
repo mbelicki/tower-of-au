@@ -323,10 +323,12 @@ class core_controller_t final : public controller_impl_i {
                     this->change_level(_level_x, _level_z - 1);
                 } else if (z >= 11) {
                     this->change_level(_level_x, _level_z + 1);
+                } else {
+                    _level->get_tile_at(x, z)
+                            .with_value([this](const tile_t *tile) {
+                        if (tile->is_stairs) this->change_region();
+                    });
                 }
-                //_level->get_tile_at(x, z).with_value([this](const tile_t *tile) {
-                //    if (tile->is_stairs) this->change_region();
-                //});
             } else if (is_idle(_player)) {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
@@ -374,6 +376,21 @@ class core_controller_t final : public controller_impl_i {
             }
         }
 
+        void change_region() {
+            remove_objects_and_feateures();
+
+            std::vector<entity_t *> buffer;
+            _world->find_all_entities("level", &buffer);
+            for (entity_t *level : buffer) {
+                _world->destroy_later(level);
+            }
+
+            delete _region;
+
+            _region = generate_random_region(&_random);
+            change_level(0, 0);
+        }
+
         void change_level(size_t x, size_t z) {
             const maybe_t<level_t *> maybe_level = _region->get_level_at(x, z);
             if (maybe_level.failed()) return;
@@ -392,7 +409,7 @@ class core_controller_t final : public controller_impl_i {
             vec3_t player_pos = _player.position;
             player_pos.x -= dx * 13;
             player_pos.z -= dz * 11;
-            make_move(&_player, player_pos);
+            make_move(&_player, player_pos, true);
         }
 
         bool can_move_to(vec3_t new_position, vec3_t old_position) {
@@ -468,7 +485,7 @@ class core_controller_t final : public controller_impl_i {
             _player.direction = get_move_direction(direction);
             const vec3_t position = move_character(_player, direction);
             if (can_move_to(position, _player.position)) {
-                make_move(&_player, position);
+                make_move(&_player, position, false);
             } else {
                 object_t *npc = npc_at_position(position);
                 if (npc != nullptr) {
@@ -494,14 +511,14 @@ class core_controller_t final : public controller_impl_i {
                     ;
                 const vec3_t push_back = vec3_add(target->position, d);
                 if (can_move_to(push_back, target->position)) {
-                    make_move(target, push_back);
+                    make_move(target, push_back, false);
                     target->attacked = true;
                 }
             }
             if (attacker != nullptr) {
                 if (target->type == OBJ_BOULDER) {
                     if (can_move_to(original_position, attacker->position))
-                        make_move(attacker, original_position);
+                        make_move(attacker, original_position, false);
                     else
                         attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
                 } else {
@@ -557,7 +574,7 @@ class core_controller_t final : public controller_impl_i {
             delete buffer;
         }
 
-        void make_move(object_t *target, vec3_t position) {
+        void make_move(object_t *target, vec3_t position, bool immediate) {
             const vec3_t old_position = target->position;
             const size_t level_width = _level->get_width();
             const size_t old_x = round(old_position.x);
@@ -597,7 +614,9 @@ class core_controller_t final : public controller_impl_i {
             }
 
             target->position = position;
-            target->entity->receive_message(CORE_DO_MOVE, position);
+            const int msg_type
+                = immediate ? CORE_DO_MOVE_IMMEDIATE : CORE_DO_MOVE;
+            target->entity->receive_message(msg_type, position);
         }
 
         dir_t pick_next_direction(const object_t &npc) {
@@ -689,7 +708,7 @@ class core_controller_t final : public controller_impl_i {
                     npc->direction = pick_next_direction(*npc);
                     position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 }
-                make_move(npc, position);
+                make_move(npc, position, false);
             }
         }
 };

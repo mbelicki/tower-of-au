@@ -1,5 +1,7 @@
 #include "region.h"
 
+#include <cstring> /* memmove */
+
 #include "level.h"
 #include "random.h"
 
@@ -31,7 +33,6 @@ maybeunit_t region_t::initialize(world_t *world) {
     return unit;
 }
 
-
 void region_t::change_display_positions(size_t current_x, size_t current_z) {
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
@@ -55,8 +56,8 @@ region_t *generate_random_region(random_t *random) {
         random = &local_random;
     }
 
-    const size_t width = 3;
-    const size_t height = 3;
+    const size_t width = 5;
+    const size_t height = 5;
     level_t * levels[width * height];
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {
