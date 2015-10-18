@@ -14,7 +14,7 @@
 
 using namespace warp;
 
-static const vec3_t ATTACK_POSITION = vec3(-300, -200, 0);
+static const vec3_t ATTACK_POSITION = vec3(-300, -200, 8);
 static const vec2_t ATTACK_SIZE = vec2(120, 120);
 
 static move_dir_t gesture_kind_to_move(gesture_kind_t kind) {
@@ -150,7 +150,7 @@ class input_controller_t final : public controller_impl_i {
             _shift_acc.x = shift.x * k + _shift_acc.x * (1 - k);
             _shift_acc.y = shift.y * k + _shift_acc.y * (1 - k);
             
-            k = saturate<float>(k * 8.0f, 0, 1);
+            k = saturate<float>(k * 2.0f, 0, 1);
             _reference_acc.x = _shift_acc.x * k + _reference_acc.x * (1 - k);
             _reference_acc.y = _shift_acc.y * k + _reference_acc.y * (1 - k);
         }
@@ -161,7 +161,7 @@ class input_controller_t final : public controller_impl_i {
                 _acc_initialized = true;
             }
 
-            update_shift(shift, 0.001f);
+            update_shift(shift, 0.005f);
             
             vec2_t mod = vec2_sub(_shift_acc, _reference_acc);
             mod.x = saturate(mod.x, -48.0f, 48.0f);
