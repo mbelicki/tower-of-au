@@ -52,7 +52,13 @@ static float get_time_for_heal_state(health_state_t state) {
 class movement_controller_t final : public controller_impl_i {
     public:
         movement_controller_t(bool confirm_move)
-            : _confirm(confirm_move)
+            : _owner(nullptr)
+            , _world(nullptr)
+            , _timer(0)
+            , _state(MOVE_IDLE)
+            , _confirm(confirm_move)
+            , _target_pos(0, 0, 0)
+            , _old_pos(0, 0, 0)
         { }
 
         dynval_t get_property(const tag_t &name) const override {
@@ -65,6 +71,8 @@ class movement_controller_t final : public controller_impl_i {
         void initialize(entity_t *owner, world_t *world) override {
             _owner = owner;
             _world = world;
+
+            _target_pos = _old_pos = _owner->get_position();
         }
 
         void update(float dt, const input_t &) override { 
@@ -157,6 +165,13 @@ class movement_controller_t final : public controller_impl_i {
 
 class health_controller_t final : public controller_impl_i {
     public:
+        health_controller_t()
+            : _owner(nullptr)
+            , _world(nullptr)
+            , _timer(0)
+            , _state(HEAL_IDLE)
+        { }
+
         dynval_t get_property(const tag_t &) const override {
             return dynval_t::make_null();
         }

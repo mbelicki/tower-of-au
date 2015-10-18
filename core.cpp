@@ -254,13 +254,18 @@ static void spawn_objects
 class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(region_t *initial_region)
-            : _region(initial_region)
+            : _owner(nullptr)
+            , _world(nullptr)
+            , _region(initial_region)
             , _level(nullptr)
+            , _level_x(0), _level_z(0)
             , _bullets(nullptr)
+            , _player()
             , _objects(nullptr)
             , _features(nullptr)
-        {
-        }
+            , _tiles_count(0)
+            , _random()
+        { }
 
         ~core_controller_t() {
             for (size_t i = 0; i < _tiles_count; i++) {

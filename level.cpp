@@ -14,7 +14,8 @@ level_t::level_t(const tile_t *tiles, size_t width, size_t height)
         : _initialized(false)
         , _width(width)
         , _height(height)
-        , _tiles(nullptr) {
+        , _tiles(nullptr) 
+        , _entity(nullptr) {
     const size_t tiles_count = _width * _height;
     /* because memmove does not interact well with C++ constructors and
      * destructors */
