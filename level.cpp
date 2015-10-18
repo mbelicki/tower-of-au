@@ -32,6 +32,11 @@ void level_t::set_display_position(const warp::vec3_t pos) {
     _entity->receive_message(MSG_PHYSICS_MOVE, pos);
 }
 
+void level_t::set_visiblity(bool visible) {
+    if (_initialized == false) return;
+    _entity->receive_message(MSG_GRAPHICS_VISIBLITY, (int)visible);
+}
+
 maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
     if (x >= _width) {
         return nothing<const tile_t *>("Illegal x value.");

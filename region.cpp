@@ -37,9 +37,13 @@ void region_t::change_display_positions(size_t current_x, size_t current_z) {
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
             level_t *level = _levels[i + _width * j];
-            const int x = 13 * ((int)i - (int)current_x);
-            const int z = 11 * ((int)j - (int)current_z);
-            level->set_display_position(vec3(x, 0, z));
+
+            const int dx = (int)i - (int)current_x;
+            const int dz = (int)j - (int)current_z;
+            const bool visible = abs(dx) <= 1 && (dz <= 0 && dx >= -1);
+
+            level->set_display_position(vec3(13 * dx, 0, 11 * dz));
+            level->set_visiblity(visible);
         }
     }
 }

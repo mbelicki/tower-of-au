@@ -43,6 +43,7 @@ class level_t {
 
         warp::maybeunit_t initialize(warp::world_t *world);
         void set_display_position(const warp::vec3_t pos);
+        void set_visiblity(bool visible);
 
         inline bool is_initialized() const { return _initialized; }
         inline size_t get_width() const { return _width; }
