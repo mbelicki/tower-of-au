@@ -40,7 +40,7 @@ void region_t::change_display_positions(size_t current_x, size_t current_z) {
 
             const int dx = (int)i - (int)current_x;
             const int dz = (int)j - (int)current_z;
-            const bool visible = abs(dx) <= 1 && (dz <= 0 && dz >= -1);
+            const bool visible = abs(dx) <= 1 && abs(dz) <= 1;
 
             level->set_display_position(vec3(13 * dx, 0, 11 * dz));
             level->set_visiblity(visible);
@@ -60,8 +60,8 @@ region_t *generate_random_region(random_t *random) {
         random = &local_random;
     }
 
-    const size_t width = 5;
-    const size_t height = 5;
+    const size_t width = 9;
+    const size_t height = 9;
     level_t * levels[width * height];
     for (size_t i = 0; i < width; i++) {
         for (size_t j = 0; j < height; j++) {

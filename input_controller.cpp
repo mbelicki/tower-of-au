@@ -2,6 +2,8 @@
 
 #include "warp/keycodes.h"
 
+#include "warp/camera.h"
+#include "warp/cameras.h"
 #include "warp/input.h"
 #include "warp/world.h"
 #include "warp/entity.h"
@@ -43,10 +45,14 @@ class input_controller_t final : public controller_impl_i {
             _is_button_touched = false;
             _is_move_touched = false;
             _button_scale = 1;
+
+            _acc_initialized = false;
         }
 
         void update(float, const input_t &input) override {
             _screen_size = input.screen_size;
+            update_camera(vec2(input.acc_x, input.acc_y));
+
             bool any_touched_button = false;
             bool any_touched_elswhere = false;
             if (input.touch_points->size() > 0) {
@@ -135,6 +141,39 @@ class input_controller_t final : public controller_impl_i {
         float _button_scale;
         gesture_t _button_gesture;
         gesture_t _move_gesture;
+
+        bool _acc_initialized;
+        vec2_t _shift_acc;
+        vec2_t _reference_acc;
+
+        void update_shift(vec2_t shift, float k) {
+            _shift_acc.x = shift.x * k + _shift_acc.x * (1 - k);
+            _shift_acc.y = shift.y * k + _shift_acc.y * (1 - k);
+            
+            k = saturate<float>(k * 8.0f, 0, 1);
+            _reference_acc.x = _shift_acc.x * k + _reference_acc.x * (1 - k);
+            _reference_acc.y = _shift_acc.y * k + _reference_acc.y * (1 - k);
+        }
+
+        void update_camera(vec2_t shift) {
+            if (_acc_initialized) {
+                _shift_acc = _reference_acc = shift;
+                _acc_initialized = true;
+            }
+
+            update_shift(shift, 0.001f);
+            
+            vec2_t mod = vec2_sub(_shift_acc, _reference_acc);
+            mod.x = saturate(mod.x, -48.0f, 48.0f);
+            mod.y = saturate(mod.y, -48.0f, 48.0f);
+
+            const vec3_t pos = vec3(6, 9.5f, 12.5f);
+            const vec3_t rot = vec3(0.95f + mod.y * 0.001f, 0, mod.x * 0.001f);
+
+            cameras_mgr_t *cameras = _world->get_resources().cameras;
+            const maybe_t<camera_id_t> id = cameras->get_id_for_tag("main");
+            cameras->change_transforms(VALUE(id), pos, rot);
+        }
         
         void move(move_dir_t direction) {
             if (direction != MOVE_NONE) {
