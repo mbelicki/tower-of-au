@@ -194,6 +194,19 @@ static object_t *create_object
     return object;
 }
 
+static void initialize_player
+        (object_t *player, vec3_t start_position, world_t *world) {
+    const maybe_t<entity_t *> avatar 
+        = create_character_entity(start_position, world, true);
+    player->entity = VALUE(avatar);
+    player->entity->set_tag("player");
+    player->position = start_position;
+    player->direction = DIR_Z_MINUS;
+    player->health = 2;
+    player->can_shoot = true;
+}
+
+
 static void spawn_objects
         ( const level_t &level
         , object_t **objs, feature_t **feats
@@ -275,13 +288,6 @@ class core_controller_t final : public controller_impl_i {
             _level_z = 0;
             _level = VALUE(_region->get_level_at(_level_x, _level_z));
 
-            maybe_t<entity_t *> avatar 
-                = create_character_entity(vec3(8, 0, 5), world, true);
-            _player.entity = VALUE(avatar);
-            _player.entity->set_tag("player");
-            _player.position = vec3(6, 0, 5);
-            _player.direction = DIR_Z_MINUS;
-            _player.health = 2;
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
@@ -290,6 +296,8 @@ class core_controller_t final : public controller_impl_i {
             _features = new (std::nothrow) feature_t * [_tiles_count];
 
             spawn_objects(*_level, _objects, _features, world, &_random);
+
+            initialize_player(&_player, vec3(6, 0, 5), _world);
         }
 
         void update(float, const input_t &) override { }
@@ -333,7 +341,7 @@ class core_controller_t final : public controller_impl_i {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
                     handle_move((move_dir_t)direction);
-                } else if (type == CORE_TRY_SHOOT) {
+                } else if (type == CORE_TRY_SHOOT && _player.can_shoot) {
                     const move_dir_t direction
                         = (move_dir_t) VALUE(message.data.get_int());
                     handle_shooting(&_player, get_move_direction(direction));
@@ -366,8 +374,12 @@ class core_controller_t final : public controller_impl_i {
                 _world->destroy_later(npc);
             }
             _world->find_all_entities("feature", &buffer);
-            for (entity_t *npc : buffer) {
-                _world->destroy_later(npc);
+            for (entity_t *feature : buffer) {
+                _world->destroy_later(feature);
+            }
+            _world->find_all_entities("bullet", &buffer);
+            for (entity_t *bullet : buffer) {
+                _world->destroy_later(bullet);
             }
             
             for (size_t i = 0; i < _tiles_count; i++) {
@@ -704,7 +716,7 @@ class core_controller_t final : public controller_impl_i {
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 const bool change_dir = _random.uniform_zero_to_one() > 0.6f;
-                if (change_dir || can_move_to(position, npc->position) == false) {
+                if (change_dir || (can_move_to(position, npc->position) == false)) {
                     npc->direction = pick_next_direction(*npc);
                     position = vec3_add(npc->position, dir_to_vec3(npc->direction));
                 }
