@@ -19,6 +19,13 @@
 
 using namespace warp;
 
+static const float LEVEL_TRANSITION_TIME = 1.0f;
+
+enum core_state_t {
+    CSTATE_LEVEL = 0,
+    CSTATE_TRANSITION,
+};
+
 struct object_t {
     object_type_t type;
     entity_t *entity;
@@ -265,6 +272,8 @@ class core_controller_t final : public controller_impl_i {
             , _features(nullptr)
             , _tiles_count(0)
             , _random()
+            , _state(CSTATE_LEVEL)
+            , _transition_timer(0)
         { }
 
         ~core_controller_t() {
@@ -305,7 +314,34 @@ class core_controller_t final : public controller_impl_i {
             initialize_player(&_player, vec3(6, 0, 5), _world);
         }
 
-        void update(float, const input_t &) override { }
+        void update(float dt, const input_t &) override { 
+            if (_state == CSTATE_TRANSITION) {
+                _transition_timer -= dt;
+                if (_transition_timer <= 0) {
+                    _transition_timer = 0;
+                    _state = CSTATE_LEVEL;
+                }
+
+                const float k = 1 - _transition_timer / LEVEL_TRANSITION_TIME;
+                const float t = ease_cubic(k);
+                _region->animate_transition
+                    (_level_x, _level_z, _previous_level_x, _previous_level_z, t);
+
+                const int dx = (int)_level_x - (int)_previous_level_x;
+                const int dz = (int)_level_z - (int)_previous_level_z;
+                
+                vec3_t player_pos = _player.position;
+                player_pos.x += dx * (1 - t) * 13;
+                player_pos.z += dz * (1 - t) * 11;
+                _player.entity->receive_message(CORE_DO_MOVE_IMMEDIATE, player_pos);
+
+                if (_state == CSTATE_LEVEL) {
+                    _region->change_display_positions(_level_x, _level_z);
+                    spawn_objects(*_level, _objects, _features, _world, &_random);
+                    make_move(&_player, _player.position, true);
+                }
+            }
+        }
 
         bool accepts(messagetype_t type) const override {
             return type == CORE_TRY_MOVE
@@ -316,6 +352,8 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_message(const message_t &message) override {
+            if (_state == CSTATE_TRANSITION) return;
+
             const messagetype_t type = message.type;
             if (type == CORE_BULLET_HIT) {
                 const vec3_t target_pos = VALUE(message.data.get_vec3());
@@ -329,13 +367,13 @@ class core_controller_t final : public controller_impl_i {
                 const int x = round(_player.position.x);
                 const int z = round(_player.position.z);
                 if (x < 0) {
-                    this->change_level(_level_x - 1, _level_z);
+                    start_level_change(_level_x - 1, _level_z);
                 } else if (x >= 13) {
-                    this->change_level(_level_x + 1, _level_z);
+                    start_level_change(_level_x + 1, _level_z);
                 } else if (z < 0) {
-                    this->change_level(_level_x, _level_z - 1);
+                    start_level_change(_level_x, _level_z - 1);
                 } else if (z >= 11) {
-                    this->change_level(_level_x, _level_z + 1);
+                    start_level_change(_level_x, _level_z + 1);
                 } else {
                     _level->get_tile_at(x, z)
                             .with_value([this](const tile_t *tile) {
@@ -362,6 +400,8 @@ class core_controller_t final : public controller_impl_i {
         level_t *_level;
         size_t _level_x;
         size_t _level_z;
+        size_t _previous_level_x;
+        size_t _previous_level_z;
 
         bullet_factory_t *_bullets;
 
@@ -371,6 +411,9 @@ class core_controller_t final : public controller_impl_i {
         size_t _tiles_count;
 
         random_t _random;
+
+        core_state_t _state;
+        float _transition_timer;
 
         void remove_objects_and_feateures() {
             std::vector<entity_t *> buffer;
@@ -407,16 +450,27 @@ class core_controller_t final : public controller_impl_i {
             _region = generate_random_region(&_random);
             change_level(0, 0);
         }
+        
+        void start_level_change(size_t x, size_t z) {
+            if (_region->get_level_at(x, z).failed()) return;
+
+            _state = CSTATE_TRANSITION;
+            _transition_timer = LEVEL_TRANSITION_TIME;
+
+            _previous_level_x = _level_x;
+            _previous_level_z = _level_z;
+            change_level(x, z);
+        }
 
         void change_level(size_t x, size_t z) {
             const maybe_t<level_t *> maybe_level = _region->get_level_at(x, z);
             if (maybe_level.failed()) return;
 
             _level = VALUE(maybe_level);
-            _region->change_display_positions(x, z);
+            //_region->change_display_positions(x, z);
             
             remove_objects_and_feateures();
-            spawn_objects(*_level, _objects, _features, _world, &_random);
+            //spawn_objects(*_level, _objects, _features, _world, &_random);
 
             const int dx = x - _level_x;
             const int dz = z - _level_z;

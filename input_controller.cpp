@@ -156,7 +156,7 @@ class input_controller_t final : public controller_impl_i {
         }
 
         void update_camera(vec2_t shift) {
-            if (_acc_initialized) {
+            if (_acc_initialized == false) {
                 _shift_acc = _reference_acc = shift;
                 _acc_initialized = true;
             }

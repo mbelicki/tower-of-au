@@ -33,6 +33,28 @@ maybeunit_t region_t::initialize(world_t *world) {
     return unit;
 }
 
+void region_t::animate_transition
+        (size_t new_x, size_t new_z, size_t old_x, size_t old_z, float k) {
+    const int ddx = (int)new_x - (int)old_x;
+    const int ddz = (int)new_z - (int)old_z;
+
+    for (size_t i = 0; i < _width; i++) {
+        for (size_t j = 0; j < _height; j++) {
+            level_t *level = _levels[i + _width * j];
+
+            const int dx = (int)i - (int)old_x;
+            const int dz = (int)j - (int)old_z;
+            const bool visible = abs(dx) <= 1 && abs(dz) <= 1;
+
+            const float x = 13 * (dx - k * ddx);
+            const float z = 11 * (dz - k * ddz);
+
+            level->set_display_position(vec3(x, 0, z));
+            level->set_visiblity(visible);
+        }
+    }
+}
+
 void region_t::change_display_positions(size_t current_x, size_t current_z) {
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
