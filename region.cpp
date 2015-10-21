@@ -44,7 +44,7 @@ void region_t::animate_transition
 
             const int dx = (int)i - (int)old_x;
             const int dz = (int)j - (int)old_z;
-            const bool visible = abs(dx) <= 1 && abs(dz) <= 1;
+            const bool visible = abs(dx) <= 2 && abs(dz) <= 2;
 
             const float x = 13 * (dx - k * ddx);
             const float z = 11 * (dz - k * ddz);
