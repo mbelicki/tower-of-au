@@ -241,7 +241,7 @@ static void spawn_objects
             const object_type_t obj_type = tile->spawned_object;
             const feature_type_t feat_type = tile->feature;
 
-            if (obj_type != OBJ_NONE || tile->spawn_probablity > 0) {
+            if (obj_type != OBJ_NONE && tile->spawn_probablity > 0) {
                 const float r = random->uniform_zero_to_one();
                 if (r <= tile->spawn_probablity) {
                     const dir_t dir = directions[random->uniform_from_range(0, 3)];

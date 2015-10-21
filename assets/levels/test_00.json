@@ -9,9 +9,16 @@
             "symbol" : " ",
             "walkable" : true,
             "mesh" : "floor.obj"
+        },
+        {
+            "symbol" : "B",
+            "walkable" : true,
+            "mesh" : "floor.obj",
+            "object" : "OBJ_BOULDER",
+            "spawnRate" : 1.0
         }
     ],
-    "width" : 2,
+    "width" : 4,
     "height" : 1,
     "levels" : [
         {
@@ -39,25 +46,80 @@
             ]
         },
         {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "# #       #  ",
+                "#  B     B# #",
+                "            #",
+                "#            ",
+                "            #",
+                "#  B     B# #",
+                "# #       #  ",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
             "tiles": [
                 {
-                    "symbol" : "B",
+                    "symbol" : "N",
                     "walkable" : true,
                     "mesh" : "floor.obj",
-                    "object" : "OBJ_BOULDER",
+                    "object" : "OBJ_NPC_GRUNT",
                     "spawnRate" : 1.0
+                },
+                {
+                    "symbol" : "n",
+                    "walkable" : true,
+                    "mesh" : "floor.obj",
+                    "object" : "OBJ_NPC_GRUNT",
+                    "spawnRate" : 0.5
                 }
             ],
             "data": [
                 "#############",
                 "#           #",
+                "  ##B###B## #",
                 "# #       # #",
-                "#  B     B# #",
-                "            #",
+                "# B       n #",
+                "  #   N      ",
+                "# B       n #",
+                "# #       # #",
+                "  ##B###B## #",
                 "#           #",
-                "            #",
-                "#  B     B# #",
-                "# #       # #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [
+                {
+                    "symbol" : "T",
+                    "walkable" : true,
+                    "mesh" : "floor.obj",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 5, "y" : 4}
+                },
+                {
+                    "symbol" : "D",
+                    "walkable" : true,
+                    "mesh" : "floor.obj",
+                    "feature" : "FEAT_DOOR",
+                    "spawnRate" : 1.0
+                }
+            ],
+            "data": [
+                "#############",
+                "#  # T #    #",
+                "#  BB  #    #",
+                "# B   ##    #",
+                "#  ##D#     #",
+                "   #        #",
+                "####        #",
+                "#           #",
+                "#           #",
                 "#           #",
                 "#############"
             ]

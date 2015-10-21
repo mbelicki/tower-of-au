@@ -97,6 +97,16 @@ region_t *generate_random_region(random_t *random) {
     return new region_t(levels, width, height);
 }
 
+static feature_type_t feature_from_string(const char *type) {
+    if (type == nullptr) return FEAT_NONE;
+    if (strncmp(type, "FEAT_DOOR", 9) == 0) {
+        return FEAT_DOOR;
+    } else if (strncmp(type, "FEAT_BUTTON", 11) == 0) {
+        return FEAT_BUTTON;
+    }
+    return FEAT_NONE;
+}
+
 static object_type_t object_from_string(const char *type) {
     if (type == nullptr) return OBJ_NONE;
     if (strncmp(type, "OBJ_NPC_GRUNT", 9) == 0) {
@@ -104,7 +114,6 @@ static object_type_t object_from_string(const char *type) {
     } else if (strncmp(type, "OBJ_BOULDER", 11) == 0) {
         return OBJ_BOULDER;
     }
-
     return OBJ_NONE;
 }
 
@@ -128,11 +137,19 @@ static tile_t parse_tile(JSON_Object *tile) {
     }
     if (json_object_get_value(tile, "object") != nullptr) {
         const char *type = json_object_get_string(tile, "object");
-        puts("checkin' object");
         result.spawned_object = object_from_string(type);
+    }
+    if (json_object_get_value(tile, "feature") != nullptr) {
+        const char *type = json_object_get_string(tile, "feature");
+        result.feature = feature_from_string(type);
     }
     if (json_object_get_value(tile, "spawnRate") != nullptr) {
         result.spawn_probablity = json_object_dotget_number(tile, "spawnRate");
+    }
+    if (json_object_get_value(tile, "target") != nullptr) {
+        const size_t x = json_object_dotget_number(tile, "target.x");
+        const size_t y = json_object_dotget_number(tile, "target.y");
+        result.feat_target_id = x + 13 * y;
     }
     
     return result;
