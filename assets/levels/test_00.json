@@ -95,12 +95,20 @@
         {
             "tiles": [
                 {
-                    "symbol" : "T",
+                    "symbol" : "1",
                     "walkable" : true,
                     "mesh" : "floor.obj",
                     "feature" : "FEAT_BUTTON",
                     "spawnRate" : 1.0,
                     "target" : { "x" : 5, "y" : 4}
+                },
+                {
+                    "symbol" : "2",
+                    "walkable" : true,
+                    "mesh" : "floor.obj",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 11, "y" : 7}
                 },
                 {
                     "symbol" : "D",
@@ -112,15 +120,15 @@
             ],
             "data": [
                 "#############",
-                "#  # T #    #",
+                "#  # 1 #    #",
                 "#  BB  #    #",
-                "# B   ##    #",
-                "#  ##D#     #",
-                "   #        #",
+                "# B   #####B#",
+                "#  ##D#   # #",
+                "   #  B # # #",
+                "#####BB   # #",
+                "####  ## ##D#",
                 "####        #",
-                "#           #",
-                "#           #",
-                "#           #",
+                "#####   2   #",
                 "#############"
             ]
         }
