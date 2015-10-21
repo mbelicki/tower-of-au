@@ -1,3 +1,6 @@
 [submodule "warp"]
 	path = warp
 	url = https://github.com/mbelicki/warp
+[submodule "libs/parson"]
+	path = libs/parson
+	url = https://github.com/kgabis/parson

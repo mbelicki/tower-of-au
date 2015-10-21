@@ -48,6 +48,8 @@ set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR})
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_LIB_DIR libs)
 
+set(PARSON_SOURCES "${PROJECT_LIB_DIR}/parson/parson.c")
+add_library(parson STATIC ${PARSON_SOURCES})
 
 file(GLOB SOURCES *.cpp)
 
@@ -59,6 +61,7 @@ add_subdirectory(warp)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} warp)
+target_link_libraries(${PROJECT_NAME} parson)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 

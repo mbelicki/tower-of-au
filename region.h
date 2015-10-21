@@ -36,3 +36,4 @@ class region_t {
 };
 
 region_t *generate_random_region(random_t *random);
+warp::maybe_t<region_t *> load_region(const char* path);

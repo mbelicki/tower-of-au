@@ -39,7 +39,15 @@ void level_transition_t::initialize_state
         printf("%s\n", reset_result.get_message().c_str());
     }
 
-    region_t *region = generate_random_region(nullptr);
+    region_t *region;
+    maybe_t<region_t *> maybe_region
+        = load_region("./assets/levels/test_00.json");
+    if (maybe_region.failed()) {
+        printf("%s\n", maybe_region.get_message().c_str());
+        region = generate_random_region(nullptr);
+    } else {
+        region = VALUE(maybe_region);
+    }
     region->initialize(world);
 
     create_core(world, region);

@@ -1,0 +1,66 @@
+{
+    "tiles" : [
+        {
+            "symbol" : "#",
+            "walkable" : false,
+            "mesh" : "wall.obj"
+        },
+        {
+            "symbol" : " ",
+            "walkable" : true,
+            "mesh" : "floor.obj"
+        }
+    ],
+    "width" : 2,
+    "height" : 1,
+    "levels" : [
+        {
+            "tiles": [
+                {
+                    "symbol" : "E",
+                    "walkable" : true,
+                    "mesh" : "floor.obj",
+                    "object" : "OBJ_NPC_GRUNT",
+                    "spawnRate" : 0.8
+                }
+            ],
+            "data": [
+                "#############",
+                "#           #",
+                "# ##     ## #",
+                "#  E  #  E  #",
+                "#            ",
+                "#    # #    #",
+                "#            ",
+                "#  E  #  E  #",
+                "# ##     ## #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [
+                {
+                    "symbol" : "B",
+                    "walkable" : true,
+                    "mesh" : "floor.obj",
+                    "object" : "OBJ_BOULDER",
+                    "spawnRate" : 1.0
+                }
+            ],
+            "data": [
+                "#############",
+                "#           #",
+                "# #       # #",
+                "#  B     B# #",
+                "            #",
+                "#           #",
+                "            #",
+                "#  B     B# #",
+                "# #       # #",
+                "#           #",
+                "#############"
+            ]
+        }
+    ]
+}
