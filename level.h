@@ -34,6 +34,7 @@ struct tile_t {
 
     feature_type_t feature;
     size_t feat_target_id;
+    size_t portal_id;
 };
 
 class level_t {

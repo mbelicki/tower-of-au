@@ -377,7 +377,13 @@ class core_controller_t final : public controller_impl_i {
                 } else {
                     _level->get_tile_at(x, z)
                             .with_value([this](const tile_t *tile) {
-                        if (tile->is_stairs) this->change_region();
+                        if (tile->is_stairs) { 
+                            maybe_t<const portal_t *> portal
+                                = _region->get_portal(tile->portal_id);
+                            if (portal.has_value()) {
+                                change_region(VALUE(portal));
+                            }
+                        }
                     });
                 }
             } else if (is_idle(_player)) {
@@ -436,19 +442,13 @@ class core_controller_t final : public controller_impl_i {
             }
         }
 
-        void change_region() {
-            remove_objects_and_feateures();
+        void change_region(const portal_t *portal) {
+            if (portal == nullptr) return;
 
-            std::vector<entity_t *> buffer;
-            _world->find_all_entities("level", &buffer);
-            for (entity_t *level : buffer) {
-                _world->destroy_later(level);
-            }
-
-            delete _region;
-
-            _region = generate_random_region(&_random);
-            change_level(0, 0);
+            //load_region(portal->region_name)
+            //        .with_value([this, portal](region_t *region) {
+            //    
+            //});
         }
         
         void start_level_change(size_t x, size_t z) {
@@ -467,10 +467,8 @@ class core_controller_t final : public controller_impl_i {
             if (maybe_level.failed()) return;
 
             _level = VALUE(maybe_level);
-            //_region->change_display_positions(x, z);
             
             remove_objects_and_feateures();
-            //spawn_objects(*_level, _objects, _features, _world, &_random);
 
             const int dx = x - _level_x;
             const int dz = z - _level_z;

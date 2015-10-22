@@ -3,6 +3,8 @@
 #include <cstring> /* memmove */
 #include <map>
 
+#include "warp/io.h"
+
 #include "libs/parson/parson.h"
 
 #include "level.h"
@@ -14,7 +16,8 @@ region_t::region_t(level_t **levels, size_t width, size_t height)
         : _initialized(false)
         , _width(width)
         , _height(height)
-        , _levels(nullptr) {
+        , _levels(nullptr)
+        , _portals_count(0) {
     const size_t tiles_count = _width * _height;
     _levels = new (std::nothrow) level_t * [tiles_count];
     memmove(_levels, levels, tiles_count * sizeof (level_t *));
@@ -22,6 +25,9 @@ region_t::region_t(level_t **levels, size_t width, size_t height)
 
 region_t::~region_t() {
     delete [] _levels;
+    for (size_t i = 0; i < _portals_count; i++) {
+        delete [] _portals[i].region_name;
+    }
 }
 
 maybeunit_t region_t::initialize(world_t *world) {
@@ -34,6 +40,38 @@ maybeunit_t region_t::initialize(world_t *world) {
         }
     }
     return unit;
+}
+
+maybeunit_t region_t::add_portal
+            ( const char *region_name, size_t level_x, size_t level_z
+            , size_t tile_x, size_t tile_z
+            ) {
+    if (_portals_count == MAX_PORTAL_COUNT) {
+        return nothing<unit_t>("Already full.");
+    }
+    
+    portal_t portal;
+
+    const size_t name_size = strnlen(region_name, 256);
+    char *name_buffer = new char[name_size];
+    strncmp(name_buffer, region_name, name_size);
+    portal.region_name = name_buffer;
+    portal.level_x = level_x;
+    portal.level_z = level_z;
+    portal.tile_x = tile_x;
+    portal.tile_z = tile_z;
+
+    _portals[_portals_count] = portal;
+    _portals_count++;
+
+    return unit;
+}
+
+maybe_t<const portal_t *> region_t::get_portal(size_t id) {
+    if (id >= _portals_count) {
+        return nothing<const portal_t *>("Unknown id.");
+    }
+    return _portals + id;
 }
 
 void region_t::animate_transition
@@ -135,6 +173,9 @@ static tile_t parse_tile(JSON_Object *tile) {
     if (json_object_get_value(tile, "walkable") != nullptr) {
         result.is_walkable = json_object_get_boolean(tile, "walkable");
     }
+    if (json_object_get_value(tile, "stairs") != nullptr) {
+        result.is_stairs = json_object_get_boolean(tile, "stairs");
+    }
     if (json_object_get_value(tile, "object") != nullptr) {
         const char *type = json_object_get_string(tile, "object");
         result.spawned_object = object_from_string(type);
@@ -150,6 +191,9 @@ static tile_t parse_tile(JSON_Object *tile) {
         const size_t x = json_object_dotget_number(tile, "target.x");
         const size_t y = json_object_dotget_number(tile, "target.y");
         result.feat_target_id = x + 13 * y;
+    }
+    if (json_object_get_value(tile, "portalId") != nullptr) {
+        result.portal_id = json_object_dotget_number(tile, "portalId");
     }
     
     return result;
@@ -217,7 +261,28 @@ static void parse_level
     *parsed = new level_t(tiles, width, height);
 }
 
-maybe_t<region_t *> load_region(const char *path) {
+static void add_portals(region_t *region, JSON_Array *portals) {
+    if (portals == nullptr) return;
+
+    const size_t count = json_array_get_count(portals);
+    for (size_t i = 0; i < count; i++) {
+        JSON_Object *portal = json_array_get_object(portals, i);
+
+        const char *name = json_object_get_string(portal, "region");
+        const size_t level_x = json_object_dotget_number(portal, "level.x");
+        const size_t level_z = json_object_dotget_number(portal, "level.x");
+        const size_t tile_x = json_object_dotget_number(portal, "tile.x");
+        const size_t tile_z = json_object_dotget_number(portal, "tile.x");
+
+        region->add_portal(name, level_x, level_z, tile_x, tile_z);
+    }
+}
+
+maybe_t<region_t *> load_region(const char *name) {
+    char path[1024]; 
+    maybeunit_t path_found = find_path(name, "assets/levels", path, 1024);
+    MAYBE_RETURN(path_found, region_t *, "Failed to find region path:");
+
     const JSON_Value *root_value = json_parse_file(path);
     if (json_value_get_type(root_value) != JSONObject) {
         return nothing<region_t *>
@@ -247,7 +312,10 @@ maybe_t<region_t *> load_region(const char *path) {
 
     region_t *region = new region_t(parsed_levels, width, height);
     delete parsed_levels;
-
+    
+    JSON_Array *portals = json_object_dotget_array(root, "portals");
+    add_portals(region, portals);
+    
     return region;
 }
 

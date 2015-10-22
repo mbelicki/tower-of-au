@@ -40,8 +40,7 @@ void level_transition_t::initialize_state
     }
 
     region_t *region;
-    maybe_t<region_t *> maybe_region
-        = load_region("./assets/levels/test_00.json");
+    maybe_t<region_t *> maybe_region = load_region("test_00.json");
     if (maybe_region.failed()) {
         printf("%s\n", maybe_region.get_message().c_str());
         region = generate_random_region(nullptr);
