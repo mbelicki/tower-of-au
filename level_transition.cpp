@@ -1,13 +1,14 @@
 #include "level_transition.h"
 
+#include "warp/world.h"
+#include "warp/cameras.h"
+#include "warp/camera.h"
+
 #include "level.h"
 #include "region.h"
 #include "core.h"
 #include "input_controller.h"
-
-#include "warp/world.h"
-#include "warp/cameras.h"
-#include "warp/camera.h"
+#include "persitence.h"
 
 using namespace warp;
 
@@ -26,8 +27,8 @@ static maybeunit_t reset_camera(world_t *world) {
     return unit;
 }
 
-bool level_transition_t::is_entity_kept(const entity_t *) const {
-    return false;
+bool level_transition_t::is_entity_kept(const entity_t *entity) const {
+    return entity->get_tag() == "region_data";
 }
 
 void level_transition_t::initialize_state
@@ -39,8 +40,18 @@ void level_transition_t::initialize_state
         printf("%s\n", reset_result.get_message().c_str());
     }
 
+    const portal_t *portal = nullptr;
+    entity_t *region_data = world->find_entity("region_data");
+    if (region_data != nullptr) {
+        region_data->get_property("portal")
+                .get_pointer().with_value([&portal](void *ptr) {
+            portal = (const portal_t *) ptr;
+        });
+    } 
+
     region_t *region;
-    maybe_t<region_t *> maybe_region = load_region("test_00.json");
+    maybe_t<region_t *> maybe_region
+        = load_region(portal == nullptr ? "test_00.json" : portal->region_name);
     if (maybe_region.failed()) {
         printf("%s\n", maybe_region.get_message().c_str());
         region = generate_random_region(nullptr);

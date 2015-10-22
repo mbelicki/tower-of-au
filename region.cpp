@@ -54,7 +54,7 @@ maybeunit_t region_t::add_portal
 
     const size_t name_size = strnlen(region_name, 256);
     char *name_buffer = new char[name_size];
-    strncmp(name_buffer, region_name, name_size);
+    strncpy(name_buffer, region_name, name_size + 1);
     portal.region_name = name_buffer;
     portal.level_x = level_x;
     portal.level_z = level_z;

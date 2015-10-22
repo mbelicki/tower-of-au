@@ -16,6 +16,7 @@
 #include "character.h"
 #include "features.h"
 #include "bullets.h"
+#include "persitence.h"
 
 using namespace warp;
 
@@ -444,11 +445,9 @@ class core_controller_t final : public controller_impl_i {
 
         void change_region(const portal_t *portal) {
             if (portal == nullptr) return;
-
-            //load_region(portal->region_name)
-            //        .with_value([this, portal](region_t *region) {
-            //    
-            //});
+            
+            create_region_token(_world, portal);
+            _world->request_state_change("level", 1.0f);
         }
         
         void start_level_change(size_t x, size_t z) {

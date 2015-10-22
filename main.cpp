@@ -45,7 +45,7 @@ static int initialize_and_run() {
 
     warp::statemanager_t states = {"level"};
     states.insert_transition(START_STATE, "level", start_level, false);
-    states.insert_transition(END_STATE, "level", start_level, false);
+    states.insert_transition("level", "level", start_level, false);
     //states.insert_transition("level", END_STATE, end_level, false);
 
     warp::game_config_t config;
