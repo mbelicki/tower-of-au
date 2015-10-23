@@ -40,26 +40,23 @@ void level_transition_t::initialize_state
         printf("%s\n", reset_result.get_message().c_str());
     }
 
-    const portal_t *portal = nullptr;
+    portal_t default_portal;
+    default_portal.region_name = "test_00.json";
+    default_portal.level_x = 0;
+    default_portal.level_z = 0;
+    default_portal.tile_x = 6;
+    default_portal.tile_z = 5;
+
+    const portal_t *portal = &default_portal;
     entity_t *region_data = world->find_entity("region_data");
     if (region_data != nullptr) {
         region_data->get_property("portal")
                 .get_pointer().with_value([&portal](void *ptr) {
             portal = (const portal_t *) ptr;
         });
-    } 
-
-    region_t *region;
-    maybe_t<region_t *> maybe_region
-        = load_region(portal == nullptr ? "test_00.json" : portal->region_name);
-    if (maybe_region.failed()) {
-        printf("%s\n", maybe_region.get_message().c_str());
-        region = generate_random_region(nullptr);
-    } else {
-        region = VALUE(maybe_region);
     }
-    region->initialize(world);
 
-    create_core(world, region);
+
+    create_core(world, portal);
     create_input_controller(world);
 }

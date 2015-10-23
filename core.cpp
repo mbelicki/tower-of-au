@@ -261,21 +261,25 @@ static void spawn_objects
 
 class core_controller_t final : public controller_impl_i {
     public:
-        core_controller_t(region_t *initial_region)
-            : _owner(nullptr)
-            , _world(nullptr)
-            , _region(initial_region)
-            , _level(nullptr)
-            , _level_x(0), _level_z(0)
-            , _bullets(nullptr)
-            , _player()
-            , _objects(nullptr)
-            , _features(nullptr)
-            , _tiles_count(0)
-            , _random()
-            , _state(CSTATE_LEVEL)
-            , _transition_timer(0)
-        { }
+        core_controller_t(const portal_t *start)
+                : _owner(nullptr)
+                , _world(nullptr)
+                , _portal(*start)
+                , _level(nullptr)
+                , _level_x(0), _level_z(0)
+                , _bullets(nullptr)
+                , _player()
+                , _objects(nullptr)
+                , _features(nullptr)
+                , _tiles_count(0)
+                , _random()
+                , _state(CSTATE_LEVEL)
+                , _transition_timer(0) {
+            const size_t name_size = strnlen(start->region_name, 256);
+            char *name_buffer = new char[name_size];
+            strncpy(name_buffer, start->region_name, name_size + 1);
+            _portal.region_name = name_buffer;
+        }
 
         ~core_controller_t() {
             for (size_t i = 0; i < _tiles_count; i++) {
@@ -286,6 +290,8 @@ class core_controller_t final : public controller_impl_i {
             delete _features;
 
             delete _bullets;
+
+            delete [] _portal.region_name;
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -299,8 +305,11 @@ class core_controller_t final : public controller_impl_i {
             _bullets = new bullet_factory_t(world);
             _bullets->initialize();
 
-            _level_x = 0;
-            _level_z = 0;
+            _region = VALUE(load_region(_portal.region_name));
+            _region->initialize(_world);
+
+            _level_x = _portal.level_x;
+            _level_z = _portal.level_z;
             _level = VALUE(_region->get_level_at(_level_x, _level_z));
 
 
@@ -312,7 +321,7 @@ class core_controller_t final : public controller_impl_i {
 
             spawn_objects(*_level, _objects, _features, world, &_random);
 
-            initialize_player(&_player, vec3(6, 0, 5), _world);
+            initialize_player(&_player, vec3(_portal.tile_x, 0, _portal.tile_z), _world);
         }
 
         void update(float dt, const input_t &) override { 
@@ -403,6 +412,7 @@ class core_controller_t final : public controller_impl_i {
         entity_t *_owner;
         world_t *_world;
 
+        portal_t _portal;
         region_t *_region;
         level_t *_level;
         size_t _level_x;
@@ -781,13 +791,13 @@ class core_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<entity_t *> create_core(world_t *world, region_t *region) {
-    if (region == nullptr) {
+extern maybe_t<entity_t *> create_core(world_t *world, const portal_t *start) {
+    if (start == nullptr) {
         return nothing<entity_t *>("Region is null.");
     }
 
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new core_controller_t(region));
+    controller->initialize(new core_controller_t(start));
 
     entity_t *entity = world->create_entity(vec3(0, 0, 0), nullptr, nullptr, controller);
 
