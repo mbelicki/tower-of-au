@@ -305,11 +305,13 @@ class core_controller_t final : public controller_impl_i {
             _bullets = new bullet_factory_t(world);
             _bullets->initialize();
 
-            _region = VALUE(load_region(_portal.region_name));
-            _region->initialize(_world);
-
             _level_x = _portal.level_x;
             _level_z = _portal.level_z;
+
+            _region = VALUE(load_region(_portal.region_name));
+            _region->initialize(_world);
+            _region->change_display_positions(_level_x, _level_z);
+
             _level = VALUE(_region->get_level_at(_level_x, _level_z));
 
 

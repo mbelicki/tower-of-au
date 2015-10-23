@@ -270,9 +270,9 @@ static void add_portals(region_t *region, JSON_Array *portals) {
 
         const char *name = json_object_get_string(portal, "region");
         const size_t level_x = json_object_dotget_number(portal, "level.x");
-        const size_t level_z = json_object_dotget_number(portal, "level.x");
+        const size_t level_z = json_object_dotget_number(portal, "level.y");
         const size_t tile_x = json_object_dotget_number(portal, "tile.x");
-        const size_t tile_z = json_object_dotget_number(portal, "tile.x");
+        const size_t tile_z = json_object_dotget_number(portal, "tile.y");
 
         region->add_portal(name, level_x, level_z, tile_x, tile_z);
     }
