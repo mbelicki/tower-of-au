@@ -25,6 +25,9 @@ enum core_msgs_t : unsigned int {
 
     CORE_FEAT_STATE_CHANGE,
     CORE_BULLET_HIT,
+
+    CORE_SHOW_KNOWN_TEXT,
+    CORE_SHOW_TAG_TEXT,
 };
 
 enum move_dir_t : int {
@@ -33,6 +36,10 @@ enum move_dir_t : int {
     MOVE_DOWN,
     MOVE_LEFT,
     MOVE_RIGHT,
+};
+
+enum known_text_t : int {
+    TEXT_GAME_OVER = 0,
 };
 
 static inline bool operator==

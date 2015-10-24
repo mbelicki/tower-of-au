@@ -9,6 +9,7 @@
 #include "core.h"
 #include "input_controller.h"
 #include "persitence.h"
+#include "text-label.h"
 
 using namespace warp;
 
@@ -40,6 +41,16 @@ void level_transition_t::initialize_state
         printf("%s\n", reset_result.get_message().c_str());
     }
 
+    get_default_font(world->get_resources())
+            .with_value([world](font_t *font) {
+        create_label(world, *font, LABEL_POS_TOP | LABEL_POS_LEFT)
+                .with_value([](entity_t *e){
+            e->set_tag("hello_label");
+            e->receive_message(CORE_SHOW_TAG_TEXT, tag_t("hello"));
+        });
+    });
+    
+
     portal_t default_portal;
     default_portal.region_name = "test_00.json";
     default_portal.level_x = 0;
@@ -55,7 +66,6 @@ void level_transition_t::initialize_state
             portal = (const portal_t *) ptr;
         });
     }
-
 
     create_core(world, portal);
     create_input_controller(world);
