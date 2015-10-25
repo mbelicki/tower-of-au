@@ -21,6 +21,7 @@
 using namespace warp;
 
 static const float LEVEL_TRANSITION_TIME = 1.0f;
+static const int PLAYER_MAX_HP = 3;
 
 enum core_state_t {
     CSTATE_LEVEL = 0,
@@ -210,7 +211,7 @@ static void initialize_player
     player->entity->set_tag("player");
     player->position = start_position;
     player->direction = DIR_Z_MINUS;
-    player->health = 2;
+    player->health = PLAYER_MAX_HP;
     player->can_shoot = true;
 }
 
@@ -324,6 +325,7 @@ class core_controller_t final : public controller_impl_i {
             spawn_objects(*_level, _objects, _features, world, &_random);
 
             initialize_player(&_player, vec3(_portal.tile_x, 0, _portal.tile_z), _world);
+            update_player_health_display();
         }
 
         void update(float dt, const input_t &) override { 
@@ -433,6 +435,16 @@ class core_controller_t final : public controller_impl_i {
 
         core_state_t _state;
         float _transition_timer;
+
+        void update_player_health_display() {
+            entity_t *hp_label = _world->find_entity("health_label");
+            char buffer[PLAYER_MAX_HP + 1];
+            for (size_t i = 0; i < PLAYER_MAX_HP; i++) {
+                buffer[i] = (int)i < _player.health ? '#' : '$';
+            }
+            buffer[PLAYER_MAX_HP] = '\0';
+            hp_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
+        }
 
         void remove_objects_and_feateures() {
             std::vector<entity_t *> buffer;
@@ -610,6 +622,7 @@ class core_controller_t final : public controller_impl_i {
         bool hurt_character(object_t *target, int damage) {
             if (target == nullptr || damage < 0) return false;
             const int health_left = target->health - damage;
+            target->health = health_left;
             if (health_left <= 0) {
                 const size_t x = round(target->position.x);
                 const size_t z = round(target->position.z);
@@ -620,10 +633,13 @@ class core_controller_t final : public controller_impl_i {
 
                 if (target != &_player) delete target;
             } else {
-                target->health = health_left;
                 if (target->type != OBJ_BOULDER) {
                     target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
                 }
+            }
+            
+            if (target == &_player) {
+                update_player_health_display();
             }
 
             return health_left > 0;
