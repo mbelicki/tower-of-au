@@ -33,9 +33,8 @@ extern maybe_t<font_t *> get_default_font(const resources_t &res) {
 class label_controller_t final : public controller_impl_i {
     public:
         label_controller_t
-            ( const font_t &font, float height
-            , font_origin_pos_t anchor
-            ) : _font(font)
+            (const font_t &font, float height, font_origin_pos_t anchor)
+              : _font(font)
               , _anchor(anchor)
               , _height(height)
               , _mesh_id(0)
@@ -117,7 +116,7 @@ class label_controller_t final : public controller_impl_i {
 
             model_t *model = new model_t; /* TODO: oh hello, memory leaks */
             model->initialize(_mesh_id, _font.get_texture_id());
-
+            
             float rot_z[16]; mat4_fill_rotation_z(rot_z, PI * 0.5f);
             float rot_y[16]; mat4_fill_rotation_y(rot_y, PI * 0.5f);
             float transforms[16]; mat4_mul(transforms, rot_y, rot_z);
@@ -153,6 +152,10 @@ static vec3_t get_position
     vec3_t position = vec3(0, 0, 0);
     *origin = FONT_CENTER;
 
+    if ((flags & LABEL_PASS_MAIN) != 0) {
+        return position;
+    }
+
     if ((flags & LABEL_POS_TOP) != 0) {
         position.y += 350;
         *origin = FONT_TOP_LEFT;
@@ -176,11 +179,16 @@ static vec3_t get_position
 extern maybe_t<entity_t *> create_label
         (world_t *world, const font_t &font, label_flags_t flags) {
     font_origin_pos_t origin = FONT_CENTER;
-    const float size = (flags & LABEL_LARGE) != 0 ? 64 : 32;
+    float size = (flags & LABEL_LARGE) != 0 ? 64 : 32;
+    if ((flags & LABEL_PASS_MAIN) != 0) {
+        size /= 64 * 1.7f;
+    }
+
     const vec3_t position = get_position(flags, &origin, size);
 
     graphics_comp_t *graphics = world->create_graphics();
-    graphics->set_pass_tag("ui");
+    const tag_t pass = (flags & LABEL_PASS_MAIN) != 0 ? "main" : "ui";
+    graphics->set_pass_tag(pass);
 
     controller_comp_t *controller = world->create_controller();
     

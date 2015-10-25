@@ -43,10 +43,10 @@ void level_transition_t::initialize_state
 
     get_default_font(world->get_resources())
             .with_value([world](font_t *font) {
-        create_label(world, *font, LABEL_POS_TOP | LABEL_POS_LEFT)
+        create_label(world, *font, LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP)
                 .with_value([](entity_t *e){
-            e->set_tag("hello_label");
-            e->receive_message(CORE_SHOW_TAG_TEXT, tag_t("hello"));
+            e->set_tag("health_label");
+            e->receive_message(CORE_SHOW_TAG_TEXT, tag_t("###"));
         });
     });
     

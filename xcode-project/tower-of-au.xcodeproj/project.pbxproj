@@ -37,6 +37,8 @@
 		616FFC2A1BDADAD000AA3C60 /* test_01.json in Resources */ = {isa = PBXBuildFile; fileRef = 616FFC281BDADAD000AA3C60 /* test_01.json */; settings = {ASSET_TAGS = (); }; };
 		616FFC2E1BDADB6500AA3C60 /* parson.c in Sources */ = {isa = PBXBuildFile; fileRef = 616FFC2C1BDADB6500AA3C60 /* parson.c */; settings = {ASSET_TAGS = (); }; };
 		616FFC311BDADC5E00AA3C60 /* persitence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 616FFC2F1BDADC5E00AA3C60 /* persitence.cpp */; settings = {ASSET_TAGS = (); }; };
+		61E8976F1BDBDA7000C3ABE0 /* font.png in Resources */ = {isa = PBXBuildFile; fileRef = 61E8976E1BDBDA7000C3ABE0 /* font.png */; settings = {ASSET_TAGS = (); }; };
+		61E897731BDBDA7E00C3ABE0 /* text-label.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61E897711BDBDA7E00C3ABE0 /* text-label.cpp */; settings = {ASSET_TAGS = (); }; };
 		61F98E001BCD96EB00EEF945 /* features.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61F98DFE1BCD96EB00EEF945 /* features.cpp */; settings = {ASSET_TAGS = (); }; };
 		61F98E051BCD970300EEF945 /* boulder.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E021BCD970300EEF945 /* boulder.obj */; settings = {ASSET_TAGS = (); }; };
 		61F98E061BCD970300EEF945 /* button.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E031BCD970300EEF945 /* button.obj */; settings = {ASSET_TAGS = (); }; };
@@ -98,6 +100,9 @@
 		616FFC2D1BDADB6500AA3C60 /* parson.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = parson.h; sourceTree = "<group>"; };
 		616FFC2F1BDADC5E00AA3C60 /* persitence.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = persitence.cpp; sourceTree = "<group>"; };
 		616FFC301BDADC5E00AA3C60 /* persitence.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = persitence.h; sourceTree = "<group>"; };
+		61E8976E1BDBDA7000C3ABE0 /* font.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = font.png; sourceTree = "<group>"; };
+		61E897711BDBDA7E00C3ABE0 /* text-label.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "text-label.cpp"; sourceTree = "<group>"; };
+		61E897721BDBDA7E00C3ABE0 /* text-label.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "text-label.h"; sourceTree = "<group>"; };
 		61F98DFE1BCD96EB00EEF945 /* features.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = features.cpp; sourceTree = "<group>"; };
 		61F98DFF1BCD96EB00EEF945 /* features.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = features.h; sourceTree = "<group>"; };
 		61F98E021BCD970300EEF945 /* boulder.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = boulder.obj; sourceTree = "<group>"; };
@@ -168,6 +173,8 @@
 		6154D8881BBC66C800B4D95B /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				61E897711BDBDA7E00C3ABE0 /* text-label.cpp */,
+				61E897721BDBDA7E00C3ABE0 /* text-label.h */,
 				616FFC2F1BDADC5E00AA3C60 /* persitence.cpp */,
 				616FFC301BDADC5E00AA3C60 /* persitence.h */,
 				61F98E0F1BD2F6EA00EEF945 /* region.cpp */,
@@ -245,6 +252,7 @@
 		6154D8DD1BBC6B4A00B4D95B /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				61E8976E1BDBDA7000C3ABE0 /* font.png */,
 				61F98E0D1BCEE58D00EEF945 /* button.png */,
 				6154D8DF1BBC6B6D00B4D95B /* missing.png */,
 			);
@@ -368,6 +376,7 @@
 				616FFC291BDADAD000AA3C60 /* test_00.json in Resources */,
 				6154D8E81BBC6B7B00B4D95B /* wall.obj in Resources */,
 				61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */,
+				61E8976F1BDBDA7000C3ABE0 /* font.png in Resources */,
 				6154D8E71BBC6B7B00B4D95B /* stairs.obj in Resources */,
 				6154D8EA1BBC6C3400B4D95B /* Images.xcassets in Resources */,
 				6154D8E51BBC6B7B00B4D95B /* floor.obj in Resources */,
@@ -394,6 +403,7 @@
 				61F98E111BD2F6EA00EEF945 /* region.cpp in Sources */,
 				616FFC2E1BDADB6500AA3C60 /* parson.c in Sources */,
 				6154D8981BBC66FF00B4D95B /* level_transition.cpp in Sources */,
+				61E897731BDBDA7E00C3ABE0 /* text-label.cpp in Sources */,
 				6154D8991BBC66FF00B4D95B /* level.cpp in Sources */,
 				61F98E0A1BCEE4CF00EEF945 /* bullets.cpp in Sources */,
 			);
