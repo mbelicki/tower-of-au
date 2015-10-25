@@ -46,7 +46,6 @@ void level_transition_t::initialize_state
         create_label(world, *font, LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP)
                 .with_value([](entity_t *e){
             e->set_tag("health_label");
-            e->receive_message(CORE_SHOW_TAG_TEXT, tag_t("###"));
         });
     });
     

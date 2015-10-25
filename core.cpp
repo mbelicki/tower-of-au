@@ -631,7 +631,11 @@ class core_controller_t final : public controller_impl_i {
                 _objects[x + level_width * z] = nullptr;
                 target->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
 
-                if (target != &_player) delete target;
+                if (target != &_player) { 
+                    delete target;
+                } else {
+                    change_region(&_portal);
+                }
             } else {
                 if (target->type != OBJ_BOULDER) {
                     target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
