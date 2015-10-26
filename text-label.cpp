@@ -204,6 +204,127 @@ extern maybe_t<entity_t *> create_label
     return world->create_entity(position, graphics, nullptr, controller);
 }
 
+/* TODO: move outside this module */
+
+enum shrink_state_t {
+    SHRINK_GROWING,
+    SHRINK_STABLE,
+    SHRINK_SHRINKING,
+};
+
+class shrink_controller_t final : public controller_impl_i {
+    public:
+        shrink_controller_t()
+            : _owner(nullptr)
+            , _world(nullptr)
+            , _timer(0)
+            , _state(SHRINK_GROWING)
+        { }
+
+        dynval_t get_property(const tag_t &) const override {
+            return dynval_t::make_null();
+        }
+
+        void initialize(entity_t *owner, world_t *world) override {
+            _owner = owner;
+            _world = world;
+
+            change_state(SHRINK_GROWING);
+        }
+
+        void update(float dt, const input_t &) override { 
+            if (_timer <= 0) {
+                if (_state == SHRINK_GROWING) {
+                    change_state(SHRINK_STABLE);
+                } else if (_state == SHRINK_STABLE) {
+                    change_state(SHRINK_SHRINKING);
+                } else if (_state == SHRINK_SHRINKING) {
+                    _world->destroy_later(_owner);
+                } 
+                return;
+            } 
+
+            _timer -= dt;
+            const float t = _timer / get_time_for_state(_state);
+
+            if (_state == SHRINK_SHRINKING) {
+                update_dying(t);
+            } else if (_state == SHRINK_GROWING) {
+                update_rising(t);
+            }
+        }
+
+        bool accepts(messagetype_t) const override { return false; }
+        void handle_message(const message_t &) override { }
+
+    private:
+        entity_t *_owner;
+        world_t *_world;
+        float _timer;
+        shrink_state_t _state;
+
+        void change_state(shrink_state_t state) {
+            _state = state;
+            _timer = get_time_for_state(state);
+        }
+
+        float get_time_for_state(shrink_state_t state) {
+            switch (state) {
+                case SHRINK_GROWING:   return 2.50f;
+                case SHRINK_STABLE:    return 0.25f;
+                case SHRINK_SHRINKING: return 2.00f;
+                default: return 0;
+            }
+        }
+
+        void update_dying(float t) {
+            const float scale = ease_cubic(t);
+            const vec3_t scales = vec3(scale, scale, scale);
+            _owner->receive_message(MSG_PHYSICS_SCALE, scales);
+        }
+
+        void update_rising(float t) {
+            const float scale = ease_elastic(1 - t);
+            const vec3_t scales = vec3(scale, scale, scale);
+            _owner->receive_message(MSG_PHYSICS_SCALE, scales);
+        }
+};
+
+class ballon_controller_t final : public controller_impl_i {
+    public:
+        ballon_controller_t(float velocity, float acceleration)
+            : _owner(nullptr)
+            , _world(nullptr)
+            , _velocity(velocity)
+            , _acceleration(acceleration)
+        { }
+
+        dynval_t get_property(const tag_t &) const override {
+            return dynval_t::make_null();
+        }
+
+        void initialize(entity_t *owner, world_t *world) override {
+            _owner = owner;
+            _world = world;
+        }
+
+        void update(float dt, const input_t &) override { 
+            _velocity += dt * _acceleration;
+            const vec3_t pos
+                = vec3_add(_owner->get_position(), vec3(0, dt * _velocity, 0));
+            _owner->receive_message(MSG_PHYSICS_MOVE, pos);
+        }
+
+        bool accepts(messagetype_t) const override { return false; }
+        void handle_message(const message_t &) override { }
+
+    private:
+        entity_t *_owner;
+        world_t *_world;
+        float _velocity;
+        float _acceleration;
+};
+
 maybe_t<entity_t *> create_speech_bubble
         (world_t *world, const font_t &font, const std::string &text) {
     const label_flags_t flags = LABEL_PASS_MAIN;
@@ -226,6 +347,8 @@ maybe_t<entity_t *> create_speech_bubble
     label_controller_t *label_ctrl
         = new label_controller_t(font, size, origin);
     controller->initialize(label_ctrl);
+    controller->add_controller(new shrink_controller_t);
+    controller->add_controller(new ballon_controller_t(0.05f, 0.3f));
 
     entity_t *entity
         = world->create_entity(position, graphics, nullptr, controller);
