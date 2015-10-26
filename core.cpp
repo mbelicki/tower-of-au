@@ -22,6 +22,7 @@ using namespace warp;
 
 static const float LEVEL_TRANSITION_TIME = 1.0f;
 static const int PLAYER_MAX_HP = 3;
+static const int PLAYER_MAX_AMMO = 16;
 
 enum core_state_t {
     CSTATE_LEVEL = 0,
@@ -36,6 +37,7 @@ struct object_t {
     dir_t direction;
 
     int health;
+    int ammo;
     bool hold;
     bool attacked;
     bool can_shoot;
@@ -195,6 +197,7 @@ static object_t *create_object
     object->position = pos;
     object->direction = dir;
     object->health = 2;
+    object->ammo = 8;
     object->can_shoot = false;
 
     object->entity = VALUE(entity);
@@ -212,6 +215,7 @@ static void initialize_player
     player->position = start_position;
     player->direction = DIR_Z_MINUS;
     player->health = PLAYER_MAX_HP;
+    player->ammo = PLAYER_MAX_AMMO;
     player->can_shoot = true;
 }
 
@@ -326,6 +330,7 @@ class core_controller_t final : public controller_impl_i {
 
             initialize_player(&_player, vec3(_portal.tile_x, 0, _portal.tile_z), _world);
             update_player_health_display();
+            update_player_ammo_display();
         }
 
         void update(float dt, const input_t &) override { 
@@ -404,7 +409,7 @@ class core_controller_t final : public controller_impl_i {
                 if (type == CORE_TRY_MOVE) {
                     const int direction = VALUE(message.data.get_int());
                     handle_move((move_dir_t)direction);
-                } else if (type == CORE_TRY_SHOOT && _player.can_shoot) {
+                } else if (type == CORE_TRY_SHOOT) {
                     const move_dir_t direction
                         = (move_dir_t) VALUE(message.data.get_int());
                     handle_shooting(&_player, get_move_direction(direction));
@@ -443,6 +448,13 @@ class core_controller_t final : public controller_impl_i {
                 buffer[i] = (int)i < _player.health ? '#' : '$';
             }
             buffer[PLAYER_MAX_HP] = '\0';
+            hp_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
+        }
+
+        void update_player_ammo_display() {
+            entity_t *hp_label = _world->find_entity("ammo_label");
+            char buffer[16];
+            snprintf(buffer, 16, "*%2d", _player.ammo);
             hp_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
         }
 
@@ -556,6 +568,7 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_shooting(object_t *shooter, dir_t dir) {
+            if (shooter->can_shoot == false || shooter->ammo <= 0) return;
             const float speed = 4.5f;
 
             const vec3_t d = dir_to_vec3(dir);
@@ -565,6 +578,11 @@ class core_controller_t final : public controller_impl_i {
 
             const vec3_t recoil = vec3_add(shooter->position, vec3_scale(d, -1));
             shooter->entity->receive_message(CORE_DO_BOUNCE, recoil);
+            shooter->ammo -= 1;
+
+            if (shooter == &_player) {
+                update_player_ammo_display();
+            }
         }
 
         void handle_move(move_dir_t direction) {
@@ -755,6 +773,8 @@ class core_controller_t final : public controller_impl_i {
         }
 
         dir_t can_shoot_player(const object_t &npc) {
+            if (npc.can_shoot == false || npc.ammo <= 0) return DIR_NONE;
+
             const float dx = npc.position.x - _player.position.x;
             const float dz = npc.position.z - _player.position.z;
 
@@ -798,8 +818,7 @@ class core_controller_t final : public controller_impl_i {
             dir_t shoot_dir = DIR_NONE;
             if (can_attack_player(*npc)) {
                 handle_attack(&_player, npc);
-            } else if (npc->can_shoot 
-                    && (shoot_dir = can_shoot_player(*npc)) != DIR_NONE) {
+            } else if ((shoot_dir = can_shoot_player(*npc)) != DIR_NONE) {
                 handle_shooting(npc, shoot_dir);               
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));

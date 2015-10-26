@@ -47,6 +47,10 @@ void level_transition_t::initialize_state
                 .with_value([](entity_t *e){
             e->set_tag("health_label");
         });
+        create_label(world, *font, LABEL_LARGE | LABEL_POS_RIGHT | LABEL_POS_TOP)
+                .with_value([](entity_t *e){
+            e->set_tag("ammo_label");
+        });
     });
     
 
