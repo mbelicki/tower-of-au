@@ -355,5 +355,7 @@ maybe_t<entity_t *> create_speech_bubble
 
     label_ctrl->recreate_text_mesh(text);
 
+    entity->receive_message(MSG_PHYSICS_ROTATE, quat_from_euler(0, 0, 0.3f));
+
     return entity;
 }
