@@ -51,6 +51,7 @@ void level_transition_t::initialize_state
                 .with_value([](entity_t *e){
             e->set_tag("ammo_label");
         });
+        create_speech_bubble(world, *font, "hello,\nworld!");
     });
     
 

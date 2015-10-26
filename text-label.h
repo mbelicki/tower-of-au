@@ -31,4 +31,5 @@ warp::maybe_t<warp::font_t *> get_default_font(const warp::resources_t &res);
 warp::maybe_t<warp::entity_t *> create_label
         (warp::world_t *world, const warp::font_t &font, label_flags_t flags);
 
-
+warp::maybe_t<warp::entity_t *> create_speech_bubble
+        (warp::world_t *world, const warp::font_t &font, const std::string &text);

@@ -74,16 +74,6 @@ class label_controller_t final : public controller_impl_i {
             }
         }
 
-    private:
-        world_t  *_world;
-        entity_t *_owner;
-
-        font_t _font;
-        
-        font_origin_pos_t _anchor;
-        float _height;
-        mesh_id_t _mesh_id;
-
         maybeunit_t recreate_text_mesh(const std::string &text) {
             const size_t count = _font.calculate_buffer_size(text);
             std::unique_ptr<vertex_t[]> vertices(new (std::nothrow) vertex_t [count]);
@@ -102,6 +92,17 @@ class label_controller_t final : public controller_impl_i {
 
             return unit;
         }
+
+
+    private:
+        world_t  *_world;
+        entity_t *_owner;
+
+        font_t _font;
+        
+        font_origin_pos_t _anchor;
+        float _height;
+        mesh_id_t _mesh_id;
 
         maybeunit_t add_new_mesh
                 (std::unique_ptr<vertex_t[]> vertices, size_t count) {
@@ -125,7 +126,7 @@ class label_controller_t final : public controller_impl_i {
 
             model->change_local_transforms(final_trans);
 
-            _owner->receive_message(MSG_GRAPHICS_REMOVE_MODELS, 0);
+            //_owner->receive_message(MSG_GRAPHICS_REMOVE_MODELS, 0);
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, model);
 
             const vec3_t pos = _owner->get_position();
@@ -176,14 +177,18 @@ static vec3_t get_position
     return position;
 }
 
+static float get_size(label_flags_t flags) {
+    float size = (flags & LABEL_LARGE) != 0 ? 64 : 32;
+    if ((flags & LABEL_PASS_MAIN) != 0) {
+        size /= 64 * 1.4f;
+    }
+    return size;
+}
+
 extern maybe_t<entity_t *> create_label
         (world_t *world, const font_t &font, label_flags_t flags) {
     font_origin_pos_t origin = FONT_CENTER;
-    float size = (flags & LABEL_LARGE) != 0 ? 64 : 32;
-    if ((flags & LABEL_PASS_MAIN) != 0) {
-        size /= 64 * 1.7f;
-    }
-
+    const float size = get_size(flags);
     const vec3_t position = get_position(flags, &origin, size);
 
     graphics_comp_t *graphics = world->create_graphics();
@@ -197,4 +202,35 @@ extern maybe_t<entity_t *> create_label
     controller->initialize(label_ctrl);
 
     return world->create_entity(position, graphics, nullptr, controller);
+}
+
+maybe_t<entity_t *> create_speech_bubble
+        (world_t *world, const font_t &font, const std::string &text) {
+    const label_flags_t flags = LABEL_PASS_MAIN;
+    font_origin_pos_t origin = FONT_CENTER;
+    const float size = get_size(flags);
+    const vec3_t position = vec3(6, 1, 5);
+
+    graphics_comp_t *graphics = world->create_graphics();
+    meshmanager_t *meshes = world->get_resources().meshes;
+    meshes->add_mesh("speech.obj").with_value([graphics](mesh_id_t id) {
+        float trans[16]; mat4_fill_translation(trans, vec3(0, 0, -0.05f));
+        model_t model;
+        model.initialize(id, 0);
+        model.change_local_transforms(trans);
+        graphics->add_model(model);
+    });
+
+    controller_comp_t *controller = world->create_controller();
+    
+    label_controller_t *label_ctrl
+        = new label_controller_t(font, size, origin);
+    controller->initialize(label_ctrl);
+
+    entity_t *entity
+        = world->create_entity(position, graphics, nullptr, controller);
+
+    label_ctrl->recreate_text_mesh(text);
+
+    return entity;
 }
