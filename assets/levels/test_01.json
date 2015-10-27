@@ -21,7 +21,7 @@
         {
             "region": "test_00.json",
             "level": {"x": 0, "y": 2},
-            "tile": {"x": 1, "y": 1}
+            "tile": {"x": 3, "y": 5}
         }
     ],
     "width" : 1,

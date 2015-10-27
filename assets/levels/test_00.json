@@ -29,6 +29,11 @@
             "region": "test_01.json",
             "level": {"x": 0, "y": 0},
             "tile": {"x": 2, "y": 2}
+        },
+        {
+            "region": "test_01.json",
+            "level": {"x": 0, "y": 0},
+            "tile": {"x": 11, "y": 8}
         }
     ],
     "width" : 2,
@@ -146,7 +151,14 @@
             ]
         },
         {
-            "tiles": [],
+            "tiles": [
+                {
+                    "symbol" : "S",
+                    "stairs" : true,
+                    "mesh" : "stairs.obj",
+                    "portalId": 1
+                }
+            ],
             "data": [
                 "#############",
                 "#           #",

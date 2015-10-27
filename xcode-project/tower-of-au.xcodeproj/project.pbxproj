@@ -39,6 +39,7 @@
 		616FFC311BDADC5E00AA3C60 /* persitence.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 616FFC2F1BDADC5E00AA3C60 /* persitence.cpp */; settings = {ASSET_TAGS = (); }; };
 		61E8976F1BDBDA7000C3ABE0 /* font.png in Resources */ = {isa = PBXBuildFile; fileRef = 61E8976E1BDBDA7000C3ABE0 /* font.png */; settings = {ASSET_TAGS = (); }; };
 		61E897731BDBDA7E00C3ABE0 /* text-label.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61E897711BDBDA7E00C3ABE0 /* text-label.cpp */; settings = {ASSET_TAGS = (); }; };
+		61E897751BE0153B00C3ABE0 /* speech.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61E897741BE0153B00C3ABE0 /* speech.obj */; settings = {ASSET_TAGS = (); }; };
 		61F98E001BCD96EB00EEF945 /* features.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61F98DFE1BCD96EB00EEF945 /* features.cpp */; settings = {ASSET_TAGS = (); }; };
 		61F98E051BCD970300EEF945 /* boulder.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E021BCD970300EEF945 /* boulder.obj */; settings = {ASSET_TAGS = (); }; };
 		61F98E061BCD970300EEF945 /* button.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E031BCD970300EEF945 /* button.obj */; settings = {ASSET_TAGS = (); }; };
@@ -103,6 +104,7 @@
 		61E8976E1BDBDA7000C3ABE0 /* font.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = font.png; sourceTree = "<group>"; };
 		61E897711BDBDA7E00C3ABE0 /* text-label.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "text-label.cpp"; sourceTree = "<group>"; };
 		61E897721BDBDA7E00C3ABE0 /* text-label.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "text-label.h"; sourceTree = "<group>"; };
+		61E897741BE0153B00C3ABE0 /* speech.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = speech.obj; sourceTree = "<group>"; };
 		61F98DFE1BCD96EB00EEF945 /* features.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = features.cpp; sourceTree = "<group>"; };
 		61F98DFF1BCD96EB00EEF945 /* features.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = features.h; sourceTree = "<group>"; };
 		61F98E021BCD970300EEF945 /* boulder.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = boulder.obj; sourceTree = "<group>"; };
@@ -263,6 +265,7 @@
 		6154D8DE1BBC6B5100B4D95B /* Meshes */ = {
 			isa = PBXGroup;
 			children = (
+				61E897741BE0153B00C3ABE0 /* speech.obj */,
 				61F98E0B1BCEE55200EEF945 /* arrow.obj */,
 				61F98E021BCD970300EEF945 /* boulder.obj */,
 				61F98E031BCD970300EEF945 /* button.obj */,
@@ -374,6 +377,7 @@
 				61F98E051BCD970300EEF945 /* boulder.obj in Resources */,
 				6154D8E61BBC6B7B00B4D95B /* npc.obj in Resources */,
 				616FFC291BDADAD000AA3C60 /* test_00.json in Resources */,
+				61E897751BE0153B00C3ABE0 /* speech.obj in Resources */,
 				6154D8E81BBC6B7B00B4D95B /* wall.obj in Resources */,
 				61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */,
 				61E8976F1BDBDA7000C3ABE0 /* font.png in Resources */,
@@ -503,10 +507,11 @@
 				GCC_PREPROCESSOR_DEFINITIONS = IOS;
 				HEADER_SEARCH_PATHS = ./../warp/libs/SDL/include;
 				INFOPLIST_FILE = "tower-of-au/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "belickim.net.tower-of-au";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Debug;
 		};
@@ -519,10 +524,11 @@
 				GCC_PREPROCESSOR_DEFINITIONS = IOS;
 				HEADER_SEARCH_PATHS = ./../warp/libs/SDL/include;
 				INFOPLIST_FILE = "tower-of-au/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "belickim.net.tower-of-au";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 2;
 			};
 			name = Release;
 		};

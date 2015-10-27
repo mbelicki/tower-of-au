@@ -248,8 +248,7 @@ static void parse_level
         tile_t result; fill_default_tile(&result);
         if (local_map.find(symbol) != local_map.end()) {
             result = local_map.at(symbol);
-        }
-        if (global_map.find(symbol) != global_map.end()) {
+        } else if (global_map.find(symbol) != global_map.end()) {
             result = global_map.at(symbol);
         }
         return result;
