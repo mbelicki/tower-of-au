@@ -348,7 +348,7 @@ maybe_t<entity_t *> create_speech_bubble
         = new label_controller_t(font, size, origin);
     controller->initialize(label_ctrl);
     controller->add_controller(new shrink_controller_t);
-    controller->add_controller(new ballon_controller_t(0.05f, 0.3f));
+    controller->add_controller(new ballon_controller_t(0.5f, -0.1f));
 
     entity_t *entity
         = world->create_entity(position, graphics, nullptr, controller);
