@@ -51,9 +51,7 @@ void level_transition_t::initialize_state
                 .with_value([](entity_t *e){
             e->set_tag("ammo_label");
         });
-        create_speech_bubble(world, *font, "hello,\nworld!");
     });
-    
 
     portal_t default_portal;
     default_portal.region_name = "test_00.json";

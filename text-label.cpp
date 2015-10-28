@@ -326,11 +326,12 @@ class ballon_controller_t final : public controller_impl_i {
 };
 
 maybe_t<entity_t *> create_speech_bubble
-        (world_t *world, const font_t &font, const std::string &text) {
+        ( world_t *world, const font_t &font
+        , vec3_t position, const std::string &text
+        ) {
     const label_flags_t flags = LABEL_PASS_MAIN;
     font_origin_pos_t origin = FONT_CENTER;
     const float size = get_size(flags);
-    const vec3_t position = vec3(6, 1, 5);
 
     graphics_comp_t *graphics = world->create_graphics();
     meshmanager_t *meshes = world->get_resources().meshes;

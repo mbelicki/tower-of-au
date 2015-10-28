@@ -17,6 +17,7 @@
 #include "features.h"
 #include "bullets.h"
 #include "persitence.h"
+#include "text-label.h"
 
 using namespace warp;
 
@@ -273,6 +274,7 @@ class core_controller_t final : public controller_impl_i {
                 , _level(nullptr)
                 , _level_x(0), _level_z(0)
                 , _bullets(nullptr)
+                , _font(nullptr)
                 , _player()
                 , _objects(nullptr)
                 , _features(nullptr)
@@ -318,7 +320,11 @@ class core_controller_t final : public controller_impl_i {
             _region->change_display_positions(_level_x, _level_z);
 
             _level = VALUE(_region->get_level_at(_level_x, _level_z));
-
+            
+            get_default_font(world->get_resources())
+                    .with_value([this](font_t *font) {
+                _font = font;
+            });
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
@@ -430,6 +436,7 @@ class core_controller_t final : public controller_impl_i {
         size_t _previous_level_z;
 
         bullet_factory_t *_bullets;
+        font_t *_font;
 
         object_t _player;
         object_t  **_objects;
@@ -610,9 +617,9 @@ class core_controller_t final : public controller_impl_i {
                 (object_t *target, object_t *attacker) {
             if (target == nullptr) return;
 
+            const vec3_t original_position = target->position;
             const int damage = calculate_damage(*target);
             const bool alive = hurt_character(target, damage);
-            const vec3_t original_position = target->position;
             if (alive) {
                 const vec3_t d
                     = attacker == nullptr 
@@ -654,6 +661,11 @@ class core_controller_t final : public controller_impl_i {
                 } else {
                     change_region(&_portal);
                 }
+
+                create_speech_bubble
+                        ( _world, *_font, vec3_add(target->position, vec3(0, 1, 0))
+                        , "ouch!"
+                        );
             } else {
                 if (target->type != OBJ_BOULDER) {
                     target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
