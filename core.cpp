@@ -30,12 +30,22 @@ enum core_state_t {
     CSTATE_TRANSITION,
 };
 
+enum object_flags_t {
+    FOBJ_NONE = 0,
+    FOBJ_NPCMOVE_STILL = 1,
+    FOBJ_NPCMOVE_VLINE = 2,
+    FOBJ_NPCMOVE_HLINE = 4,
+    FOBJ_NPCMOVE_ROAM  = 8,
+};
+
 struct object_t {
     object_type_t type;
     entity_t *entity;
 
     vec3_t position;
     dir_t direction;
+
+    object_flags_t flags;
 
     int health;
     int ammo;
@@ -200,6 +210,7 @@ static object_t *create_object
     object->health = 2;
     object->ammo = 8;
     object->can_shoot = false;
+    object->flags = FOBJ_NONE;
 
     object->entity = VALUE(entity);
     object->entity->set_tag("object");
@@ -220,6 +231,14 @@ static void initialize_player
     player->can_shoot = true;
 }
 
+
+static object_flags_t random_movement_flag(random_t *rand) {
+    const object_flags_t flags[4]
+        = { FOBJ_NPCMOVE_STILL, FOBJ_NPCMOVE_VLINE
+          , FOBJ_NPCMOVE_HLINE, FOBJ_NPCMOVE_ROAM
+          };
+    return flags[rand->uniform_from_range(0, 3)];
+}
 
 static void spawn_objects
         ( const level_t &level
@@ -254,6 +273,7 @@ static void spawn_objects
                     const dir_t dir = directions[random->uniform_from_range(0, 3)];
                     objs[index] = create_object(world, obj_type, dir, i, j);
                     objs[index]->can_shoot = random->boolean(0.2f);
+                    objs[index]->flags = random_movement_flag(random);
                 }
             }
 
