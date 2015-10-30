@@ -4,6 +4,7 @@
 #include "warp/entity.h"
 #include "warp/meshbuilder.h"
 #include "warp/meshmanager.h"
+#include "warp/textures.h"
 #include "warp/components.h"
 
 #include "random.h"
@@ -97,7 +98,7 @@ static maybeunit_t append_tile
 
     const char *mesh_name = tile.is_stairs 
                           ? "stairs.obj" 
-                          : (tile.is_walkable ? "floor.obj" : "wall.obj");
+                          : (tile.is_walkable ? "grass.obj" : "wall.obj");
     const maybe_t<mesh_id_t> maybe_id = meshes->add_mesh(mesh_name);
     MAYBE_RETURN(maybe_id, unit_t, "Failed to get tile mesh:");
 
@@ -110,6 +111,7 @@ static maybeunit_t append_tile
 maybeunit_t level_t::initialize(world_t *world) {
     if (_initialized) return nothing<unit_t>("Already initialized.");
     
+    texturemgr_t *textures = world->get_resources().textures;
     meshmanager_t *meshes = world->get_resources().meshes;
     meshbuilder_t builder;
 
@@ -125,11 +127,14 @@ maybeunit_t level_t::initialize(world_t *world) {
     maybe_t<mesh_id_t> mesh_id = meshes->add_mesh_from_builder(builder);
     MAYBE_RETURN(mesh_id, unit_t, "Failed to create level mesh:");
 
+    maybe_t<mesh_id_t> tex_id = textures->add_texture("grass.png");
+    MAYBE_RETURN(tex_id, unit_t, "Failed to load level texture:");
+
     maybe_t<graphics_comp_t *> graphics = world->create_graphics();
     MAYBE_RETURN(graphics, unit_t, "Failed to create level graphics:");
 
     model_t model;
-    model.initialize(VALUE(mesh_id), 0);
+    model.initialize(VALUE(mesh_id), VALUE(tex_id));
     
     (VALUE(graphics))->add_model(model);
 
