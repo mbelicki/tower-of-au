@@ -8,6 +8,7 @@
 #include "warp/components.h"
 
 #include "random.h"
+#include "region.h"
 
 using namespace warp;
 
@@ -87,6 +88,7 @@ static maybeunit_t append_tile
         , meshmanager_t *meshes
         , const tile_t &tile
         , size_t x, size_t y
+        , const region_t *owner
         ) {
     transforms_t transforms;
     transforms.change_position(vec3(x, 0, y));
@@ -96,9 +98,13 @@ static maybeunit_t append_tile
         transforms.change_rotation(quat_from_euler(0, PI, 0));
     }
 
-    const char *mesh_name = tile.is_stairs 
-                          ? "stairs.obj" 
-                          : (tile.is_walkable ? "grass.obj" : "wall.obj");
+    const tile_graphics_t *graphics
+        = owner->get_tile_graphics(tile.graphics_id);
+    if (graphics == nullptr) {
+        return nothing<unit_t>
+            ("Failed to get tile graphics with id: %s.", tile.graphics_id.get_text());
+    }
+    const char *mesh_name = str_value(graphics->mesh);
     const maybe_t<mesh_id_t> maybe_id = meshes->add_mesh(mesh_name);
     MAYBE_RETURN(maybe_id, unit_t, "Failed to get tile mesh:");
 
@@ -108,7 +114,7 @@ static maybeunit_t append_tile
     return unit;
 }
 
-maybeunit_t level_t::initialize(world_t *world) {
+maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
     if (_initialized) return nothing<unit_t>("Already initialized.");
     
     texturemgr_t *textures = world->get_resources().textures;
@@ -119,7 +125,7 @@ maybeunit_t level_t::initialize(world_t *world) {
         for (size_t j = 0; j < _height; j++) {
             const size_t index = i + _width * j;
             maybeunit_t result
-                = append_tile(&builder, meshes, _tiles[index], i, j);
+                = append_tile(&builder, meshes, _tiles[index], i, j, owner);
             MAYBE_RETURN(result, unit_t, "Failed to append a tile mesh:");
         }
     }

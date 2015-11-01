@@ -332,8 +332,19 @@ class core_controller_t final : public controller_impl_i {
             _level_x = _portal.level_x;
             _level_z = _portal.level_z;
 
-            _region = VALUE(load_region(str_value(_portal.region_name)));
-            _region->initialize(_world);
+            maybe_t<region_t *> region = load_region(str_value(_portal.region_name));
+            if (region.failed()) {
+                printf("Failed to load region: %s", region.get_message().c_str());
+                abort();
+            }
+
+            _region = VALUE(region);
+            maybeunit_t init_result = _region->initialize(_world);
+            if (init_result.failed()) {
+                printf("Failed to initialize region: %s", init_result.get_message().c_str());
+                abort();
+            }
+
             _region->change_display_positions(_level_x, _level_z);
 
             _level = VALUE(_region->get_level_at(_level_x, _level_z));

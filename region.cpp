@@ -46,11 +46,15 @@ region_t::~region_t() {
 }
 
 maybeunit_t region_t::initialize(world_t *world) {
+    if (world == nullptr) return nothing<unit_t>("World is null.");
+
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
             level_t *level = _levels[i + _width * j];
-            if (level->is_initialized() == false)
-                level->initialize(world);
+            if (level->is_initialized() == false) {
+                maybeunit_t result = level->initialize(world, this);
+                MAYBE_RETURN(result, unit_t, "Failed to initialize one of levels:");
+            }
             level->set_display_position(vec3(13 * i, 0, 11 * j));
         }
     }
@@ -212,6 +216,9 @@ static tile_t parse_tile(JSON_Object *tile) {
     if (json_object_get_value(tile, "portalId") != nullptr) {
         result.portal_id = json_object_dotget_number(tile, "portalId");
     }
+    if (json_object_get_value(tile, "graphics") != nullptr) {
+        result.graphics_id = json_object_dotget_string(tile, "graphics");
+    }
     
     return result;
 }
@@ -277,6 +284,21 @@ static void parse_level
     *parsed = new level_t(tiles, width, height);
 }
 
+static void add_graphics(region_t *region, JSON_Array *graphics) {
+    if (graphics == nullptr) return;
+
+    const size_t count = json_array_get_count(graphics);
+    for (size_t i = 0; i < count; i++) {
+        JSON_Object *g = json_array_get_object(graphics, i);
+
+        const char *name = json_object_get_string(g, "name");
+        const char *mesh = json_object_get_string(g, "mesh");
+        const char *texture = json_object_get_string(g, "texture");
+
+        region->add_tile_graphics(name, mesh, texture);
+    }
+}
+
 static void add_portals(region_t *region, JSON_Array *portals) {
     if (portals == nullptr) return;
 
@@ -331,6 +353,9 @@ maybe_t<region_t *> load_region(const char *name) {
     
     JSON_Array *portals = json_object_dotget_array(root, "portals");
     add_portals(region, portals);
+
+    JSON_Array *graphics = json_object_dotget_array(root, "graphics");
+    add_graphics(region, graphics);
     
     return region;
 }

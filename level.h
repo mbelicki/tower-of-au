@@ -39,12 +39,15 @@ struct tile_t {
     warp::tag_t graphics_id;
 };
 
+class region_t;
+
 class level_t {
     public:
         level_t(const tile_t *tiles, size_t width, size_t height);
         ~level_t();
 
-        warp::maybeunit_t initialize(warp::world_t *world);
+        warp::maybeunit_t initialize
+            (warp::world_t *world, const region_t *owner);
         void set_display_position(const warp::vec3_t pos);
         void set_visiblity(bool visible);
 

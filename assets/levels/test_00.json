@@ -42,6 +42,7 @@
             "symbol" : "B",
             "walkable" : true,
             "object" : "OBJ_BOULDER",
+            "graphics" : "floor",
             "spawnRate" : 1.0
         }
     ],

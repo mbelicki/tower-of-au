@@ -1,19 +1,36 @@
 {
+    "graphics" : [
+        {
+            "name" : "floor",
+            "mesh" : "floor.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "wall",
+            "mesh" : "wall.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "stairs",
+            "mesh" : "stairs.obj",
+            "texture" : "wall.png"
+        }
+    ],
     "tiles" : [
         {
             "symbol" : "#",
             "walkable" : false,
-            "mesh" : "wall.obj"
+            "graphics" : "wall"
         },
         {
             "symbol" : " ",
             "walkable" : true,
-            "mesh" : "floor.obj"
+            "graphics" : "floor"
         },
         {
             "symbol" : "S",
             "stairs" : true,
-            "mesh" : "stairs.obj",
+            "graphics" : "stairs",
             "portalId" : 0
         }
     ],
