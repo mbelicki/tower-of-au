@@ -10,6 +10,11 @@
 #include "warp/direction.h"
 #include "warp/entity-helpers.h"
 
+extern "C" {
+    #include "warp/collections/array.h"
+    #include "warp/utils/str.h"
+}
+
 #include "random.h"
 #include "region.h"
 #include "level.h"
@@ -67,6 +72,22 @@ struct feature_t {
     size_t target_id;
     feat_state_t state;
 };
+
+static void destroy_string(void *raw_str) {
+    str_destroy(* (warp_str_t *)raw_str);
+}
+
+/* TODO: move this to file */
+static warp_array_t create_pain_texts() {
+    warp_array_t array = array_create_typed(warp_str_t, 16, destroy_string);
+    array_append_value(warp_str_t, &array, str_create("ouch!"));
+    array_append_value(warp_str_t, &array, str_create("argh!"));
+    array_append_value(warp_str_t, &array, str_create("oww!"));
+    array_append_value(warp_str_t, &array, str_create("au!"));
+    array_append_value(warp_str_t, &array, str_create("uggh!"));
+    array_append_value(warp_str_t, &array, str_create("agh!"));
+    return array;
+}
 
 static dir_t vec3_to_dir(const vec3_t v) {
     const vec3_t absolutes = vec3(fabs(v.x), fabs(v.y), fabs(v.z));
@@ -301,8 +322,10 @@ class core_controller_t final : public controller_impl_i {
                 , _tiles_count(0)
                 , _random()
                 , _state(CSTATE_LEVEL)
-                , _transition_timer(0) {
+                , _transition_timer(0) 
+                , _pain_texts() {
             _portal.region_name = str_copy(start->region_name);
+            _pain_texts = create_pain_texts();
         }
 
         ~core_controller_t() {
@@ -316,6 +339,7 @@ class core_controller_t final : public controller_impl_i {
             delete _bullets;
 
             str_destroy(_portal.region_name);
+            array_destroy(_pain_texts);
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -475,6 +499,8 @@ class core_controller_t final : public controller_impl_i {
 
         core_state_t _state;
         float _transition_timer;
+
+        warp_array_t _pain_texts;
 
         void update_player_health_display() {
             entity_t *hp_label = _world->find_entity("health_label");
@@ -672,6 +698,12 @@ class core_controller_t final : public controller_impl_i {
             }
         }
 
+        const char *get_pain_text() {
+            const int index = _random.uniform_from_range(0, array_get_size(&_pain_texts) - 1);
+            const warp_str_t text = array_get_value(warp_str_t, &_pain_texts, index);
+            return str_value(text);
+        }
+
         bool hurt_character(object_t *target, int damage) {
             if (target == nullptr || damage < 0) return false;
             const int health_left = target->health - damage;
@@ -692,7 +724,7 @@ class core_controller_t final : public controller_impl_i {
 
                 create_speech_bubble
                         ( _world, *_font, vec3_add(target->position, vec3(0, 1, 0))
-                        , "ouch!"
+                        , get_pain_text()
                         );
             } else {
                 if (target->type != OBJ_BOULDER) {
