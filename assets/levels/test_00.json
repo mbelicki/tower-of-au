@@ -1,25 +1,46 @@
 {
+    "graphics" : [
+        {
+            "name" : "grass",
+            "mesh" : "grass.obj",
+            "texture" : "grass.png"
+        },
+        {
+            "name" : "wall",
+            "mesh" : "wall.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "stairs",
+            "mesh" : "stairs.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "floor",
+            "mesh" : "floor.obj",
+            "texture" : "wall.png"
+        }
+    ],
     "tiles" : [
         {
             "symbol" : "#",
             "walkable" : false,
-            "mesh" : "wall.obj"
+            "graphics" : "wall"
         },
         {
             "symbol" : " ",
             "walkable" : true,
-            "mesh" : "floor.obj"
+            "graphics" : "grass"
         },
         {
             "symbol" : "S",
             "stairs" : true,
-            "mesh" : "stairs.obj",
+            "graphics" : "stairs",
             "portalId": 0
         },
         {
             "symbol" : "B",
             "walkable" : true,
-            "mesh" : "floor.obj",
             "object" : "OBJ_BOULDER",
             "spawnRate" : 1.0
         }
@@ -44,7 +65,7 @@
                 {
                     "symbol" : "E",
                     "walkable" : true,
-                    "mesh" : "floor.obj",
+                    "graphics" : "floor",
                     "object" : "OBJ_NPC_GRUNT",
                     "spawnRate" : 0.8
                 }
@@ -84,14 +105,14 @@
                 {
                     "symbol" : "N",
                     "walkable" : true,
-                    "mesh" : "floor.obj",
+                    "graphics" : "floor",
                     "object" : "OBJ_NPC_GRUNT",
                     "spawnRate" : 1.0
                 },
                 {
                     "symbol" : "n",
                     "walkable" : true,
-                    "mesh" : "floor.obj",
+                    "graphics" : "floor",
                     "object" : "OBJ_NPC_GRUNT",
                     "spawnRate" : 0.5
                 }
@@ -115,7 +136,7 @@
                 {
                     "symbol" : "1",
                     "walkable" : true,
-                    "mesh" : "floor.obj",
+                    "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
                     "spawnRate" : 1.0,
                     "target" : { "x" : 5, "y" : 4}
@@ -123,7 +144,7 @@
                 {
                     "symbol" : "2",
                     "walkable" : true,
-                    "mesh" : "floor.obj",
+                    "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
                     "spawnRate" : 1.0,
                     "target" : { "x" : 11, "y" : 7}
@@ -131,7 +152,7 @@
                 {
                     "symbol" : "D",
                     "walkable" : true,
-                    "mesh" : "floor.obj",
+                    "graphics" : "floor",
                     "feature" : "FEAT_DOOR",
                     "spawnRate" : 1.0
                 }
@@ -155,7 +176,7 @@
                 {
                     "symbol" : "S",
                     "stairs" : true,
-                    "mesh" : "stairs.obj",
+                    "graphics" : "stairs",
                     "portalId": 1
                 }
             ],

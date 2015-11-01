@@ -1,7 +1,8 @@
 #pragma once
 
-#include "warp/maybe.h"
+#include "warp/tag.h"
 #include "warp/vec3.h"
+#include "warp/maybe.h"
 #include "warp/direction.h"
 
 #include <functional>
@@ -35,6 +36,7 @@ struct tile_t {
     feature_type_t feature;
     size_t feat_target_id;
     size_t portal_id;
+    warp::tag_t graphics_id;
 };
 
 class level_t {

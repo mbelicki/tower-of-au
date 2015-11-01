@@ -12,22 +12,37 @@
 
 using namespace warp;
 
+static void destroy_portal(void *raw_portal) {
+    portal_t *portal = (portal_t *)raw_portal;
+    str_destroy(portal->region_name);
+}
+
+static void destroy_tile_graphics(void *raw_graphics) {
+    tile_graphics_t *graphics = (tile_graphics_t *)raw_graphics;
+    graphics->name.~tag_t();
+    str_destroy(graphics->mesh);
+    str_destroy(graphics->texture);
+}
+
 region_t::region_t(level_t **levels, size_t width, size_t height)
         : _initialized(false)
         , _width(width)
         , _height(height)
         , _levels(nullptr)
-        , _portals_count(0) {
+        , _portals() 
+        , _graphics() {
     const size_t tiles_count = _width * _height;
     _levels = new (std::nothrow) level_t * [tiles_count];
     memmove(_levels, levels, tiles_count * sizeof (level_t *));
+
+    _graphics = array_create_typed(tile_graphics_t, 16, destroy_tile_graphics);
+    _portals  = array_create_typed(portal_t, 16, destroy_portal);
 }
 
 region_t::~region_t() {
     delete [] _levels;
-    for (size_t i = 0; i < _portals_count; i++) {
-        delete [] _portals[i].region_name;
-    }
+    array_destroy(_graphics);
+    array_destroy(_portals);
 }
 
 maybeunit_t region_t::initialize(world_t *world) {
@@ -42,36 +57,38 @@ maybeunit_t region_t::initialize(world_t *world) {
     return unit;
 }
 
-maybeunit_t region_t::add_portal
+bool region_t::add_portal
             ( const char *region_name, size_t level_x, size_t level_z
             , size_t tile_x, size_t tile_z
             ) {
-    if (_portals_count == MAX_PORTAL_COUNT) {
-        return nothing<unit_t>("Already full.");
-    }
-    
     portal_t portal;
 
-    const size_t name_size = strnlen(region_name, 256);
-    char *name_buffer = new char[name_size];
-    strncpy(name_buffer, region_name, name_size + 1);
-    portal.region_name = name_buffer;
+    portal.region_name = str_create(region_name);
     portal.level_x = level_x;
     portal.level_z = level_z;
     portal.tile_x = tile_x;
     portal.tile_z = tile_z;
 
-    _portals[_portals_count] = portal;
-    _portals_count++;
-
-    return unit;
+    return array_append(&_portals, &portal, 1);
 }
 
-maybe_t<const portal_t *> region_t::get_portal(size_t id) {
-    if (id >= _portals_count) {
-        return nothing<const portal_t *>("Unknown id.");
+bool region_t::add_tile_graphics
+        (const tag_t &name, const char *mesh, const char *tex) {
+    const tile_graphics_t g = { name, str_create(mesh), str_create(tex) };
+    return array_append(&_graphics, &g, 1);
+}
+
+const portal_t *region_t::get_portal(size_t id) {
+    return (const portal_t *) array_get(&_portals, id);
+}
+
+const tile_graphics_t *region_t::get_tile_graphics(const tag_t &tag) const {
+    const size_t count = array_get_size(&_graphics);
+    for (size_t i = 0; i < count; i++) {
+        const tile_graphics_t *tg = (const tile_graphics_t *)array_get(&_graphics, i);
+        if (tg->name == tag) return tg;
     }
-    return _portals + id;
+    return NULL;
 }
 
 void region_t::animate_transition

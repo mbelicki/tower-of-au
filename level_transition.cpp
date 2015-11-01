@@ -54,7 +54,7 @@ void level_transition_t::initialize_state
     });
 
     portal_t default_portal;
-    default_portal.region_name = "test_00.json";
+    default_portal.region_name = str_create("test_00.json");
     default_portal.level_x = 0;
     default_portal.level_z = 0;
     default_portal.tile_x = 6;
@@ -71,4 +71,6 @@ void level_transition_t::initialize_state
 
     create_core(world, portal);
     create_input_controller(world);
+
+    str_destroy(default_portal.region_name);
 }

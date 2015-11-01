@@ -302,10 +302,7 @@ class core_controller_t final : public controller_impl_i {
                 , _random()
                 , _state(CSTATE_LEVEL)
                 , _transition_timer(0) {
-            const size_t name_size = strnlen(start->region_name, 256);
-            char *name_buffer = new char[name_size];
-            strncpy(name_buffer, start->region_name, name_size + 1);
-            _portal.region_name = name_buffer;
+            _portal.region_name = str_copy(start->region_name);
         }
 
         ~core_controller_t() {
@@ -318,7 +315,7 @@ class core_controller_t final : public controller_impl_i {
 
             delete _bullets;
 
-            delete [] _portal.region_name;
+            str_destroy(_portal.region_name);
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -335,7 +332,7 @@ class core_controller_t final : public controller_impl_i {
             _level_x = _portal.level_x;
             _level_z = _portal.level_z;
 
-            _region = VALUE(load_region(_portal.region_name));
+            _region = VALUE(load_region(str_value(_portal.region_name)));
             _region->initialize(_world);
             _region->change_display_positions(_level_x, _level_z);
 

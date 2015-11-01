@@ -15,14 +15,11 @@ class region_token_controller_t final : public controller_impl_i {
                 : _owner(nullptr)
                 , _world(nullptr)
                 , _portal(*portal) {
-            const size_t name_size = strnlen(portal->region_name, 256);
-            char *name_buffer = new char[name_size];
-            strncpy(name_buffer, portal->region_name, name_size + 1);
-            _portal.region_name = name_buffer;
+            _portal.region_name = str_copy(portal->region_name);
         }
 
         ~region_token_controller_t() {
-            delete [] _portal.region_name;
+            str_destroy(_portal.region_name);
         }
 
         dynval_t get_property(const tag_t &name) const override {
