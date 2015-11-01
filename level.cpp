@@ -121,8 +121,8 @@ maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
     meshmanager_t *meshes = world->get_resources().meshes;
     meshbuilder_t builder;
 
-    for (size_t i = 0; i < _width; i++) {
-        for (size_t j = 0; j < _height; j++) {
+    for (int j = _height - 1; j >= 0; j--) {
+        for (int i = _width - 1; i >= 0; i--) {
             const size_t index = i + _width * j;
             maybeunit_t result
                 = append_tile(&builder, meshes, _tiles[index], i, j, owner);
@@ -133,7 +133,7 @@ maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
     maybe_t<mesh_id_t> mesh_id = meshes->add_mesh_from_builder(builder);
     MAYBE_RETURN(mesh_id, unit_t, "Failed to create level mesh:");
 
-    maybe_t<mesh_id_t> tex_id = textures->add_texture("grass.png");
+    maybe_t<mesh_id_t> tex_id = textures->add_texture("atlas.png");
     MAYBE_RETURN(tex_id, unit_t, "Failed to load level texture:");
 
     maybe_t<graphics_comp_t *> graphics = world->create_graphics();
