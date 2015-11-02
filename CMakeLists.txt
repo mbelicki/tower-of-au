@@ -47,6 +47,12 @@ endif()
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR})
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_LIB_DIR libs)
+set(ASSETS_DIRECTORY ${CMAKE_SOURCE_DIR}/assets)
+
+if(DEFINED ENV{ASSET_DIR})
+    set(ASSETS_DIRECTORY ${CMAKE_SOURCE_DIR}/$ENV{ASSET_DIR})
+    message("### hey, hey! " ${ASSETS_DIRECTORY})
+endif()
 
 set(PARSON_SOURCES "${PROJECT_LIB_DIR}/parson/parson.c")
 add_library(parson STATIC ${PARSON_SOURCES})
@@ -75,5 +81,5 @@ endif()
 add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
+    ${ASSETS_DIRECTORY} $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
 )
