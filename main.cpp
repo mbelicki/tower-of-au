@@ -57,8 +57,7 @@ static int initialize_and_run() {
     warp::game_t game;
     warp::maybeunit_t maybe_initialized = game.initialize(config, states);
     if (maybe_initialized.failed()) {
-        fprintf( stderr, "Failed to initialize: %s\n"
-               , maybe_initialized.get_message().c_str());
+        warp_log_e("Failed to initialize: %s", maybe_initialized.get_message().c_str());
         return 1;
     }
 

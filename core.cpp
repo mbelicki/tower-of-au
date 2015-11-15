@@ -10,10 +10,9 @@
 #include "warp/direction.h"
 #include "warp/entity-helpers.h"
 
-extern "C" {
-    #include "warp/collections/array.h"
-    #include "warp/utils/str.h"
-}
+#include "warp/collections/array.h"
+#include "warp/utils/str.h"
+#include "warp/utils/log.h"
 
 #include "random.h"
 #include "region.h"
@@ -358,14 +357,14 @@ class core_controller_t final : public controller_impl_i {
 
             maybe_t<region_t *> region = load_region(str_value(_portal.region_name));
             if (region.failed()) {
-                printf("Failed to load region: %s", region.get_message().c_str());
+                warp_log_e("Failed to load region: %s", region.get_message().c_str());
                 abort();
             }
 
             _region = VALUE(region);
             maybeunit_t init_result = _region->initialize(_world);
             if (init_result.failed()) {
-                printf("Failed to initialize region: %s", init_result.get_message().c_str());
+                warp_log_e("Failed to initialize region: %s", init_result.get_message().c_str());
                 abort();
             }
 

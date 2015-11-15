@@ -46,7 +46,7 @@ void level_transition_t::initialize_state
     
     maybeunit_t reset_result = reset_camera(world);
     if (reset_result.failed()) {
-        printf("%s\n", reset_result.get_message().c_str());
+        warp_log_e("%s\n", reset_result.get_message().c_str());
     }
 
     get_default_font(world->get_resources())

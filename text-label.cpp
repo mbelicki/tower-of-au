@@ -70,7 +70,7 @@ class label_controller_t final : public controller_impl_i {
             }
 
             if (result.failed()) {
-                fprintf(stderr, "Teselation failed: %s", result.get_message().c_str());
+                warp_log_e("Teselation failed: %s", result.get_message().c_str());
             }
         }
 
