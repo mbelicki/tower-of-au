@@ -3,6 +3,7 @@
 #include "warp/world.h"
 #include "warp/cameras.h"
 #include "warp/camera.h"
+#include "warp/renderer.h"
 
 #include "level.h"
 #include "region.h"
@@ -26,6 +27,13 @@ static maybeunit_t reset_camera(world_t *world) {
     MAYBE_RETURN(camera_id, unit_t, "Failed to create camera:");
 
     return unit;
+}
+
+void level_transition_t::configure_renderer(renderer_t *render) const {
+    light_settings_t settings = *(render->gett_light_settings());
+    settings.sun_color = vec3(1, 1, 1);
+    settings.ambient_color = vec3(0.2f, 0, 0.4f);
+    render->set_light_settings(&settings);
 }
 
 bool level_transition_t::is_entity_kept(const entity_t *entity) const {
