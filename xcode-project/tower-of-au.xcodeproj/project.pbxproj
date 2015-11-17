@@ -42,6 +42,11 @@
 		61E8976F1BDBDA7000C3ABE0 /* font.png in Resources */ = {isa = PBXBuildFile; fileRef = 61E8976E1BDBDA7000C3ABE0 /* font.png */; };
 		61E897731BDBDA7E00C3ABE0 /* text-label.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61E897711BDBDA7E00C3ABE0 /* text-label.cpp */; };
 		61E897751BE0153B00C3ABE0 /* speech.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61E897741BE0153B00C3ABE0 /* speech.obj */; };
+		61EDEFD91BFBC15F00A1A7E2 /* rock_hg_wall.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61EDEFD51BFBC15F00A1A7E2 /* rock_hg_wall.obj */; };
+		61EDEFDA1BFBC15F00A1A7E2 /* rock_hlc_wall.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61EDEFD61BFBC15F00A1A7E2 /* rock_hlc_wall.obj */; };
+		61EDEFDB1BFBC15F00A1A7E2 /* rock_hrc_wall.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61EDEFD71BFBC15F00A1A7E2 /* rock_hrc_wall.obj */; };
+		61EDEFDC1BFBC15F00A1A7E2 /* rock_hwall.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61EDEFD81BFBC15F00A1A7E2 /* rock_hwall.obj */; };
+		61EDEFDF1BFBC16800A1A7E2 /* overworld.json in Resources */ = {isa = PBXBuildFile; fileRef = 61EDEFDE1BFBC16800A1A7E2 /* overworld.json */; };
 		61F98E001BCD96EB00EEF945 /* features.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 61F98DFE1BCD96EB00EEF945 /* features.cpp */; };
 		61F98E051BCD970300EEF945 /* boulder.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E021BCD970300EEF945 /* boulder.obj */; };
 		61F98E061BCD970300EEF945 /* button.obj in Resources */ = {isa = PBXBuildFile; fileRef = 61F98E031BCD970300EEF945 /* button.obj */; };
@@ -109,6 +114,11 @@
 		61E897711BDBDA7E00C3ABE0 /* text-label.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "text-label.cpp"; sourceTree = "<group>"; };
 		61E897721BDBDA7E00C3ABE0 /* text-label.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "text-label.h"; sourceTree = "<group>"; };
 		61E897741BE0153B00C3ABE0 /* speech.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = speech.obj; sourceTree = "<group>"; };
+		61EDEFD51BFBC15F00A1A7E2 /* rock_hg_wall.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rock_hg_wall.obj; sourceTree = "<group>"; };
+		61EDEFD61BFBC15F00A1A7E2 /* rock_hlc_wall.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rock_hlc_wall.obj; sourceTree = "<group>"; };
+		61EDEFD71BFBC15F00A1A7E2 /* rock_hrc_wall.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rock_hrc_wall.obj; sourceTree = "<group>"; };
+		61EDEFD81BFBC15F00A1A7E2 /* rock_hwall.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rock_hwall.obj; sourceTree = "<group>"; };
+		61EDEFDE1BFBC16800A1A7E2 /* overworld.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = overworld.json; sourceTree = "<group>"; };
 		61F98DFE1BCD96EB00EEF945 /* features.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = features.cpp; sourceTree = "<group>"; };
 		61F98DFF1BCD96EB00EEF945 /* features.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = features.h; sourceTree = "<group>"; };
 		61F98E021BCD970300EEF945 /* boulder.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = boulder.obj; sourceTree = "<group>"; };
@@ -270,6 +280,10 @@
 		6154D8DE1BBC6B5100B4D95B /* Meshes */ = {
 			isa = PBXGroup;
 			children = (
+				61EDEFD51BFBC15F00A1A7E2 /* rock_hg_wall.obj */,
+				61EDEFD61BFBC15F00A1A7E2 /* rock_hlc_wall.obj */,
+				61EDEFD71BFBC15F00A1A7E2 /* rock_hrc_wall.obj */,
+				61EDEFD81BFBC15F00A1A7E2 /* rock_hwall.obj */,
 				613A258E1BE68089008A4D22 /* grass.obj */,
 				61E897741BE0153B00C3ABE0 /* speech.obj */,
 				61F98E0B1BCEE55200EEF945 /* arrow.obj */,
@@ -288,6 +302,7 @@
 		616FFC261BDADA7900AA3C60 /* Levels */ = {
 			isa = PBXGroup;
 			children = (
+				61EDEFDE1BFBC16800A1A7E2 /* overworld.json */,
 				616FFC271BDADAD000AA3C60 /* test_00.json */,
 				616FFC281BDADAD000AA3C60 /* test_01.json */,
 			);
@@ -387,7 +402,11 @@
 				613A258F1BE68089008A4D22 /* grass.obj in Resources */,
 				61E897751BE0153B00C3ABE0 /* speech.obj in Resources */,
 				6154D8E81BBC6B7B00B4D95B /* wall.obj in Resources */,
+				61EDEFDF1BFBC16800A1A7E2 /* overworld.json in Resources */,
+				61EDEFDB1BFBC15F00A1A7E2 /* rock_hrc_wall.obj in Resources */,
 				61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */,
+				61EDEFDC1BFBC15F00A1A7E2 /* rock_hwall.obj in Resources */,
+				61EDEFD91BFBC15F00A1A7E2 /* rock_hg_wall.obj in Resources */,
 				61E8976F1BDBDA7000C3ABE0 /* font.png in Resources */,
 				6154D8E71BBC6B7B00B4D95B /* stairs.obj in Resources */,
 				6154D8EA1BBC6C3400B4D95B /* Images.xcassets in Resources */,
@@ -395,6 +414,7 @@
 				61F98E071BCD970300EEF945 /* door.obj in Resources */,
 				6154D8E01BBC6B6D00B4D95B /* missing.png in Resources */,
 				616FFC2A1BDADAD000AA3C60 /* test_01.json in Resources */,
+				61EDEFDA1BFBC15F00A1A7E2 /* rock_hlc_wall.obj in Resources */,
 				61F98E061BCD970300EEF945 /* button.obj in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -464,6 +484,7 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRIP_STYLE = all;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -501,6 +522,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
+				STRIP_STYLE = all;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
