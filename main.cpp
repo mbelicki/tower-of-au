@@ -54,14 +54,19 @@ static int initialize_and_run() {
     config.max_entites_count = 512;
     config.window_name = "Tower of Au";
 
-    warp::game_t game;
-    warp::maybeunit_t maybe_initialized = game.initialize(config, states);
+    warp::game_t *game = new warp::game_t;
+    warp::maybeunit_t maybe_initialized = game->initialize(config, states);
     if (maybe_initialized.failed()) {
         warp_log_e("Failed to initialize: %s", maybe_initialized.get_message().c_str());
         return 1;
     }
 
-    return game.run();
+    int exit_code = game->run();
+    /* on iOS the game continues to operate after main has finished */
+    if (game->is_alive_after_main() == false) {
+        delete game;
+    }
+    return exit_code;
 }
 
 int main(int argc, char **argv) {
