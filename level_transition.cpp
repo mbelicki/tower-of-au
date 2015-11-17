@@ -31,7 +31,7 @@ static maybeunit_t reset_camera(world_t *world) {
 
 void level_transition_t::configure_renderer(renderer_t *render) const {
     light_settings_t settings = *(render->gett_light_settings());
-    settings.sun_color = vec3(1, 1, 1);
+    settings.sun_color = vec3(1.1f, 1.1f, 0.9f);
     settings.ambient_color = vec3(0.2f, 0, 0.4f);
     render->set_light_settings(&settings);
 }
@@ -62,9 +62,9 @@ void level_transition_t::initialize_state
     });
 
     portal_t default_portal;
-    default_portal.region_name = str_create("test_00.json");
-    default_portal.level_x = 0;
-    default_portal.level_z = 0;
+    default_portal.region_name = str_create("overworld.json");
+    default_portal.level_x = 1;
+    default_portal.level_z = 1;
     default_portal.tile_x = 6;
     default_portal.tile_z = 5;
 

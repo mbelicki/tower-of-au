@@ -19,6 +19,26 @@
             "name" : "floor",
             "mesh" : "floor.obj",
             "texture" : "wall.png"
+        },
+        {
+            "name" : "rock_hwall",
+            "mesh" : "rock_hwall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_hg_wall",
+            "mesh" : "rock_hg_wall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_hrc_wall",
+            "mesh" : "rock_hrc_wall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_hlc_wall",
+            "mesh" : "rock_hlc_wall.obj",
+            "texture" : "rock.png"
         }
     ],
     "tiles" : [
@@ -26,6 +46,26 @@
             "symbol" : "#",
             "walkable" : false,
             "graphics" : "wall"
+        },
+        {
+            "symbol" : "H",
+            "walkable" : false,
+            "graphics" : "rock_hwall"
+        },
+        {
+            "symbol" : "G",
+            "walkable" : false,
+            "graphics" : "rock_hg_wall"
+        },
+        {
+            "symbol" : "L",
+            "walkable" : false,
+            "graphics" : "rock_hlc_wall"
+        },
+        {
+            "symbol" : "R",
+            "walkable" : false,
+            "graphics" : "rock_hrc_wall"
         },
         {
             "symbol" : " ",
@@ -68,21 +108,21 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "object" : "OBJ_NPC_GRUNT",
-                    "spawnRate" : 0.8
+                    "spawnRate" : 0.9
                 }
             ],
             "data": [
-                "#############",
-                "#           #",
-                "# ##     ## #",
-                "#  E  #  E  #",
-                "#            ",
-                "#  #S  #    #",
-                "#            ",
-                "#  E  #  E  #",
-                "# ##     ## #",
-                "#           #",
-                "#############"
+                "GGGGGGGGGGGGG",
+                "R           L",
+                "R LR     LR L",
+                "R  E  R  E  L",
+                "R            ",
+                "R  LHR LRE  L",
+                "R            ",
+                "R  E  R  E  L",
+                "R LR     LR L",
+                "R           L",
+                "HHHHHHHHHHHHH"
             ]
         },
         {

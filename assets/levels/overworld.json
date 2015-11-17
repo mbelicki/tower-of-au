@@ -1,0 +1,297 @@
+{
+    "graphics" : [
+        {
+            "name" : "grass",
+            "mesh" : "grass.obj",
+            "texture" : "grass.png"
+        },
+        {
+            "name" : "wall",
+            "mesh" : "wall.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "stairs",
+            "mesh" : "stairs.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "floor",
+            "mesh" : "floor.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "rock_hwall",
+            "mesh" : "rock_hwall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_hg_wall",
+            "mesh" : "rock_hg_wall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_hrc_wall",
+            "mesh" : "rock_hrc_wall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_hlc_wall",
+            "mesh" : "rock_hlc_wall.obj",
+            "texture" : "rock.png"
+        }
+    ],
+    "tiles" : [
+        {
+            "symbol" : "#",
+            "walkable" : false,
+            "graphics" : "wall"
+        },
+        {
+            "symbol" : "H",
+            "walkable" : false,
+            "graphics" : "rock_hwall"
+        },
+        {
+            "symbol" : "G",
+            "walkable" : false,
+            "graphics" : "rock_hg_wall"
+        },
+        {
+            "symbol" : "L",
+            "walkable" : false,
+            "graphics" : "rock_hlc_wall"
+        },
+        {
+            "symbol" : "R",
+            "walkable" : false,
+            "graphics" : "rock_hrc_wall"
+        },
+        {
+            "symbol" : " ",
+            "walkable" : true,
+            "graphics" : "grass"
+        },
+        {
+            "symbol" : "S",
+            "stairs" : true,
+            "graphics" : "stairs",
+            "portalId": 0
+        },
+        {
+            "symbol" : "Q",
+            "walkable" : false,
+            "graphics" : "floor"
+        },
+        {
+            "symbol" : "B",
+            "walkable" : true,
+            "object" : "OBJ_BOULDER",
+            "graphics" : "grass",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "X",
+            "walkable" : true,
+            "object" : "OBJ_NPC_GRUNT",
+            "graphics" : "grass",
+            "spawnRate" : 1.0
+        }
+    ],
+    "portals" : [
+        {
+            "region": "test_01.json",
+            "level": {"x": 0, "y": 0},
+            "tile": {"x": 2, "y": 2}
+        },
+        {
+            "region": "test_01.json",
+            "level": {"x": 0, "y": 0},
+            "tile": {"x": 11, "y": 8}
+        }
+    ],
+    "width" : 4,
+    "height" : 3,
+    "levels" : [
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R            ",
+                "R            ",
+                "R           L",
+                "R           L",
+                "HHHHH   HHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "HHHHR  LR LHH",
+                "HHR      B LH",
+                "HR          L",
+                "HR  #X      L",
+                "R      X#    ",
+                "     X       ",
+                "     #      L",
+                "HHR     #   L",
+                "HHHHHR     LH",
+                "HHHHHHHR  LHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "HR  LHHHR  LH",
+                "R    LR    LH",
+                "R         LHH",
+                "R         LHH",
+                "    X      LH",
+                "  LR    #   L",
+                "R  #      X L",
+                "HR           ",
+                "HR      LHR  ",
+                "HHHR  LHHHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGSGGGGG",
+                "RHHHHR   QQQQ",
+                "RX   B  XB QQ",
+                "R       B  QQ",
+                "R  BXQQ QQQQQ",
+                "R  QQQQQQQQQQ",
+                "R XQQQQQQQQQQ",
+                "R   QQQQQQQQQ",
+                "      QQQQQQQ",
+                "        QQQQQ",
+                "HHHHR   LHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGG   GGGGG",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R            ",
+                "R            ",
+                "R           L",
+                "R            ",
+                "R           L",
+                "R           L",
+                "H  HHHHH  HHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGR  LGG",
+                "R #####    LH",
+                "R  #S#     LH",
+                "R           L",
+                "         #   ",
+                "             ",
+                "R            ",
+                "            L",
+                "R      B  LHH",
+                "HHR   B LHHHH",
+                "HHHHHHHHHHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGR  LGGGGGG",
+                "HR     LHHHHH",
+                "R        LHHH",
+                "R  #X  X# LHH",
+                "          LHH",
+                "     ##      ",
+                "         X   ",
+                "R   #X   # LH",
+                "HR         LH",
+                "HR      LHHHH",
+                "HHHR  LHHHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGR   LGGGG",
+                "HHR X #    LH",
+                "HR       #  L",
+                "R    #   #  L",
+                "R  ##    B LH",
+                "     X     LH",
+                "        X LHH",
+                "R      #  LHH",
+                "RR X       LH",
+                "RR    LR    L",
+                "HR   LHHHR  L"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "HHHHHHHHHHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "HHHHHHHHHHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "HHHHHHHHHHHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "R           L",
+                "HHHHHHHHHHHHH"
+            ]
+        }
+    ]
+}

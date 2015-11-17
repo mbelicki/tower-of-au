@@ -574,7 +574,7 @@ class core_controller_t final : public controller_impl_i {
             player_pos.x -= dx * 13;
             player_pos.z -= dz * 11;
             
-            _portal.level_z = x;
+            _portal.level_x = x;
             _portal.level_z = z;
             _portal.tile_x = round(player_pos.x);
             _portal.tile_z = round(player_pos.z);
