@@ -31,6 +31,16 @@
             "texture" : "rock.png"
         },
         {
+            "name" : "rock_hglc_wall",
+            "mesh" : "rock_hglc_wall.obj",
+            "texture" : "rock.png"
+        },
+        {
+            "name" : "rock_vgl_wall",
+            "mesh" : "rock_vgl_wall.obj",
+            "texture" : "rock.png"
+        },
+        {
             "name" : "rock_hrc_wall",
             "mesh" : "rock_hrc_wall.obj",
             "texture" : "rock.png"
@@ -56,6 +66,16 @@
             "symbol" : "G",
             "walkable" : false,
             "graphics" : "rock_hg_wall"
+        },
+        {
+            "symbol" : "g",
+            "walkable" : false,
+            "graphics" : "rock_hglc_wall"
+        },
+        {
+            "symbol" : "l",
+            "walkable" : false,
+            "graphics" : "rock_vgl_wall"
         },
         {
             "symbol" : "L",
@@ -131,14 +151,14 @@
         {
             "data": [
                 "GGGGGGGGGGGGG",
-                "HHHHR  LR LHH",
-                "HHR      B LH",
-                "HR          L",
-                "HR  #X      L",
+                "HHHHR  LR gHH",
+                "HHR      B gH",
+                "HR          l",
+                "HR  #X      g",
                 "R      X#    ",
                 "     X       ",
                 "     #      L",
-                "HHR     #   L",
+                "HHR     #   l",
                 "HHHHHR     LH",
                 "HHHHHHHR  LHH"
             ]
@@ -190,10 +210,10 @@
         },
         {
             "data": [
-                "GGGGGGGR  LGG",
-                "R #####    LH",
-                "R  #S#     LH",
-                "R           L",
+                "GGGGGGGR  gGG",
+                "R #####    lH",
+                "R  #S#     gH",
+                "R           g",
                 "         #   ",
                 "             ",
                 "R            ",
