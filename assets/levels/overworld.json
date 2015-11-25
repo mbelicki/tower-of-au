@@ -145,7 +145,7 @@
                 "R            ",
                 "R           L",
                 "R           L",
-                "HHHHH   HHHHH"
+                "HHHHH  lHHHHH"
             ]
         },
         {
@@ -160,22 +160,22 @@
                 "     #      L",
                 "HHR     #   l",
                 "HHHHHR     LH",
-                "HHHHHHHR  LHH"
+                "HHHHHHHR  lHH"
             ]
         },
         {
             "data": [
                 "GGGGGGGGGGGGG",
-                "HR  LHHHR  LH",
-                "R    LR    LH",
-                "R         LHH",
-                "R         LHH",
-                "    X      LH",
-                "  LR    #   L",
-                "R  #      X L",
+                "HR  gHHHR  lH",
+                "R    gR    lH",
+                "R         lHH",
+                "R         gHH",
+                "    X      gH",
+                "  LR    #   l",
+                "R  #      X g",
                 "HR           ",
                 "HR      LHR  ",
-                "HHHR  LHHHHHH"
+                "HHHR  lHHHHHH"
             ]
         },
         {
@@ -190,22 +190,22 @@
                 "R   QQQQQQQQQ",
                 "      QQQQQQQ",
                 "        QQQQQ",
-                "HHHHR   LHHHH"
+                "HHHHR   lHHHH"
             ]
         },
         {
             "data": [
-                "GGGGG   GGGGG",
-                "R           L",
-                "R           L",
-                "R           L",
+                "GGGGG  gGGGGG",
+                "R           l",
+                "R           l",
+                "R           g",
                 "R            ",
                 "R            ",
                 "R           L",
                 "R            ",
-                "R           L",
-                "R           L",
-                "H  HHHHH  HHH"
+                "R           l",
+                "R           l",
+                "H  gHHHH  gHH"
             ]
         },
         {
@@ -225,32 +225,32 @@
         },
         {
             "data": [
-                "GGGR  LGGGGGG",
-                "HR     LHHHHH",
-                "R        LHHH",
-                "R  #X  X# LHH",
-                "          LHH",
+                "GGGR  gGGGGGG",
+                "HR     gHHHHH",
+                "R        gHHH",
+                "R  #X  X# lHH",
+                "          gHH",
                 "     ##      ",
                 "         X   ",
-                "R   #X   # LH",
-                "HR         LH",
+                "R   #X   # lH",
+                "HR         lH",
                 "HR      LHHHH",
                 "HHHR  LHHHHHH"
             ]
         },
         {
             "data": [
-                "GGGGR   LGGGG",
-                "HHR X #    LH",
-                "HR       #  L",
-                "R    #   #  L",
-                "R  ##    B LH",
-                "     X     LH",
-                "        X LHH",
-                "R      #  LHH",
-                "RR X       LH",
-                "RR    LR    L",
-                "HR   LHHHR  L"
+                "GGGGR   gGGGG",
+                "HHR X #    gH",
+                "HR       #  l",
+                "R    #   #  l",
+                "R  ##    B lH",
+                "     X     lH",
+                "        X lHH",
+                "R      #  gHH",
+                "RR X       gH",
+                "RR    LR    l",
+                "HR   LHHHR  l"
             ]
         },
         {
