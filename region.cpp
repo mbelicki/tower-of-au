@@ -8,7 +8,6 @@
 #include "libs/parson/parson.h"
 
 #include "level.h"
-#include "random.h"
 
 using namespace warp;
 
@@ -138,10 +137,11 @@ maybe_t<level_t *> region_t::get_level_at(size_t x, size_t y) const {
     return _levels[x + _width * y];
 }
 
-region_t *generate_random_region(random_t *random) {
-    random_t local_random;
+region_t *generate_random_region(warp_random_t *random) {
+    bool local_random = false;
     if (random == nullptr) {
-        random = &local_random;
+        random = warp_random_create(209);
+        local_random = true;
     }
 
     const size_t width = 9;
@@ -153,7 +153,11 @@ region_t *generate_random_region(random_t *random) {
         }
     }
     
-    return new region_t(levels, width, height);
+    region_t *region = new region_t(levels, width, height);
+    if (local_random) {
+        warp_random_destroy(random);
+    }
+    return region;
 }
 
 static feature_type_t feature_from_string(const char *type) {

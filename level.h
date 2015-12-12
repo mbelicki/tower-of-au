@@ -5,9 +5,9 @@
 #include "warp/maybe.h"
 #include "warp/direction.h"
 
-#include <functional>
+#include "warp/utils/random.h"
 
-class random_t;
+#include <functional>
 
 namespace warp {
     class entity_t;
@@ -76,4 +76,4 @@ class level_t {
 
 /// Generates uninitialized level instance.
 level_t *generate_test_level();
-level_t *generate_random_level(random_t *random);
+level_t *generate_random_level(warp_random_t *random);

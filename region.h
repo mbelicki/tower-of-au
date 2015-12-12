@@ -4,13 +4,11 @@
 #include "warp/vec3.h"
 #include "warp/tag.h"
 
-extern "C" {
-    #include "warp/collections/array.h"
-    #include "warp/utils/str.h"
-}
+#include "warp/collections/array.h"
+#include "warp/utils/random.h"
+#include "warp/utils/str.h"
 
 class level_t;
-class random_t;
 
 namespace warp {
     class world_t;
@@ -65,5 +63,5 @@ class region_t {
         warp_array_t _graphics;
 };
 
-region_t *generate_random_region(random_t *random);
+region_t *generate_random_region(warp_random_t *random);
 warp::maybe_t<region_t *> load_region(const char* path);

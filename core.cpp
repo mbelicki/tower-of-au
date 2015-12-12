@@ -11,10 +11,10 @@
 #include "warp/entity-helpers.h"
 
 #include "warp/collections/array.h"
+#include "warp/utils/random.h"
 #include "warp/utils/str.h"
 #include "warp/utils/log.h"
 
-#include "random.h"
 #include "region.h"
 #include "level.h"
 #include "character.h"
@@ -252,22 +252,22 @@ static void initialize_player
 }
 
 
-static object_flags_t random_movement_flag(random_t *rand) {
+static object_flags_t random_movement_flag(warp_random_t *rand) {
     const object_flags_t flags[4]
         = { FOBJ_NPCMOVE_STILL, FOBJ_NPCMOVE_VLINE
           , FOBJ_NPCMOVE_HLINE, FOBJ_NPCMOVE_ROAM
           };
-    return flags[rand->uniform_from_range(0, 3)];
+    return flags[warp_random_from_range(rand, 0, 3)];
 }
 
 static void spawn_objects
         ( const level_t &level
         , object_t **objs, feature_t **feats
-        , world_t *world, random_t *random
+        , world_t *world, warp_random_t *random
         ) {
     const size_t width = level.get_width();
     const size_t height = level.get_height();
-
+    
     for (size_t i = 0; i < width * height; i++) {
         objs[i] = nullptr;
         feats[i] = nullptr;
@@ -288,11 +288,12 @@ static void spawn_objects
             const feature_type_t feat_type = tile->feature;
 
             if (obj_type != OBJ_NONE && tile->spawn_probablity > 0) {
-                const float r = random->uniform_zero_to_one();
+                const float r = warp_random_float(random);
                 if (r <= tile->spawn_probablity) {
-                    const dir_t dir = directions[random->uniform_from_range(0, 3)];
+                    int dir_index = warp_random_from_range(random, 0, 3);
+                    const dir_t dir = directions[dir_index];
                     objs[index] = create_object(world, obj_type, dir, i, j);
-                    objs[index]->can_shoot = random->boolean(0.2f);
+                    objs[index]->can_shoot = warp_random_boolean(random);
                     objs[index]->flags = random_movement_flag(random);
                 }
             }
@@ -319,18 +320,19 @@ class core_controller_t final : public controller_impl_i {
                 , _objects(nullptr)
                 , _features(nullptr)
                 , _tiles_count(0)
-                , _random()
                 , _state(CSTATE_LEVEL)
                 , _transition_timer(0) 
-                , _pain_texts() {
+                , _pain_texts()
+                , _random(nullptr) {
+            _random = warp_random_create(314);
             _portal.region_name = str_copy(start->region_name);
             _pain_texts = create_pain_texts();
         }
 
         ~core_controller_t() {
             for (size_t i = 0; i < _tiles_count; i++) {
-                delete _objects[i];
-                delete _features[i];
+                if (_objects) delete _objects[i];
+                if (_features) delete _features[i];
             }
             delete _objects;
             delete _features;
@@ -339,6 +341,7 @@ class core_controller_t final : public controller_impl_i {
 
             str_destroy(_portal.region_name);
             array_destroy(_pain_texts);
+            warp_random_destroy(_random);
         }
 
         dynval_t get_property(const tag_t &) const override {
@@ -383,7 +386,7 @@ class core_controller_t final : public controller_impl_i {
             _objects  = new (std::nothrow) object_t  * [_tiles_count];
             _features = new (std::nothrow) feature_t * [_tiles_count];
 
-            spawn_objects(*_level, _objects, _features, world, &_random);
+            spawn_objects(*_level, _objects, _features, _world, _random);
 
             initialize_player(&_player, vec3(_portal.tile_x, 0, _portal.tile_z), _world);
             update_player_health_display();
@@ -413,7 +416,7 @@ class core_controller_t final : public controller_impl_i {
 
                 if (_state == CSTATE_LEVEL) {
                     _region->change_display_positions(_level_x, _level_z);
-                    spawn_objects(*_level, _objects, _features, _world, &_random);
+                    spawn_objects(*_level, _objects, _features, _world, _random);
                     make_move(&_player, _player.position, true);
                 }
             }
@@ -494,12 +497,11 @@ class core_controller_t final : public controller_impl_i {
         feature_t **_features;
         size_t _tiles_count;
 
-        random_t _random;
-
         core_state_t _state;
         float _transition_timer;
 
         warp_array_t _pain_texts;
+        warp_random_t *_random;
 
         void update_player_health_display() {
             entity_t *hp_label = _world->find_entity("health_label");
@@ -536,6 +538,8 @@ class core_controller_t final : public controller_impl_i {
             for (size_t i = 0; i < _tiles_count; i++) {
                 delete _objects[i];
                 delete _features[i];
+                _objects[i]  = NULL;
+                _features[i] = NULL;;
             }
         }
 
@@ -704,7 +708,8 @@ class core_controller_t final : public controller_impl_i {
         }
 
         const char *get_pain_text() {
-            const int index = _random.uniform_from_range(0, array_get_size(&_pain_texts) - 1);
+            const int max_index = array_get_size(&_pain_texts) - 1; 
+            const int index = warp_random_from_range(_random, 0, max_index);
             const warp_str_t text = array_get_value(warp_str_t, &_pain_texts, index);
             return str_value(text);
         }
@@ -899,7 +904,7 @@ class core_controller_t final : public controller_impl_i {
                 handle_shooting(npc, shoot_dir);               
             } else {
                 vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
-                const bool change_dir = _random.uniform_zero_to_one() > 0.6f;
+                const bool change_dir = warp_random_float(_random) > 0.6f;
                 if (change_dir || (can_move_to(position, npc->position) == false)) {
                     npc->direction = pick_next_direction(*npc);
                     position = vec3_add(npc->position, dir_to_vec3(npc->direction));

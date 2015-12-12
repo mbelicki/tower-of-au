@@ -7,7 +7,6 @@
 #include "warp/textures.h"
 #include "warp/components.h"
 
-#include "random.h"
 #include "region.h"
 
 using namespace warp;
@@ -201,7 +200,7 @@ extern level_t *generate_test_level() {
     return new (std::nothrow) level_t(tiles, width, height);
 }
 
-extern level_t *generate_random_level(random_t *random) {
+extern level_t *generate_random_level(warp_random_t *random) {
     const size_t width = 13;
     const size_t height = 11;
     const size_t count = width * height;
@@ -214,13 +213,12 @@ extern level_t *generate_random_level(random_t *random) {
             bool is_wall = tiles[index].is_walkable == false;
 
             if (is_wall == false) {
-                const bool is_floor = random->uniform_from_range(0, 10) >= 1; 
+                const bool is_floor = warp_random_boolean(random);
                 tiles[index].is_walkable = is_floor;
-                if (is_floor && random->uniform_zero_to_one() < 0.05f) {
-                    tiles[index].spawn_probablity
-                        = random->uniform_zero_to_one();
+                if (is_floor && warp_random_float(random) < 0.05f) {
+                    tiles[index].spawn_probablity = warp_random_float(random);
                     tiles[index].spawned_object
-                        = random->uniform_zero_to_one() < 0.7f
+                        = warp_random_float(random) < 0.7f
                         ? OBJ_CHARACTER
                         : OBJ_BOULDER
                         ;
