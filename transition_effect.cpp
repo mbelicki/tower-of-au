@@ -110,6 +110,7 @@ class fade_circle_controller_t final : public controller_impl_i {
 
             model_t *model = new model_t; /* TODO: oh hello, memory leaks */
             model->initialize(_mesh_id, 0);
+            model->set_color(vec4(0, 0, 0, 1));
             
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, model);
             return unit;
