@@ -22,6 +22,7 @@
 #include "bullets.h"
 #include "persitence.h"
 #include "text-label.h"
+#include "transition_effect.h"
 
 using namespace warp;
 
@@ -546,8 +547,10 @@ class core_controller_t final : public controller_impl_i {
         void change_region(const portal_t *portal) {
             if (portal == nullptr) return;
             
+            const float change_time = 2.0f;
             create_region_token(_world, portal);
-            _world->request_state_change("level", 1.0f);
+            _world->request_state_change("level", change_time);
+            create_fade_circle(_world, 700, change_time, true);
         }
         
         void start_level_change(size_t x, size_t z) {

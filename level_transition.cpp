@@ -11,6 +11,7 @@
 #include "input_controller.h"
 #include "persitence.h"
 #include "text-label.h"
+#include "transition_effect.h"
 
 using namespace warp;
 
@@ -79,6 +80,7 @@ void level_transition_t::initialize_state
 
     create_core(world, portal);
     create_input_controller(world);
+    create_fade_circle(world, 700, 1.2f, false);
 
     str_destroy(default_portal.region_name);
 }
