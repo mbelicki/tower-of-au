@@ -78,26 +78,6 @@ static void shuffle(dir_t *array, size_t n) {
     }
 }
 
-static dir_t get_move_direction(move_dir_t move_dir) {
-    switch (move_dir) {
-        case MOVE_NONE:
-        case MOVE_UP:
-            return DIR_Z_MINUS;
-        case MOVE_DOWN:
-            return DIR_Z_PLUS;
-        case MOVE_LEFT:
-            return DIR_X_MINUS;
-        case MOVE_RIGHT:
-            return DIR_X_PLUS;
-    }
-}
-
-static vec3_t move_character(const object_t &character, move_dir_t dir) {
-    const dir_t direction = get_move_direction(dir);
-    const vec3_t step = dir_to_vec3(direction);
-    return vec3_add(character.position, step);
-}
-
 static bool is_idle(const object_t *object) {
     if (object == nullptr) {
         warp_log_e("Cannot check if object is idle, object is null.");
@@ -276,25 +256,11 @@ class core_controller_t final : public controller_impl_i {
                 /* let NPC make moves */
                 next_turn();
                 //check_events();
-
-                //} else {
-                //    _level->get_tile_at(x, z)
-                //            .with_value([this](const tile_t *tile) {
-                //        if (tile->is_stairs) { 
-                //            maybe_t<const portal_t *> portal
-                //                = _region->get_portal(tile->portal_id);
-                //            if (portal.has_value()) {
-                //                change_region(VALUE(portal));
-                //            }
-                //        }
-                //    });
-                //}
             } else if (is_idle(player)) {
                 command_t cmd = {player, message};
                 std::vector<command_t> commands;
                 commands.push_back(cmd);
                 _level_state->update(_level, commands);
-
             }
         }
 
@@ -340,6 +306,19 @@ class core_controller_t final : public controller_impl_i {
                     } else if (z >= 11) {
                         start_level_change(player, _level_x, _level_z + 1);
                     }
+                } else if (type == EVENT_PLAYER_ENTER_PORTAL) {
+                    const int x = round(obj->position.x);
+                    const int z = round(obj->position.z);
+                    _level->get_tile_at(x, z)
+                            .with_value([this](const tile_t *tile) {
+                        if (tile->is_stairs) { 
+                            maybe_t<const portal_t *> portal
+                                = _region->get_portal(tile->portal_id);
+                            if (portal.has_value()) {
+                                change_region(VALUE(portal));
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -375,9 +354,9 @@ class core_controller_t final : public controller_impl_i {
             if (portal == nullptr) return;
             
             const float change_time = 2.0f;
+            create_fade_circle(_world, 700, change_time, true);
             create_region_token(_world, portal);
             _world->request_state_change("level", change_time);
-            create_fade_circle(_world, 700, change_time, true);
         }
         
         void start_level_change(const object_t *player, size_t x, size_t z) {

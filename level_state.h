@@ -60,6 +60,7 @@ struct command_t {
 
 enum event_type_t : int {
     EVENT_PLAYER_LEAVE = 1,
+    EVENT_PLAYER_ENTER_PORTAL,
 };
 
 struct event_t {
@@ -100,7 +101,7 @@ class level_state_t {
         void handle_attack(object_t *target, object_t *attacker, const level_t *level);
         void handle_shooting(object_t *shooter, warp::dir_t dir, const level_t *level);
 
-        void move_object(object_t *target, warp::vec3_t pos, bool immediate);
+        void move_object(object_t *target, warp::vec3_t pos, bool immediate, const level_t *level);
         bool hurt_object(object_t *target, int damage);
 
     private:

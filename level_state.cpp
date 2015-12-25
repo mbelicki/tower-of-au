@@ -367,7 +367,7 @@ void level_state_t::handle_move
     }
 
     if (can_move_to(pos, level)) {
-        move_object(target, pos, false);
+        move_object(target, pos, false, level);
     } else {
         object_t *npc = (object_t *)object_at_position(pos);
         if (npc != nullptr) {
@@ -400,14 +400,14 @@ void level_state_t::handle_attack
             ;
         const vec3_t push_back = vec3_add(target->position, d);
         if (can_move_to(push_back, level)) {
-            move_object(target, push_back, false);
+            move_object(target, push_back, false, level);
             target->attacked = true;
         }
     }
     if (attacker != nullptr) {
         if (target->type == OBJ_BOULDER) {
             if (can_move_to(original_position, level)) {
-                move_object(attacker, original_position, false);
+                move_object(attacker, original_position, false, level);
             } else {
                 attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
             }
@@ -439,7 +439,8 @@ void level_state_t::handle_shooting
     shooter->ammo -= 1;
 }
 
-void level_state_t::move_object(object_t *target, warp::vec3_t pos, bool immediate) {
+void level_state_t::move_object
+        (object_t *target, warp::vec3_t pos, bool immediate, const level_t *level) {
     if (target == nullptr) {
         warp_log_e("Cannot handle move, null target.");
         return;
@@ -490,6 +491,13 @@ void level_state_t::move_object(object_t *target, warp::vec3_t pos, bool immedia
         if (x < 0 || x >= 13 || z < 0 || z >= 11) {
             event_t event = {target, EVENT_PLAYER_LEAVE};
             _events.push_back(event);
+        } else {
+            level->get_tile_at(x, z).with_value([this, target](const tile_t *tile) {
+                if (tile->is_stairs) { 
+                    event_t event = {target, EVENT_PLAYER_ENTER_PORTAL};
+                    _events.push_back(event);
+                }
+            });
         }
     }
 }

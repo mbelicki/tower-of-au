@@ -80,11 +80,13 @@ class fade_circle_controller_t final : public controller_impl_i {
 
             tessellate(vertices.get(), _out_radius, k * _out_radius);
             
+            maybeunit_t result = unit;
             if (_mesh_id == 0) {
-                add_new_mesh(std::move(vertices), count);
+                result = add_new_mesh(std::move(vertices), count);
             } else {
-                mutate_mesh(std::move(vertices), count);
+                result = mutate_mesh(std::move(vertices), count);
             }
+            result.log_failure();
         }
 
     private:
@@ -140,6 +142,8 @@ maybe_t<entity_t *> create_fade_circle
 
     entity_t *entity
         = world->create_entity(vec3(0, 0, 0), graphics, nullptr, controller);
+    entity->set_tag("fade_circle");
+
     return entity;
 }
 
