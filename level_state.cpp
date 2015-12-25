@@ -390,20 +390,18 @@ void level_state_t::handle_attack
     }
 
     const vec3_t original_position = target->position;
-    const int damage = calculate_damage(*target);
-    const bool alive = hurt_object(target, damage);
-    if (alive) {
-        const vec3_t d
-            = attacker == nullptr 
-            ? vec3(0, 0, 0)
-            : vec3_sub(target->position, attacker->position)
-            ;
-        const vec3_t push_back = vec3_add(target->position, d);
-        if (can_move_to(push_back, level)) {
-            move_object(target, push_back, false, level);
-            target->attacked = true;
-        }
+    const vec3_t attacker_position
+        = attacker == nullptr ? original_position : attacker->position;
+    const vec3_t d = vec3_sub(original_position, attacker_position);
+    const vec3_t push_back = vec3_add(target->position, d);
+    if (can_move_to(push_back, level)) {
+        move_object(target, push_back, false, level);
+        target->attacked = true;
     }
+
+    const int damage = calculate_damage(*target);
+    hurt_object(target, damage);
+
     if (attacker != nullptr) {
         if (target->type == OBJ_BOULDER) {
             if (can_move_to(original_position, level)) {
@@ -489,12 +487,12 @@ void level_state_t::move_object
         const int x = round(pos.x);
         const int z = round(pos.z);
         if (x < 0 || x >= 13 || z < 0 || z >= 11) {
-            event_t event = {target, EVENT_PLAYER_LEAVE};
+            event_t event = {*target, EVENT_PLAYER_LEAVE};
             _events.push_back(event);
         } else {
             level->get_tile_at(x, z).with_value([this, target](const tile_t *tile) {
                 if (tile->is_stairs) { 
-                    event_t event = {target, EVENT_PLAYER_ENTER_PORTAL};
+                    event_t event = {*target, EVENT_PLAYER_ENTER_PORTAL};
                     _events.push_back(event);
                 }
             });
@@ -507,8 +505,8 @@ bool level_state_t::hurt_object(object_t *target, int damage) {
         warp_log_e("Cannot hurt object, target is null.");
         return false;
     }
-    if (damage < 0) { 
-        return false;
+    if (damage <= 0) { 
+        return true;
     }
 
     const int health_left = target->health - damage;
@@ -520,20 +518,16 @@ bool level_state_t::hurt_object(object_t *target, int damage) {
         _objects[x + _width * z] = nullptr;
         target->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
 
-        //if (target != &_player) { 
-            delete target;
-        //} else {
-        //    change_region(&_portal);
-        //}
+        event_t event = {*target, EVENT_OBJECT_KILLED};
+        _events.push_back(event);
 
-        //create_speech_bubble
-        //    ( _world, *_font, vec3_add(target->position, vec3(0, 1, 0))
-        //     , get_pain_text()
-        //    );
+        delete target;
     } else {
         if (target->type != OBJ_BOULDER) {
             target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
         }
+        event_t event = {*target, EVENT_OBJECT_HURT};
+        _events.push_back(event);
     }
 
     return health_left > 0;

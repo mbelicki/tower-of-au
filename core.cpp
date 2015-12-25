@@ -255,7 +255,7 @@ class core_controller_t final : public controller_impl_i {
                 check_events();
                 /* let NPC make moves */
                 next_turn();
-                //check_events();
+                check_events();
             } else if (is_idle(player)) {
                 command_t cmd = {player, message};
                 std::vector<command_t> commands;
@@ -289,14 +289,14 @@ class core_controller_t final : public controller_impl_i {
         warp_random_t *_random;
 
         void check_events() {
-            for (event_t event : _level_state->get_last_turn_events()) {
+            for (const event_t &event : _level_state->get_last_turn_events()) {
                 const event_type_t type = event.type;
-                const object_t *obj = event.object;
+                const object_t *obj = &event.object;
+                const int x = round(obj->position.x);
+                const int z = round(obj->position.z);
                 if (type == EVENT_PLAYER_LEAVE) {
                     _last_player_state = *obj;
                     const object_t *player = &_last_player_state;
-                    const int x = round(player->position.x);
-                    const int z = round(player->position.z);
                     if (x < 0) {
                         start_level_change(player, _level_x - 1, _level_z);
                     } else if (x >= 13) {
@@ -307,8 +307,6 @@ class core_controller_t final : public controller_impl_i {
                         start_level_change(player, _level_x, _level_z + 1);
                     }
                 } else if (type == EVENT_PLAYER_ENTER_PORTAL) {
-                    const int x = round(obj->position.x);
-                    const int z = round(obj->position.z);
                     _level->get_tile_at(x, z)
                             .with_value([this](const tile_t *tile) {
                         if (tile->is_stairs) { 
@@ -319,6 +317,13 @@ class core_controller_t final : public controller_impl_i {
                             }
                         }
                     });
+                } else if (type == EVENT_OBJECT_HURT) {
+                    const vec3_t pos = vec3_add(obj->position, vec3(0, 1, 0));
+                    create_speech_bubble(_world, *_font, pos, get_pain_text());
+                } else if (type == EVENT_OBJECT_KILLED) {
+                    if ((obj->flags & FOBJ_PLAYER_AVATAR) != 0) {
+                        change_region(&_portal);
+                    }
                 }
             }
         }

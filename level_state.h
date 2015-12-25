@@ -61,10 +61,12 @@ struct command_t {
 enum event_type_t : int {
     EVENT_PLAYER_LEAVE = 1,
     EVENT_PLAYER_ENTER_PORTAL,
+    EVENT_OBJECT_HURT,
+    EVENT_OBJECT_KILLED,
 };
 
 struct event_t {
-    const object_t *object;
+    object_t object;
     event_type_t type;
 };
 
