@@ -28,8 +28,6 @@
 using namespace warp;
 
 static const float LEVEL_TRANSITION_TIME = 1.0f;
-static const int PLAYER_MAX_HP = 3;
-static const int PLAYER_MAX_AMMO = 16;
 
 enum core_state_t {
     CSTATE_LEVEL = 0,
@@ -85,42 +83,6 @@ static bool is_idle(const object_t *object) {
     }
     const dynval_t is_idle = object->entity->get_property("avat.is_idle");
     return VALUE(is_idle.get_int()) == 1;
-}
-
-static physics_comp_t *create_object_physics(world_t *world, vec2_t size) {
-    physics_comp_t *physics = world->create_physics();
-    if (physics != nullptr) {
-        physics->_flags = PHYSFLAGS_FIXED;
-        physics->_velocity = vec2(0, 0);
-        physics->_bounds = rectangle_t(vec2(0, 0), size);
-    }
-
-    return physics;
-}
-
-static maybe_t<entity_t *> create_character_entity
-        (vec3_t position, world_t *world, bool confirm_moves) {
-    maybe_t<graphics_comp_t *> graphics
-        = create_single_model_graphics(world, "npc.obj", "missing.png");
-    maybe_t<controller_comp_t *> controller
-        = create_character_controller(world, confirm_moves);
-    physics_comp_t *physics = create_object_physics(world, vec2(0.4f, 0.4f));
-
-    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
-}
-
-static void initialize_player
-        (object_t *player, vec3_t start_position, world_t *world) {
-    const maybe_t<entity_t *> avatar 
-        = create_character_entity(start_position, world, true);
-    player->entity = VALUE(avatar);
-    player->entity->set_tag("player");
-    player->position = start_position;
-    player->direction = DIR_Z_MINUS;
-    player->health = PLAYER_MAX_HP;
-    player->ammo = PLAYER_MAX_AMMO;
-    player->can_shoot = true;
-    player->flags = FOBJ_PLAYER_AVATAR;
 }
 
 class core_controller_t final : public controller_impl_i {
@@ -188,7 +150,7 @@ class core_controller_t final : public controller_impl_i {
             _level_state->respawn(_world, _level, _random);
 
             const vec3_t initial_pos = vec3(_portal.tile_x, 0, _portal.tile_z);
-            initialize_player(&_last_player_state, initial_pos, _world);
+            initialize_player_object(&_last_player_state, initial_pos, _world);
             bool added = _level_state->add_object(_last_player_state);
             if (added == false) {
                 warp_log_e("Failed to spawn player avatar.");
@@ -329,6 +291,7 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void update_player_health_display(const object_t *player) {
+            static const int PLAYER_MAX_HP = 3; /* TODO: fix this later */
             if (player == nullptr) {
                 warp_log_e("Cannot update health, player is null.");
                 return;

@@ -45,10 +45,7 @@ void level_transition_t::initialize_state
         (const tag_t &new_state, world_t *world) const {
     (void) new_state;
     
-    maybeunit_t reset_result = reset_camera(world);
-    if (reset_result.failed()) {
-        warp_log_e("%s\n", reset_result.get_message().c_str());
-    }
+    reset_camera(world).log_failure();
 
     get_default_font(world->get_resources())
             .with_value([world](font_t *font) {

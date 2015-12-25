@@ -106,6 +106,22 @@ static object_t *create_object
     return object;
 }
 
+static const int PLAYER_MAX_HP = 3;
+static const int PLAYER_MAX_AMMO = 16;
+
+extern void initialize_player_object
+        (object_t *player, vec3_t start_position, world_t *world) {
+    const maybe_t<entity_t *> avatar 
+        = create_character_entity(start_position, world, true);
+    player->entity = VALUE(avatar);
+    player->entity->set_tag("player");
+    player->position = start_position;
+    player->direction = DIR_Z_MINUS;
+    player->health = PLAYER_MAX_HP;
+    player->ammo = PLAYER_MAX_AMMO;
+    player->can_shoot = true;
+    player->flags = FOBJ_PLAYER_AVATAR;
+}
 
 static object_flags_t random_movement_flag(warp_random_t *rand) {
     const object_flags_t flags[4]
@@ -388,7 +404,7 @@ void level_state_t::handle_attack
         warp_log_e("Cannot handle attack, null target.");
         return;
     }
-
+    /* TODO: shouldn't this be a separate function? */
     const vec3_t original_position = target->position;
     const vec3_t attacker_position
         = attacker == nullptr ? original_position : attacker->position;

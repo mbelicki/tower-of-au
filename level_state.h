@@ -39,6 +39,9 @@ struct object_t {
     bool can_shoot;
 };
 
+void initialize_player_object
+        (object_t *obj, warp::vec3_t init_pos, warp::world_t *world);
+
 enum feat_state_t : int {
     FSTATE_INACTIVE = 0,
     FSTATE_ACTIVE = 1,
