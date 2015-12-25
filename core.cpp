@@ -207,16 +207,16 @@ class core_controller_t final : public controller_impl_i {
             _level_state = new level_state_t(width, height);
             _level_state->respawn(_world, _level, _random);
 
-            object_t player;
-            initialize_player(&player, vec3(_portal.tile_x, 0, _portal.tile_z), _world);
-            bool added = _level_state->add_object(player);
+            const vec3_t initial_pos = vec3(_portal.tile_x, 0, _portal.tile_z);
+            initialize_player(&_last_player_state, initial_pos, _world);
+            bool added = _level_state->add_object(_last_player_state);
             if (added == false) {
                 warp_log_e("Failed to spawn player avatar.");
                 abort();
             }
 
-            update_player_health_display(&player);
-            update_player_ammo_display(&player);
+            update_player_health_display(&_last_player_state);
+            update_player_ammo_display(&_last_player_state);
         }
 
         void update(float dt, const input_t &) override { 
@@ -234,8 +234,8 @@ class core_controller_t final : public controller_impl_i {
 
                 const int dx = (int)_level_x - (int)_previous_level_x;
                 const int dz = (int)_level_z - (int)_previous_level_z;
-                
-                const object_t *player = _level_state->find_player();
+
+                const object_t *player = &_last_player_state;
 
                 vec3_t player_pos = player->position;
                 player_pos.x += dx * (1 - t) * 13;
@@ -245,7 +245,7 @@ class core_controller_t final : public controller_impl_i {
                 if (_state == CSTATE_LEVEL) {
                     _region->change_display_positions(_level_x, _level_z);
                     _level_state->respawn(_world, _level, _random);
-                    //make_move(player, player->position, true);
+                    _level_state->add_object(_last_player_state);
                 }
             }
         }
@@ -261,7 +261,6 @@ class core_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             if (_state == CSTATE_TRANSITION) return;
             const object_t *player = _level_state->find_player();
-            warp_log_d("player found: %s", player == nullptr ? "nope" : "yeah");
 
             const messagetype_t type = message.type;
             if (type == CORE_BULLET_HIT) {
@@ -272,17 +271,12 @@ class core_controller_t final : public controller_impl_i {
                 //}
                 //handle_attack(object, nullptr);
             } else if (type == CORE_MOVE_DONE) {
-                //next_turn();
-                //const int x = round(_player.position.x);
-                //const int z = round(_player.position.z);
-                //if (x < 0) {
-                //    start_level_change(_level_x - 1, _level_z);
-                //} else if (x >= 13) {
-                //    start_level_change(_level_x + 1, _level_z);
-                //} else if (z < 0) {
-                //    start_level_change(_level_x, _level_z - 1);
-                //} else if (z >= 11) {
-                //    start_level_change(_level_x, _level_z + 1);
+                /* process events from player turn */
+                check_events();
+                /* let NPC make moves */
+                next_turn();
+                //check_events();
+
                 //} else {
                 //    _level->get_tile_at(x, z)
                 //            .with_value([this](const tile_t *tile) {
@@ -301,15 +295,6 @@ class core_controller_t final : public controller_impl_i {
                 commands.push_back(cmd);
                 _level_state->update(_level, commands);
 
-                //if (type == CORE_TRY_MOVE) {
-                    //const int direction = VALUE(message.data.get_int());
-                    //handle_move((move_dir_t)direction);
-                    
-                //} else if (type == CORE_TRY_SHOOT) {
-                    //const move_dir_t direction
-                    //    = (move_dir_t) VALUE(message.data.get_int());
-                    //handle_shooting(player, get_move_direction(direction));
-                //}
             }
         }
 
@@ -318,6 +303,8 @@ class core_controller_t final : public controller_impl_i {
         world_t *_world;
 
         portal_t _portal;
+        object_t _last_player_state;
+
         region_t *_region;
         level_t *_level;
         size_t _level_x;
@@ -334,6 +321,28 @@ class core_controller_t final : public controller_impl_i {
 
         warp_array_t _pain_texts;
         warp_random_t *_random;
+
+        void check_events() {
+            for (event_t event : _level_state->get_last_turn_events()) {
+                const event_type_t type = event.type;
+                const object_t *obj = event.object;
+                if (type == EVENT_PLAYER_LEAVE) {
+                    _last_player_state = *obj;
+                    const object_t *player = &_last_player_state;
+                    const int x = round(player->position.x);
+                    const int z = round(player->position.z);
+                    if (x < 0) {
+                        start_level_change(player, _level_x - 1, _level_z);
+                    } else if (x >= 13) {
+                        start_level_change(player, _level_x + 1, _level_z);
+                    } else if (z < 0) {
+                        start_level_change(player, _level_x, _level_z - 1);
+                    } else if (z >= 11) {
+                        start_level_change(player, _level_x, _level_z + 1);
+                    }
+                }
+            }
+        }
 
         void update_player_health_display(const object_t *player) {
             if (player == nullptr) {
@@ -371,7 +380,7 @@ class core_controller_t final : public controller_impl_i {
             create_fade_circle(_world, 700, change_time, true);
         }
         
-        void start_level_change(size_t x, size_t z) {
+        void start_level_change(const object_t *player, size_t x, size_t z) {
             if (_region->get_level_at(x, z).failed()) return;
 
             _state = CSTATE_TRANSITION;
@@ -379,15 +388,14 @@ class core_controller_t final : public controller_impl_i {
 
             _previous_level_x = _level_x;
             _previous_level_z = _level_z;
-            change_level(x, z);
+            change_level(player, x, z);
         }
 
-        void change_level(size_t x, size_t z) {
+        void change_level(const object_t *player, size_t x, size_t z) {
             const maybe_t<level_t *> maybe_level = _region->get_level_at(x, z);
             if (maybe_level.failed()) return;
 
             _level = VALUE(maybe_level);
-            
             _level_state->clear(_world);
 
             const int dx = x - _level_x;
@@ -395,7 +403,6 @@ class core_controller_t final : public controller_impl_i {
             _level_x = x;
             _level_z = z;
 
-            const object_t *player = _level_state->find_player();
             vec3_t player_pos = player->position;
             player_pos.x -= dx * 13;
             player_pos.z -= dz * 11;
@@ -405,23 +412,9 @@ class core_controller_t final : public controller_impl_i {
             _portal.tile_x = round(player_pos.x);
             _portal.tile_z = round(player_pos.z);
 
-            //make_move(player, player_pos, true);
+            _last_player_state = *player;
+            _last_player_state.position = player_pos;
         }
-
-        //void handle_move(message_t msg) {
-        //    _player.direction = get_move_direction(direction);
-        //    const vec3_t position = move_character(_player, direction);
-        //    if (can_move_to(position, _player.position)) {
-        //        make_move(&_player, position, false);
-        //    } else {
-        //        object_t *npc = npc_at_position(position);
-        //        if (npc != nullptr) {
-        //            handle_attack(npc, &_player);
-        //        } else {
-        //            _player.entity->receive_message(CORE_DO_BOUNCE, position);
-        //        }
-        //    }
-        //}
 
         const char *get_pain_text() {
             const int max_index = array_get_size(&_pain_texts) - 1; 

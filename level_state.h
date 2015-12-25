@@ -58,6 +58,15 @@ struct command_t {
     warp::message_t command;
 };
 
+enum event_type_t : int {
+    EVENT_PLAYER_LEAVE = 1,
+};
+
+struct event_t {
+    const object_t *object;
+    event_type_t type;
+};
+
 class level_state_t {
     public:
         level_state_t(size_t level_width, size_t level_height);
@@ -65,6 +74,7 @@ class level_state_t {
 
         /* single objects/featues management: */
         bool add_object(const object_t &obj);
+
         const object_t *object_at_position(warp::vec3_t pos) const;
         const object_t *object_at(size_t x, size_t y) const;
         const object_t *find_player();
@@ -80,6 +90,10 @@ class level_state_t {
         void update(const level_t *level, const std::vector<command_t> &commands);
         void clear(warp::world_t *world);
 
+        const std::vector<event_t> &get_last_turn_events() const {
+            return _events;
+        }
+
     private:
         void update_object(const object_t *obj, const warp::message_t &command, const level_t *level);
         void handle_move(object_t *target, warp::vec3_t pos, const level_t *level);
@@ -89,8 +103,11 @@ class level_state_t {
         void move_object(object_t *target, warp::vec3_t pos, bool immediate);
         bool hurt_object(object_t *target, int damage);
 
+    private:
         size_t _width, _height;
         object_t  **_objects;
         feature_t **_features;
         bullet_factory_t *_bullets;
+        
+        std::vector<event_t> _events;
 };

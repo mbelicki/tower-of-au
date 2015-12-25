@@ -283,6 +283,7 @@ void level_state_t::respawn
 
 void level_state_t::update
         (const level_t *level, const std::vector<command_t> &commands) {
+    _events.clear();
     for (command_t command : commands) {
         update_object(command.object, command.command, level);
     }
@@ -482,6 +483,15 @@ void level_state_t::move_object(object_t *target, warp::vec3_t pos, bool immedia
     target->position = pos;
     const int msg_type = immediate ? CORE_DO_MOVE_IMMEDIATE : CORE_DO_MOVE;
     target->entity->receive_message(msg_type, pos);
+
+    if ((target->flags & FOBJ_PLAYER_AVATAR) != 0) {
+        const int x = round(pos.x);
+        const int z = round(pos.z);
+        if (x < 0 || x >= 13 || z < 0 || z >= 11) {
+            event_t event = {target, EVENT_PLAYER_LEAVE};
+            _events.push_back(event);
+        }
+    }
 }
 
 bool level_state_t::hurt_object(object_t *target, int damage) {
