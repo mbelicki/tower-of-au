@@ -215,22 +215,14 @@ const feature_t *level_state_t::feature_at(size_t x, size_t y) const {
     return _features[x + _width * y];
 }
 
-bool level_state_t::can_move_to(vec3_t new_pos, const level_t *level) const {
-    if (level == nullptr) {
-        warp_log_e("Cannot spawn objects, null level.");
-        return false;
-    }
-
+bool level_state_t::can_move_to(vec3_t new_pos) const {
     const size_t x = round(new_pos.x);
     const size_t z = round(new_pos.z);
 
-    maybe_t<const tile_t *> maybe_tile = level->get_tile_at(x, z);
+    maybe_t<const tile_t *> maybe_tile = _level->get_tile_at(x, z);
     if (maybe_tile.failed()) return true;
 
     const tile_t *tile = VALUE(maybe_tile);
-    //if (tile->is_stairs) {
-    //    return old_pos.x > new_pos.x;
-    //}
     if (tile->is_walkable == false) return false;
 
     const object_t *object = object_at(x, z);
@@ -243,20 +235,29 @@ bool level_state_t::can_move_to(vec3_t new_pos, const level_t *level) const {
             return false;
         }
     }
-
-    return true; //vec3_eps_compare(new_pos, _player.position, 0.1f) == false;
+    return true;
 }
 
-void level_state_t::respawn
+void level_state_t::spawn
         (world_t *world, const level_t *level, warp_random_t *rand) {
     if (level == nullptr) {
         warp_log_e("Cannot spawn objects, null level.");
+        return;
+    }
+    if (level->get_width() != _width) {
+        warp_log_e("Cannot spawn objects, level width does not match level state width.");
+        return;
+    }
+    if (level->get_height() != _height) {
+        warp_log_e("Cannot spawn objects, level height does not match level state height.");
         return;
     }
     if (rand == nullptr) {
         warp_log_e("Cannot spawn objects, null random generator.");
         return;
     }
+
+    _level = level;
 
     if (_bullets == nullptr) {
         _bullets = new bullet_factory_t(world);
@@ -297,21 +298,19 @@ void level_state_t::respawn
     }
 }
 
-void level_state_t::next_turn
-        (const level_t *level, const std::vector<command_t> &commands) {
+void level_state_t::next_turn(const std::vector<command_t> &commands) {
     _events.clear();
     for (const command_t &command : commands) {
-        update_object(command.object, command.command, level);
+        update_object(command.object, command.command);
     }
 }
 
-void level_state_t::process_real_time_event
-        (const level_t *level, const rt_event_t &event) {
+void level_state_t::process_real_time_event(const rt_event_t &event) {
     _events.clear();
     if (event.type == RT_EVENT_BULETT_HIT) {
         const vec3_t target_pos = VALUE(event.value.get_vec3());
         object_t *object = (object_t *)object_at_position(target_pos);
-        handle_attack(object, nullptr, level);
+        handle_attack(object, nullptr);
     }
 }
 
@@ -360,7 +359,7 @@ static vec3_t calculate_new_pos(const object_t *character, move_dir_t dir) {
 }
 
 void level_state_t::update_object
-        (const object_t *obj, const message_t &command, const level_t *level) {
+        (const object_t *obj, const message_t &command) {
     if (obj == nullptr) {
         warp_log_e("Cannot update null object.");
         return;
@@ -376,28 +375,27 @@ void level_state_t::update_object
     if (type == CORE_TRY_MOVE) {
         move_dir_t dir = (move_dir_t)VALUE(command.data.get_int());
         const vec3_t pos = calculate_new_pos(object, dir);
-        handle_move(object, pos, level);
+        handle_move(object, pos);
     } else if (type == CORE_TRY_SHOOT) {
         const move_dir_t direction = (move_dir_t) VALUE(command.data.get_int());
-        handle_shooting(object, get_move_direction(direction), level);
+        handle_shooting(object, get_move_direction(direction));
     } else {
         warp_log_e("Unsupported message type: %d.", (int)type);
     }
 }
 
-void level_state_t::handle_move
-        (object_t *target, warp::vec3_t pos, const level_t *level) {
+void level_state_t::handle_move(object_t *target, warp::vec3_t pos) {
     if (target == nullptr) { 
         warp_log_e("Cannot handle move, null target.");
         return;
     }
 
-    if (can_move_to(pos, level)) {
-        move_object(target, pos, false, level);
+    if (can_move_to(pos)) {
+        move_object(target, pos, false);
     } else {
         object_t *npc = (object_t *)object_at_position(pos);
         if (npc != nullptr) {
-            handle_attack(npc, target, level);
+            handle_attack(npc, target);
         } else {
             target->entity->receive_message(CORE_DO_BOUNCE, pos);
         }
@@ -408,8 +406,7 @@ static int calculate_damage(const object_t &target) {
     return target.type == OBJ_BOULDER ? 0 : 1;
 }
 
-void level_state_t::handle_attack
-        (object_t *target, object_t *attacker, const level_t *level) {
+void level_state_t::handle_attack(object_t *target, object_t *attacker) {
     if (target == nullptr) { 
         warp_log_e("Cannot handle attack, null target.");
         return;
@@ -420,8 +417,8 @@ void level_state_t::handle_attack
         = attacker == nullptr ? original_position : attacker->position;
     const vec3_t d = vec3_sub(original_position, attacker_position);
     const vec3_t push_back = vec3_add(target->position, d);
-    if (can_move_to(push_back, level)) {
-        move_object(target, push_back, false, level);
+    if (can_move_to(push_back)) {
+        move_object(target, push_back, false);
         target->attacked = true;
     }
 
@@ -430,8 +427,8 @@ void level_state_t::handle_attack
 
     if (attacker != nullptr) {
         if (target->type == OBJ_BOULDER) {
-            if (can_move_to(original_position, level)) {
-                move_object(attacker, original_position, false, level);
+            if (can_move_to(original_position)) {
+                move_object(attacker, original_position, false);
             } else {
                 attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
             }
@@ -441,8 +438,7 @@ void level_state_t::handle_attack
     }
 }
 
-void level_state_t::handle_shooting
-        (object_t *shooter, warp::dir_t dir, const level_t *level) {
+void level_state_t::handle_shooting(object_t *shooter, warp::dir_t dir) {
     if (shooter == nullptr) { 
         warp_log_e("Cannot handle shooting, null shooter.");
         return;
@@ -456,7 +452,7 @@ void level_state_t::handle_shooting
     const vec3_t d = dir_to_vec3(dir);
     const vec3_t pos = vec3_add(shooter->position, vec3_scale(d, 0.5f));
     const vec3_t v = vec3_add(vec3_scale(d, speed), vec3(0.001f, 0, 0.001f));
-    _bullets->create_bullet(pos, v, BULLET_ARROW, level);
+    _bullets->create_bullet(pos, v, BULLET_ARROW, _level);
 
     const vec3_t recoil = vec3_add(shooter->position, vec3_scale(d, -1));
     shooter->entity->receive_message(CORE_DO_BOUNCE, recoil);
@@ -464,7 +460,7 @@ void level_state_t::handle_shooting
 }
 
 void level_state_t::move_object
-        (object_t *target, warp::vec3_t pos, bool immediate, const level_t *level) {
+        (object_t *target, warp::vec3_t pos, bool immediate) {
     if (target == nullptr) {
         warp_log_e("Cannot handle move, null target.");
         return;
@@ -516,7 +512,7 @@ void level_state_t::move_object
             event_t event = {*target, EVENT_PLAYER_LEAVE};
             _events.push_back(event);
         } else {
-            level->get_tile_at(x, z).with_value([this, target](const tile_t *tile) {
+            _level->get_tile_at(x, z).with_value([this, target](const tile_t *tile) {
                 if (tile->is_stairs) { 
                     event_t event = {*target, EVENT_PLAYER_ENTER_PORTAL};
                     _events.push_back(event);

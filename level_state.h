@@ -98,12 +98,12 @@ class level_state_t {
         const feature_t *feature_at(size_t x, size_t y) const;
 
         /* state predicates: */
-        bool can_move_to(warp::vec3_t new_pos, const level_t *level) const;
+        bool can_move_to(warp::vec3_t new_pos) const;
     
         /* global state changes: */
-        void respawn(warp::world_t *world, const level_t *level, warp_random_t *rand);
-        void next_turn(const level_t *level, const std::vector<command_t> &commands);
-        void process_real_time_event(const level_t *level, const rt_event_t &event);
+        void spawn(warp::world_t *world, const level_t *level, warp_random_t *rand);
+        void next_turn(const std::vector<command_t> &commands);
+        void process_real_time_event(const rt_event_t &event);
         void clear(warp::world_t *world);
 
         const std::vector<event_t> &get_last_turn_events() const {
@@ -111,18 +111,19 @@ class level_state_t {
         }
 
     private:
-        void update_object(const object_t *obj, const warp::message_t &command, const level_t *level);
-        void handle_move(object_t *target, warp::vec3_t pos, const level_t *level);
-        void handle_attack(object_t *target, object_t *attacker, const level_t *level);
-        void handle_shooting(object_t *shooter, warp::dir_t dir, const level_t *level);
+        void update_object(const object_t *obj, const warp::message_t &command);
+        void handle_move(object_t *target, warp::vec3_t pos);
+        void handle_attack(object_t *target, object_t *attacker);
+        void handle_shooting(object_t *shooter, warp::dir_t dir);
 
-        void move_object(object_t *target, warp::vec3_t pos, bool immediate, const level_t *level);
+        void move_object(object_t *target, warp::vec3_t pos, bool immediate);
         bool hurt_object(object_t *target, int damage);
 
     private:
         size_t _width, _height;
         object_t  **_objects;
         feature_t **_features;
+        const level_t *_level;
         bullet_factory_t *_bullets;
         
         std::vector<event_t> _events;

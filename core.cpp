@@ -147,7 +147,7 @@ class core_controller_t final : public controller_impl_i {
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
             _level_state = new level_state_t(width, height);
-            _level_state->respawn(_world, _level, _random);
+            _level_state->spawn(_world, _level, _random);
 
             const vec3_t initial_pos = vec3(_portal.tile_x, 0, _portal.tile_z);
             initialize_player_object(&_last_player_state, initial_pos, _world);
@@ -186,7 +186,7 @@ class core_controller_t final : public controller_impl_i {
 
                 if (_state == CSTATE_LEVEL) {
                     _region->change_display_positions(_level_x, _level_z);
-                    _level_state->respawn(_world, _level, _random);
+                    _level_state->spawn(_world, _level, _random);
                     _level_state->add_object(_last_player_state);
                 }
             }
@@ -209,7 +209,7 @@ class core_controller_t final : public controller_impl_i {
             const object_t *player = _level_state->find_player();
             if (type == CORE_BULLET_HIT) {
                 rt_event_t event = {RT_EVENT_BULETT_HIT, message.data};
-                _level_state->process_real_time_event(_level, event);
+                _level_state->process_real_time_event(event);
 
                 check_events();
             } else if (type == CORE_MOVE_DONE) {
@@ -221,7 +221,7 @@ class core_controller_t final : public controller_impl_i {
                 command_t cmd = {player, message};
                 std::vector<command_t> commands;
                 commands.push_back(cmd);
-                _level_state->next_turn(_level, commands);
+                _level_state->next_turn(commands);
 
                 check_events();
             }
@@ -373,7 +373,7 @@ class core_controller_t final : public controller_impl_i {
 
         void next_turn() {
             std::vector<command_t> commands;
-            _level_state->next_turn(_level, commands);
+            _level_state->next_turn(commands);
 
             //const size_t width  = _level->get_width();
             //const size_t height = _level->get_height();
