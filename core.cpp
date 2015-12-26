@@ -24,6 +24,7 @@
 #include "persitence.h"
 #include "text-label.h"
 #include "transition_effect.h"
+#include "objects_ai.h"
 
 using namespace warp;
 
@@ -48,32 +49,6 @@ static warp_array_t create_pain_texts() {
     array_append_value(warp_str_t, &array, str_create("uggh!"));
     array_append_value(warp_str_t, &array, str_create("agh!"));
     return array;
-}
-
-static dir_t vec3_to_dir(const vec3_t v) {
-    const vec3_t absolutes = vec3(fabs(v.x), fabs(v.y), fabs(v.z));
-    if (absolutes.x > absolutes.y) {
-        if (absolutes.x > absolutes.z) {
-            return signum(v.x) > 0 ? DIR_X_PLUS : DIR_X_MINUS;
-        } else {
-            return signum(v.z) > 0 ? DIR_Z_PLUS : DIR_Z_MINUS;
-        }
-    } else {
-        if (absolutes.y > absolutes.z) {
-            return signum(v.y) > 0 ? DIR_Y_PLUS : DIR_Y_MINUS;
-        } else {
-            return signum(v.z) > 0 ? DIR_Z_PLUS : DIR_Z_MINUS;
-        }
-    }
-}
-
-static void shuffle(dir_t *array, size_t n) {
-    for (size_t i = 0; i < n - 1; i++) {
-        size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
-        dir_t tmp = array[j];
-        array[j] = array[i];
-        array[i] = tmp;
-    }
 }
 
 static bool is_idle(const object_t *object) {
@@ -378,121 +353,18 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void next_turn() {
+            std::vector<const object_t *> characters;
+            _level_state->find_all_characters(&characters);
+
             std::vector<command_t> commands;
+            for (const object_t *obj : characters) {
+                if (needs_update(obj)) {
+                    command_t buffer;
+                    pick_next_command(&buffer, obj, _level_state, _random);
+                    commands.push_back(buffer);
+                }
+            }
             _level_state->next_turn(commands);
-
-            //const size_t width  = _level->get_width();
-            //const size_t height = _level->get_height();
-            //const size_t max_characters = width * height;
-            //
-            //size_t count = 0;
-            //object_t **buffer = new object_t * [max_characters];
-
-            //for (size_t x = 0; x < width; x++) {
-            //    for (size_t y = 0; y < height; y++) {
-            //        object_t *npc = object_at(x, y);
-            //        if (npc != nullptr && is_idle(*npc)) {
-            //            buffer[count] = npc;
-            //            count++;
-            //        }
-            //    }
-            //}
-
-            //for (size_t i = 0; i < count; i++) {
-            //    update_npc(buffer[i]);
-            //}
-
-            //delete buffer;
-        }
-
-        dir_t pick_next_direction(const object_t &npc) {
-            //const vec3_t diff = vec3_sub(_player.position, npc.position);
-            //const dir_t dir = vec3_to_dir(diff);
-            //const vec3_t position = vec3_add(npc.position, dir_to_vec3(dir));
-            //if (can_move_to(position, npc.position)) {
-            //    return dir;
-            //} else {
-            //    dir_t directions[4] { 
-            //        DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
-            //    };
-            //    shuffle(directions, 4);
-
-            //    const vec3_t position = npc.position;
-            //    for (size_t i = 0; i < 4; i++) {
-            //        const dir_t dir = directions[i];
-            //        const vec3_t target = vec3_add(position, dir_to_vec3(dir));
-            //        if (can_move_to(target, position))
-            //            return dir;
-            //    }
-            //}
-
-            return npc.direction;
-        }
-
-        //bool can_attack_player(const object_t &npc) {
-        //    const float dx = fabs(npc.position.x - _player.position.x);
-        //    const float dz = fabs(npc.position.z - _player.position.z);
-        //    if (dx > 1.1f || dz > 1.1f) return false;
-        //    
-        //    const bool close_x = epsilon_compare(dx, 1, 0.05f);
-        //    const bool close_z = epsilon_compare(dz, 1, 0.05f);
-
-        //    return close_x != close_z; /* xor */
-        //}
-
-        //dir_t can_shoot_player(const object_t &npc) {
-        //    if (npc.can_shoot == false || npc.ammo <= 0) return DIR_NONE;
-
-        //    const float dx = npc.position.x - _player.position.x;
-        //    const float dz = npc.position.z - _player.position.z;
-
-        //    const bool zero_x = epsilon_compare(dx, 0, 0.05f);
-        //    const bool zero_z = epsilon_compare(dz, 0, 0.05f);
-        //    if ((zero_x || zero_z) == false) return DIR_NONE;
-
-        //    const size_t x = round(npc.position.x);
-        //    const size_t z = round(npc.position.z);
-        //    std::function<bool(const tile_t *)> pred = [](const tile_t *t) {
-        //        return t->is_walkable;
-        //    };
-
-        //    if (zero_x) {
-        //        dir_t result = dz > 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
-        //        const size_t dist = round(fabs(dz) - 1);
-        //        if (_level->scan_if_all(pred, x, z, result, dist))
-        //            return result;
-        //    } else if (zero_z) {
-        //        dir_t result = dx > 0 ? DIR_X_MINUS : DIR_X_PLUS;
-        //        const size_t dist = round(fabs(dx) - 1);
-        //        if (_level->scan_if_all(pred, x, z, result, dist))
-        //            return result;
-        //    }
-        //    return DIR_NONE;
-        //}
-
-        void update_npc(object_t *npc) {
-            if (npc->type != OBJ_CHARACTER) {
-                return;
-            }
-            if (npc->attacked) {
-                npc->attacked = false;
-                npc->direction = opposite_dir(npc->direction);
-            }
-
-            //dir_t shoot_dir = DIR_NONE;
-            //if (can_attack_player(*npc)) {
-            //    handle_attack(&_player, npc);
-            //} else if ((shoot_dir = can_shoot_player(*npc)) != DIR_NONE) {
-            //    handle_shooting(npc, shoot_dir);               
-            //} else {
-            //    vec3_t position = vec3_add(npc->position, dir_to_vec3(npc->direction));
-            //    const bool change_dir = warp_random_float(_random) > 0.6f;
-            //    if (change_dir || (can_move_to(position, npc->position) == false)) {
-            //        npc->direction = pick_next_direction(*npc);
-            //        position = vec3_add(npc->position, dir_to_vec3(npc->direction));
-            //    }
-            //    make_move(npc, position, false);
-            //}
         }
 };
 

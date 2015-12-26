@@ -183,7 +183,7 @@ const object_t *level_state_t::object_at(size_t x, size_t y) const {
     return _objects[x + _width * y];
 }
 
-const object_t *level_state_t::find_player() {
+const object_t *level_state_t::find_player() const {
     const size_t count = _width * _height;
     for (size_t i = 0; i < count; i++) {
         const object_t *obj = _objects[i];
@@ -471,6 +471,9 @@ void level_state_t::move_object
     const size_t old_z = round(old_position.z);
     const size_t new_x = round(pos.x);
     const size_t new_z = round(pos.z);
+
+    const vec3_t diff = vec3_sub(pos, old_position);
+    target->direction = vec3_to_dir(diff);
 
     _objects[old_x + _width * old_z] = nullptr;
     _objects[new_x + _width * new_z] = target;

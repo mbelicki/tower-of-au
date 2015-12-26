@@ -92,7 +92,7 @@ class level_state_t {
 
         const object_t *object_at_position(warp::vec3_t pos) const;
         const object_t *object_at(size_t x, size_t y) const;
-        const object_t *find_player();
+        const object_t *find_player() const;
         void find_all_characters(std::vector<const object_t *> *characters);
 
         const feature_t *feature_at(size_t x, size_t y) const;
@@ -109,6 +109,8 @@ class level_state_t {
         const std::vector<event_t> &get_last_turn_events() const {
             return _events;
         }
+
+        const level_t *get_current_level() const { return _level; }
 
     private:
         void update_object(const object_t *obj, const warp::message_t &command);
