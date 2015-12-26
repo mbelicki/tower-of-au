@@ -201,28 +201,29 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_message(const message_t &message) override {
-            if (_state == CSTATE_TRANSITION) return;
-            const object_t *player = _level_state->find_player();
+            if (_state == CSTATE_TRANSITION) { 
+                return;
+            }
 
             const messagetype_t type = message.type;
+            const object_t *player = _level_state->find_player();
             if (type == CORE_BULLET_HIT) {
-                //const vec3_t target_pos = VALUE(message.data.get_vec3());
-                //object_t *object = npc_at_position(target_pos);
-                //if (vec3_eps_compare(target_pos, _player.position, 0.05f)) {
-                //    object = &_player;
-                //}
-                //handle_attack(object, nullptr);
-            } else if (type == CORE_MOVE_DONE) {
-                /* process events from player turn */
+                rt_event_t event = {RT_EVENT_BULETT_HIT, message.data};
+                _level_state->process_real_time_event(_level, event);
+
                 check_events();
+            } else if (type == CORE_MOVE_DONE) {
                 /* let NPC make moves */
                 next_turn();
+
                 check_events();
             } else if (is_idle(player)) {
                 command_t cmd = {player, message};
                 std::vector<command_t> commands;
                 commands.push_back(cmd);
-                _level_state->update(_level, commands);
+                _level_state->next_turn(_level, commands);
+
+                check_events();
             }
         }
 
@@ -280,7 +281,7 @@ class core_controller_t final : public controller_impl_i {
                         }
                     });
                 } else if (type == EVENT_OBJECT_HURT) {
-                    const vec3_t pos = vec3_add(obj->position, vec3(0, 1, 0));
+                    const vec3_t pos = vec3_add(obj->position, vec3(0, 1.3f, -0.1f));
                     create_speech_bubble(_world, *_font, pos, get_pain_text());
                 } else if (type == EVENT_OBJECT_KILLED) {
                     if ((obj->flags & FOBJ_PLAYER_AVATAR) != 0) {
@@ -372,7 +373,7 @@ class core_controller_t final : public controller_impl_i {
 
         void next_turn() {
             std::vector<command_t> commands;
-            _level_state->update(_level, commands);
+            _level_state->next_turn(_level, commands);
 
             //const size_t width  = _level->get_width();
             //const size_t height = _level->get_height();

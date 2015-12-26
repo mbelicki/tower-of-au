@@ -73,6 +73,15 @@ struct event_t {
     event_type_t type;
 };
 
+enum rt_event_type_t : int {
+    RT_EVENT_BULETT_HIT = 1,
+};
+
+struct rt_event_t {
+    rt_event_type_t type;
+    warp::dynval_t value;
+};
+
 class level_state_t {
     public:
         level_state_t(size_t level_width, size_t level_height);
@@ -93,7 +102,8 @@ class level_state_t {
     
         /* global state changes: */
         void respawn(warp::world_t *world, const level_t *level, warp_random_t *rand);
-        void update(const level_t *level, const std::vector<command_t> &commands);
+        void next_turn(const level_t *level, const std::vector<command_t> &commands);
+        void process_real_time_event(const level_t *level, const rt_event_t &event);
         void clear(warp::world_t *world);
 
         const std::vector<event_t> &get_last_turn_events() const {

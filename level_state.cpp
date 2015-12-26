@@ -297,11 +297,21 @@ void level_state_t::respawn
     }
 }
 
-void level_state_t::update
+void level_state_t::next_turn
         (const level_t *level, const std::vector<command_t> &commands) {
     _events.clear();
-    for (command_t command : commands) {
+    for (const command_t &command : commands) {
         update_object(command.object, command.command, level);
+    }
+}
+
+void level_state_t::process_real_time_event
+        (const level_t *level, const rt_event_t &event) {
+    _events.clear();
+    if (event.type == RT_EVENT_BULETT_HIT) {
+        const vec3_t target_pos = VALUE(event.value.get_vec3());
+        object_t *object = (object_t *)object_at_position(target_pos);
+        handle_attack(object, nullptr, level);
     }
 }
 
