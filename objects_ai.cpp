@@ -58,7 +58,6 @@ static dir_t can_shoot_other
 
 static void shuffle(dir_t *array, size_t n, warp_random_t *rand) {
     for (size_t i = 0; i < n - 1; i++) {
-        //size_t j = i + rand() / (RAND_MAX / (n - i) + 1);
         const size_t j = i + warp_random_from_range(rand, 0, n - i);
         dir_t tmp = array[j];
         array[j] = array[i];
@@ -108,6 +107,14 @@ static move_dir_t dir_to_move(dir_t d) {
     }
 }
 
+static bool can_ai_move_to(vec3_t position, const level_state_t *state) {
+    const int x = round(position.x);
+    const int z = round(position.z);
+    if (x < 0 || x >= 13) return false;
+    if (z < 0 || z >= 11) return false;
+    return state->can_move_to(position);
+}
+
 extern void pick_next_command
         ( command_t *command, const object_t *obj
         , const level_state_t* state, warp_random_t *rand
@@ -146,7 +153,7 @@ extern void pick_next_command
         vec3_t position = vec3_add(obj->position, dir_to_vec3(obj->direction));
         dir_t dir = obj->direction;
         const bool change_dir = warp_random_float(rand) > 0.6f;
-        if (change_dir || (state->can_move_to(position) == false)) {
+        if (change_dir || can_ai_move_to(position, state) == false) {
             dir = pick_next_direction(*obj, *player, state, rand);
         }
         command->command = message_t(CORE_TRY_MOVE, (int)dir_to_move(dir));

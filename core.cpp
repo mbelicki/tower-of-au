@@ -66,6 +66,7 @@ class core_controller_t final : public controller_impl_i {
                 : _owner(nullptr)
                 , _world(nullptr)
                 , _portal(*start)
+                , _waiting_for_animation(false)
                 , _level(nullptr)
                 , _level_x(0), _level_z(0)
                 , _font(nullptr)
@@ -187,8 +188,9 @@ class core_controller_t final : public controller_impl_i {
                 _level_state->process_real_time_event(event);
 
                 check_events();
-            } else if (type == CORE_MOVE_DONE) {
+            } else if (type == CORE_MOVE_DONE && _waiting_for_animation) {
                 /* let NPC make moves */
+                _waiting_for_animation = false;
                 next_turn();
 
                 check_events();
@@ -199,6 +201,7 @@ class core_controller_t final : public controller_impl_i {
                 _level_state->next_turn(commands);
 
                 check_events();
+                _waiting_for_animation = true;
             }
         }
 
@@ -208,6 +211,7 @@ class core_controller_t final : public controller_impl_i {
 
         portal_t _portal;
         object_t _last_player_state;
+        bool _waiting_for_animation;
 
         region_t *_region;
         level_t *_level;
