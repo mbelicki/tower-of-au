@@ -122,6 +122,7 @@ class level_state_t {
         bool hurt_object(object_t *target, int damage);
 
     private:
+        bool _initialized;
         size_t _width, _height;
         object_t  **_objects;
         feature_t **_features;

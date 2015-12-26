@@ -112,6 +112,9 @@ extern void pick_next_command
         ( command_t *command, const object_t *obj
         , const level_state_t* state, warp_random_t *rand
         ) {
+    command->object = nullptr;
+    command->command = message_t(0, dynval_t::make_null());
+
     if (command == nullptr) {
         warp_log_e("Cannot fill null command.");
         return;
@@ -135,7 +138,8 @@ extern void pick_next_command
     
     dir_t shoot_dir = DIR_NONE;
     if (can_attack_other(*obj, *player)) {
-        command->command = message_t(CORE_TRY_MOVE, (int)MOVE_LEFT);
+        const vec3_t diff = vec3_sub(player->position, obj->position);
+        command->command = message_t(CORE_TRY_MOVE, (int)dir_to_move(vec3_to_dir(diff)));
     } else if ((shoot_dir = can_shoot_other(*obj, *player, state)) != DIR_NONE) {
         command->command = message_t(CORE_TRY_SHOOT, (int)dir_to_move(shoot_dir));
     } else {

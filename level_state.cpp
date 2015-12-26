@@ -133,7 +133,8 @@ static object_flags_t random_movement_flag(warp_random_t *rand) {
 
 
 level_state_t::level_state_t(size_t width, size_t height) 
-        : _width(width)
+        : _initialized(false)
+        , _width(width)
         , _height(height)
         , _objects(nullptr)
         , _features(nullptr)
@@ -256,7 +257,11 @@ void level_state_t::spawn
         warp_log_e("Cannot spawn objects, null random generator.");
         return;
     }
-
+    if (_initialized) {
+        warp_log_e("Cannot spawn objects, already spawned.");
+        return;
+    }
+    _initialized = true;
     _level = level;
 
     if (_bullets == nullptr) {
@@ -299,6 +304,10 @@ void level_state_t::spawn
 }
 
 void level_state_t::next_turn(const std::vector<command_t> &commands) {
+    if (_initialized == false) {
+        warp_log_e("Cannot simulate next turn, state not spawned.");
+        return;
+    }
     _events.clear();
     for (const command_t &command : commands) {
         update_object(command.object, command.command);
@@ -306,6 +315,11 @@ void level_state_t::next_turn(const std::vector<command_t> &commands) {
 }
 
 void level_state_t::process_real_time_event(const rt_event_t &event) {
+    if (_initialized == false) {
+        warp_log_e("Cannot process real time event, state not spawned.");
+        return;
+    }
+
     _events.clear();
     if (event.type == RT_EVENT_BULETT_HIT) {
         const vec3_t target_pos = VALUE(event.value.get_vec3());
@@ -315,6 +329,12 @@ void level_state_t::process_real_time_event(const rt_event_t &event) {
 }
 
 void level_state_t::clear(world_t *world) {
+    if (_initialized == false) {
+        warp_log_e("Cannot clear, already cleared.");
+        return;
+    }
+    _initialized = false;
+
     std::vector<entity_t *> buffer;
     world->find_all_entities("object", &buffer);
     for (entity_t *npc : buffer) {
