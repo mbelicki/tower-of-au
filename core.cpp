@@ -180,8 +180,8 @@ class core_controller_t final : public controller_impl_i {
                 const object_t *player = &_last_player_state;
 
                 vec3_t player_pos = player->position;
-                player_pos.x += dx * (1 - t) * 13;
-                player_pos.z += dz * (1 - t) * 11;
+                player_pos.x += dx * (1 - t) * (13 - 1);
+                player_pos.z += dz * (1 - t) * (11 - 1);
                 player->entity->receive_message(CORE_DO_MOVE_IMMEDIATE, player_pos);
 
                 if (_state == CSTATE_LEVEL) {
