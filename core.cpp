@@ -289,6 +289,12 @@ class core_controller_t final : public controller_impl_i {
                     }
                 }
             }
+
+            const object_t *player = _level_state->find_player();
+            if (player != nullptr) {
+                update_player_health_display(player);
+                update_player_ammo_display(player);
+            }
         }
 
         void update_player_health_display(const object_t *player) {
