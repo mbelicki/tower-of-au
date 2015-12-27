@@ -116,7 +116,7 @@ extern void initialize_player_object
     player->entity = VALUE(avatar);
     player->entity->set_tag("player");
     player->position = start_position;
-    player->direction = DIR_Z_MINUS;
+    player->direction = DIR_Z_PLUS;
     player->health = PLAYER_MAX_HP;
     player->ammo = PLAYER_MAX_AMMO;
     player->can_shoot = true;
@@ -176,6 +176,7 @@ bool level_state_t::add_object(const object_t &obj) {
     *new_obj = obj;
 
     _objects[x + _width * z] = new_obj;
+    new_obj->entity->receive_message(CORE_DO_ROTATE, (int)new_obj->direction);
     return true;
 }
 
@@ -296,7 +297,7 @@ void level_state_t::spawn
             if (obj_type != OBJ_NONE && tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
-                    _objects[id] = create_object(world, obj_type, DIR_Z_MINUS, i, j);
+                    _objects[id] = create_object(world, obj_type, DIR_Z_PLUS, i, j);
                     _objects[id]->can_shoot = warp_random_boolean(rand);
                     _objects[id]->flags = random_movement_flag(rand);
                     change_direction(_objects[id], random_direction(rand));
