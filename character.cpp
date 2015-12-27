@@ -19,11 +19,18 @@ static const float MOVE_ATTACK_TIME = 0.3f;
 static const float HEAL_DYING_TIME  = MOVE_ATTACK_TIME;
 static const float HEAL_HURT_TIME   = MOVE_ATTACK_TIME;
 
+static const float ROTATE_ROTATION_TIME = 0.3f;
+
 enum movement_state_t : unsigned int {
     MOVE_IDLE = 0,
     MOVE_MOVING,
     MOVE_BOUNCING,
     MOVE_ATTACKING,
+};
+
+enum rotation_state_t : unsigned int {
+    ROATE_IDLE = 0,
+    ROATE_ROTATING,
 };
 
 enum health_state_t : unsigned int {
@@ -37,6 +44,13 @@ static float get_time_for_char_state(movement_state_t state) {
         case MOVE_MOVING:    return MOVE_MOVE_TIME;
         case MOVE_BOUNCING:  return MOVE_BOUNCE_TIME;
         case MOVE_ATTACKING: return MOVE_ATTACK_TIME;
+        default: return 0;
+    }
+}
+
+static float get_time_for_rotate_state(rotation_state_t state) {
+    switch (state) {
+        case ROATE_ROTATING: return ROTATE_ROTATION_TIME;
         default: return 0;
     }
 }
@@ -163,6 +177,93 @@ class movement_controller_t final : public controller_impl_i {
 
 };
 
+class rotation_controller_t final : public controller_impl_i {
+    public:
+        rotation_controller_t()
+            : _owner(nullptr)
+            , _world(nullptr)
+            , _timer(0)
+            , _state(ROATE_IDLE)
+            , _old_dir(DIR_Z_MINUS)
+            , _new_dir(DIR_Z_MINUS)
+        { }
+
+        dynval_t get_property(const tag_t &) const override {
+            return dynval_t::make_null();
+        }
+
+        void initialize(entity_t *owner, world_t *world) override {
+            _owner = owner;
+            _world = world;
+        }
+
+        void update(float dt, const input_t &) override { 
+            if (_timer <= 0) {
+                _timer = 0;
+                _state = ROATE_IDLE;
+                set_angle(dir_to_angle(_new_dir));
+                return;
+            } 
+
+            _timer -= dt;
+            const float t = _timer / get_time_for_rotate_state(_state);
+
+            if (_state == ROATE_ROTATING) {
+                update_rotating(t);
+            }
+        }
+
+        bool accepts(messagetype_t type) const override {
+            return type == CORE_DO_ROTATE;
+        }
+
+        void handle_message(const message_t &message) override {
+            const messagetype_t type = message.type;
+            if (type == CORE_DO_ROTATE) {
+                const dir_t dir = (dir_t) VALUE(message.data.get_int());
+                change_state(ROATE_ROTATING, dir);
+            }
+        }
+
+    private:
+        entity_t *_owner;
+        world_t *_world;
+        float _timer;
+        rotation_state_t _state;
+
+        dir_t _old_dir;
+        dir_t _new_dir;
+
+        void change_state(rotation_state_t state, dir_t new_dir) {
+            _state = state;
+            _timer = get_time_for_rotate_state(state);
+            _old_dir = _new_dir;
+            _new_dir = new_dir;
+        }
+
+        void update_rotating(float t) {
+            float old_angle = dir_to_angle(_old_dir);
+            float new_angle = dir_to_angle(_new_dir);
+
+            float diff = new_angle - old_angle;
+            if (diff > PI * 1.1f) {
+                old_angle += 2 * PI;
+                diff = new_angle - old_angle;
+            } else if (diff < -PI * 1.1f) {
+                old_angle -= 2 * PI;
+                diff = new_angle - old_angle;
+            }
+            
+            const float k = ease_cubic(1 - t);
+            set_angle(old_angle + k * diff);
+        }
+
+        void set_angle(float angle) {
+            const quaternion_t quat = quat_from_euler(0, angle + PI, 0);
+            _owner->receive_message(MSG_PHYSICS_ROTATE, quat);
+        }
+};
+
 class health_controller_t final : public controller_impl_i {
     public:
         health_controller_t()
@@ -244,6 +345,7 @@ extern maybe_t<controller_comp_t *> create_character_controller
         (world_t *world, bool confirm_move) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new movement_controller_t(confirm_move));
+    controller->add_controller(new rotation_controller_t);
     controller->add_controller(new health_controller_t);
     return controller;
 }

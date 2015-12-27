@@ -245,6 +245,13 @@ bool level_state_t::can_move_to(vec3_t new_pos) const {
     return true;
 }
 
+static void change_direction(object_t *obj, dir_t dir) {
+    if (obj->direction != dir && obj->type != OBJ_BOULDER) {
+        obj->direction = dir;
+        obj->entity->receive_message(CORE_DO_ROTATE, (int)dir);
+    }
+}
+
 void level_state_t::spawn
         (world_t *world, const level_t *level, warp_random_t *rand) {
     if (level == nullptr) {
@@ -289,10 +296,10 @@ void level_state_t::spawn
             if (obj_type != OBJ_NONE && tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
-                    const dir_t dir = random_direction(rand); 
-                    _objects[id] = create_object(world, obj_type, dir, i, j);
+                    _objects[id] = create_object(world, obj_type, DIR_Z_MINUS, i, j);
                     _objects[id]->can_shoot = warp_random_boolean(rand);
                     _objects[id]->flags = random_movement_flag(rand);
+                    change_direction(_objects[id], random_direction(rand));
                 }
             }
 
@@ -447,6 +454,10 @@ void level_state_t::handle_attack(object_t *target, object_t *attacker) {
     hurt_object(target, damage);
 
     if (attacker != nullptr) {
+        /* rotate attacker */
+        const vec3_t diff = vec3_sub(target->position, original_position);
+        change_direction(attacker, vec3_to_dir(diff));
+        
         if (target->type == OBJ_BOULDER) {
             if (can_move_to(original_position)) {
                 move_object(attacker, original_position, false);
@@ -467,6 +478,8 @@ void level_state_t::handle_shooting(object_t *shooter, warp::dir_t dir) {
     if (shooter->can_shoot == false || shooter->ammo <= 0) { 
         return;
     }
+
+    change_direction(shooter, dir);
 
     const float speed = 4.5f;
 
@@ -494,7 +507,8 @@ void level_state_t::move_object
     const size_t new_z = round(pos.z);
 
     const vec3_t diff = vec3_sub(pos, old_position);
-    target->direction = vec3_to_dir(diff);
+    const dir_t new_dir = vec3_to_dir(diff); 
+    change_direction(target, new_dir);
 
     _objects[old_x + _width * old_z] = nullptr;
     _objects[new_x + _width * new_z] = target;
