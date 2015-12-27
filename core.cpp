@@ -362,11 +362,10 @@ class core_controller_t final : public controller_impl_i {
 
             std::vector<command_t> commands;
             for (const object_t *obj : characters) {
-                if (needs_update(obj)) {
-                    command_t buffer;
-                    pick_next_command(&buffer, obj, _level_state, _random);
-                    commands.push_back(buffer);
-                }
+                command_t buffer;
+                const bool picked
+                    = pick_next_command(&buffer, obj, _level_state, _random);
+                if (picked) commands.push_back(buffer);
             }
             _level_state->next_turn(commands);
         }

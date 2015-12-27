@@ -13,9 +13,9 @@ extern bool needs_update(const object_t *obj) {
         && ((obj->flags & FOBJ_PLAYER_AVATAR) == 0);
 }
 
-static bool can_attack_other(const object_t &npc, const object_t &other) {
-    const float dx = fabs(npc.position.x - other.position.x);
-    const float dz = fabs(npc.position.z - other.position.z);
+static bool can_attack(const object_t *attacker, const object_t *target) {
+    const float dx = fabs(attacker->position.x - target->position.x);
+    const float dz = fabs(attacker->position.z - target->position.z);
     if (dx > 1.1f || dz > 1.1f) return false;
     
     const bool close_x = epsilon_compare(dx, 1, 0.05f);
@@ -24,19 +24,25 @@ static bool can_attack_other(const object_t &npc, const object_t &other) {
     return close_x != close_z; /* xor */
 }
 
-static dir_t can_shoot_other
-        (const object_t &npc, const object_t &other, const level_state_t *state) {
-    if (npc.can_shoot == false || npc.ammo <= 0) return DIR_NONE;
+static bool can_shoot(const object_t *shooter, const object_t *target) {
+    if (shooter == nullptr || target == nullptr) return false;
+    if (shooter->can_shoot == false || shooter->ammo <= 0) return false;
+    return true;
+}
 
-    const float dx = npc.position.x - other.position.x;
-    const float dz = npc.position.z - other.position.z;
+static dir_t pick_shooting_direction
+        (const object_t *shooter, const object_t *target, const level_state_t *state) {
+    if (can_shoot(shooter, target) == false) return DIR_NONE;
+
+    const float dx = shooter->position.x - target->position.x;
+    const float dz = shooter->position.z - target->position.z;
 
     const bool zero_x = epsilon_compare(dx, 0, 0.05f);
     const bool zero_z = epsilon_compare(dz, 0, 0.05f);
     if ((zero_x || zero_z) == false) return DIR_NONE;
 
-    const size_t x = round(npc.position.x);
-    const size_t z = round(npc.position.z);
+    const size_t x = round(shooter->position.x);
+    const size_t z = round(shooter->position.z);
     std::function<bool(const tile_t *)> pred = [](const tile_t *t) {
         return t->is_walkable;
     };
@@ -44,12 +50,12 @@ static dir_t can_shoot_other
     const level_t *level = state->get_current_level();
     if (zero_x) {
         dir_t result = dz > 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
-        const size_t dist = round(fabs(dz) - 1);
+        const size_t dist = round(fabs(dz));
         if (level->scan_if_all(pred, x, z, result, dist))
             return result;
     } else if (zero_z) {
         dir_t result = dx > 0 ? DIR_X_MINUS : DIR_X_PLUS;
-        const size_t dist = round(fabs(dx) - 1);
+        const size_t dist = round(fabs(dx));
         if (level->scan_if_all(pred, x, z, result, dist))
             return result;
     }
@@ -65,7 +71,7 @@ static void shuffle(dir_t *array, size_t n, warp_random_t *rand) {
     }
 }
 
-static dir_t pick_next_direction
+static dir_t pick_roam_direction
         ( const object_t &npc, const object_t &other
         , const level_state_t *state, warp_random_t *rand
         ) {
@@ -115,47 +121,82 @@ static bool can_ai_move_to(vec3_t position, const level_state_t *state) {
     return state->can_move_to(position);
 }
 
-extern void pick_next_command
+static dir_t pick_move_direction
+        (const object_t *obj, const level_state_t* state, warp_random_t *rand) {
+    if (obj->flags & FOBJ_NPCMOVE_STILL) {
+        return DIR_NONE;
+    }
+
+    dir_t dir = obj->direction;
+    const vec3_t next_pos = vec3_add(obj->position, dir_to_vec3(dir));
+    const bool obstacle_ahead = can_ai_move_to(next_pos, state) == false;
+
+    if (obj->flags & FOBJ_NPCMOVE_ROAM) {
+        const bool change_dir = warp_random_float(rand) > 0.6f;
+        if (change_dir || obstacle_ahead) {
+            const object_t *player = state->find_player();
+            dir = pick_roam_direction(*obj, *player, state, rand);
+        }
+    } else if (obj->flags & FOBJ_NPCMOVE_LINE) {
+        if (obstacle_ahead) {
+            dir = opposite_dir(dir);
+        }
+    }
+
+    return dir;
+}
+
+static void fill_command
+        (command_t *command, const object_t *obj, int type, dir_t dir) {
+    command->object = obj;
+    command->command = message_t(type, (int)dir_to_move(dir));
+}
+
+extern bool pick_next_command
         ( command_t *command, const object_t *obj
         , const level_state_t* state, warp_random_t *rand
         ) {
-    command->object = nullptr;
-    command->command = message_t(0, dynval_t::make_null());
-
     if (command == nullptr) {
         warp_log_e("Cannot fill null command.");
-        return;
+        return false;
     }
     if (obj == nullptr) {
         warp_log_e("Cannot pick command for null object.");
-        return;
+        return false;
     }
     if (state == nullptr) {
         warp_log_e("Cannot pick command with null state.");
-        return;
+        return false;
+    }
+    if (needs_update(obj) == false) {
+        return false;
     }
 
     const object_t *player = state->find_player();
     if (player == nullptr) {
         warp_log_e("Couldn't find player.");
-        return;
+        return false;
     }
 
-    command->object = obj;
-    
-    dir_t shoot_dir = DIR_NONE;
-    if (can_attack_other(*obj, *player)) {
+    /* try to perform one of the attacks */
+    if (can_attack(obj, player)) {
         const vec3_t diff = vec3_sub(player->position, obj->position);
-        command->command = message_t(CORE_TRY_MOVE, (int)dir_to_move(vec3_to_dir(diff)));
-    } else if ((shoot_dir = can_shoot_other(*obj, *player, state)) != DIR_NONE) {
-        command->command = message_t(CORE_TRY_SHOOT, (int)dir_to_move(shoot_dir));
-    } else {
-        vec3_t position = vec3_add(obj->position, dir_to_vec3(obj->direction));
-        dir_t dir = obj->direction;
-        const bool change_dir = warp_random_float(rand) > 0.6f;
-        if (change_dir || can_ai_move_to(position, state) == false) {
-            dir = pick_next_direction(*obj, *player, state, rand);
+        fill_command(command, obj, CORE_TRY_MOVE, vec3_to_dir(diff));
+        return true;
+    } else if (can_shoot(obj, player)) {
+        const dir_t shoot_dir = pick_shooting_direction(obj, player, state);
+        if (shoot_dir != DIR_NONE) {
+            fill_command(command, obj, CORE_TRY_SHOOT, shoot_dir);
+            return true;
         }
-        command->command = message_t(CORE_TRY_MOVE, (int)dir_to_move(dir));
+    } 
+
+    /* if none of the attacks succeeded try to move: */
+    const dir_t dir = pick_move_direction(obj, state, rand);
+    if (dir != DIR_NONE) {
+        fill_command(command, obj, CORE_TRY_MOVE, dir);
+        return true;
     }
+
+    return false;
 }

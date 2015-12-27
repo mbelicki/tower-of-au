@@ -16,12 +16,11 @@ namespace warp {
 class bullet_factory_t;
 
 enum object_flags_t {
-    FOBJ_NONE          =  0,
-    FOBJ_PLAYER_AVATAR =  1,
-    FOBJ_NPCMOVE_STILL =  2,
-    FOBJ_NPCMOVE_VLINE =  4,
-    FOBJ_NPCMOVE_HLINE =  8,
-    FOBJ_NPCMOVE_ROAM  = 16,
+    FOBJ_NONE          = 0,
+    FOBJ_PLAYER_AVATAR = 1,
+    FOBJ_NPCMOVE_STILL = 2,
+    FOBJ_NPCMOVE_LINE  = 4,
+    FOBJ_NPCMOVE_ROAM  = 8,
 };
 
 struct object_t {

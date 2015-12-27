@@ -124,13 +124,19 @@ extern void initialize_player_object
 }
 
 static object_flags_t random_movement_flag(warp_random_t *rand) {
-    const object_flags_t flags[4]
-        = { FOBJ_NPCMOVE_STILL, FOBJ_NPCMOVE_VLINE
-          , FOBJ_NPCMOVE_HLINE, FOBJ_NPCMOVE_ROAM
+    const object_flags_t flags[3]
+        = { FOBJ_NPCMOVE_STILL, FOBJ_NPCMOVE_LINE
+          , FOBJ_NPCMOVE_ROAM
           };
-    return flags[warp_random_from_range(rand, 0, 3)];
+    return flags[warp_random_from_range(rand, 0, 2)];
 }
 
+static dir_t random_direction(warp_random_t *rand) {
+    const dir_t directions[4] { 
+        DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
+    };
+    return directions[warp_random_from_range(rand, 0, 3)];
+}
 
 level_state_t::level_state_t(size_t width, size_t height) 
         : _initialized(false)
@@ -269,10 +275,6 @@ void level_state_t::spawn
         _bullets->initialize();
     }
 
-    const dir_t directions[4] { 
-        DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
-    };
-
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
             const maybe_t<const tile_t *> maybe_tile
@@ -287,8 +289,7 @@ void level_state_t::spawn
             if (obj_type != OBJ_NONE && tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
-                    int dir_index = warp_random_from_range(rand, 0, 3);
-                    const dir_t dir = directions[dir_index];
+                    const dir_t dir = random_direction(rand); 
                     _objects[id] = create_object(world, obj_type, dir, i, j);
                     _objects[id]->can_shoot = warp_random_boolean(rand);
                     _objects[id]->flags = random_movement_flag(rand);
