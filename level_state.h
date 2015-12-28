@@ -16,12 +16,15 @@ namespace warp {
 class bullet_factory_t;
 
 enum object_flags_t {
-    FOBJ_NONE          = 0,
-    FOBJ_PLAYER_AVATAR = 1,
-    FOBJ_NPCMOVE_STILL = 2,
-    FOBJ_NPCMOVE_LINE  = 4,
-    FOBJ_NPCMOVE_ROAM  = 8,
+    FOBJ_NONE          =  0,
+    FOBJ_PLAYER_AVATAR =  1,
+    FOBJ_NPCMOVE_STILL =  2,
+    FOBJ_NPCMOVE_LINE  =  4,
+    FOBJ_NPCMOVE_ROAM  =  8,
+    FOBJ_CAN_SHOOT     = 16,
 };
+
+WARP_ENABLE_FLAGS(object_flags_t)
 
 struct object_t {
     object_type_t type;
@@ -34,8 +37,6 @@ struct object_t {
 
     int health;
     int ammo;
-    bool attacked;
-    bool can_shoot;
 };
 
 void initialize_player_object
@@ -80,6 +81,8 @@ struct rt_event_t {
     rt_event_type_t type;
     warp::dynval_t value;
 };
+
+class object_factory_t;
 
 class level_state_t {
     public:
@@ -126,7 +129,9 @@ class level_state_t {
         object_t  **_objects;
         feature_t **_features;
         const level_t *_level;
-        bullet_factory_t *_bullets;
+
+        bullet_factory_t *_bullet_factory;
+        object_factory_t *_object_factory;
         
         std::vector<event_t> _events;
 };

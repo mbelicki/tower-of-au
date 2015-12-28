@@ -106,14 +106,15 @@
         {
             "symbol" : "B",
             "walkable" : true,
-            "object" : "OBJ_BOULDER",
+            "object" : "boulder",
             "graphics" : "grass",
             "spawnRate" : 1.0
         },
         {
             "symbol" : "X",
             "walkable" : true,
-            "object" : "OBJ_NPC_GRUNT",
+            "object" : "weak_roaming",
+            "objectDirection" : "x_plus",
             "graphics" : "grass",
             "spawnRate" : 1.0
         }

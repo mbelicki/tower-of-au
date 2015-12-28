@@ -31,7 +31,8 @@ struct tile_t {
     bool is_stairs;
 
     float spawn_probablity;
-    object_type_t spawned_object;
+    warp::tag_t object_id;
+    warp::dir_t object_dir;
 
     feature_type_t feature;
     size_t feat_target_id;

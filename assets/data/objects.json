@@ -1,0 +1,28 @@
+{
+    "objects" : [
+        {
+            "name" : "boulder",
+            "type" : "boulder",
+            "movementType" : "line",
+            "health" : 2,
+            "canShoot" : false,
+            "ammo" : 0,
+            "graphics" : {
+                "mesh" : "boulder.obj",
+                "texture" : "missing.png"
+            }
+        },
+        {
+            "name" : "weak_roaming",
+            "type" : "character",
+            "movementType" : "roam",
+            "health" : 2,
+            "canShoot" : false,
+            "ammo" : 0,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "missing.png"
+            }
+        }
+    ]
+}

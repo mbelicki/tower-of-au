@@ -8,6 +8,7 @@
 #include "character.h"
 #include "features.h"
 #include "bullets.h"
+#include "object_factory.h"
 
 using namespace warp;
 
@@ -51,17 +52,6 @@ static maybe_t<entity_t *> create_character_entity
     return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
 }
 
-static maybe_t<entity_t *> create_boulder_entity
-        (vec3_t position, world_t *world) {
-    maybe_t<graphics_comp_t *> graphics
-        = create_single_model_graphics(world, "boulder.obj", "missing.png");
-    maybe_t<controller_comp_t *> controller
-        = create_character_controller(world, false);
-    physics_comp_t *physics = create_object_physics(world, vec2(0.6f, 0.6f));
-
-    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
-}
-
 static feature_t *create_feature
         (world_t *world, feature_type_t type, size_t target, size_t x, size_t z) {
     const vec3_t pos = vec3(x, 0, z);
@@ -82,30 +72,6 @@ static feature_t *create_feature
     return feat;
 }
 
-static object_t *create_object
-        (world_t *world, object_type_t type, dir_t dir, size_t x, size_t z) {
-    const vec3_t pos = vec3(x, 0, z);
-    const maybe_t<entity_t *> entity
-        = type == OBJ_CHARACTER
-        ? create_character_entity(pos, world, false)
-        : create_boulder_entity(pos, world)
-        ;
-
-    object_t *object = new (std::nothrow) object_t;
-    object->type = type;
-    object->position = pos;
-    object->direction = dir;
-    object->health = 2;
-    object->ammo = 8;
-    object->can_shoot = false;
-    object->flags = FOBJ_NONE;
-
-    object->entity = VALUE(entity);
-    object->entity->set_tag("object");
-
-    return object;
-}
-
 static const int PLAYER_MAX_HP = 3;
 static const int PLAYER_MAX_AMMO = 16;
 
@@ -119,23 +85,7 @@ extern void initialize_player_object
     player->direction = DIR_Z_PLUS;
     player->health = PLAYER_MAX_HP;
     player->ammo = PLAYER_MAX_AMMO;
-    player->can_shoot = true;
-    player->flags = FOBJ_PLAYER_AVATAR;
-}
-
-static object_flags_t random_movement_flag(warp_random_t *rand) {
-    const object_flags_t flags[3]
-        = { FOBJ_NPCMOVE_STILL, FOBJ_NPCMOVE_LINE
-          , FOBJ_NPCMOVE_ROAM
-          };
-    return flags[warp_random_from_range(rand, 0, 2)];
-}
-
-static dir_t random_direction(warp_random_t *rand) {
-    const dir_t directions[4] { 
-        DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
-    };
-    return directions[warp_random_from_range(rand, 0, 3)];
+    player->flags = FOBJ_PLAYER_AVATAR | FOBJ_CAN_SHOOT;
 }
 
 level_state_t::level_state_t(size_t width, size_t height) 
@@ -144,7 +94,9 @@ level_state_t::level_state_t(size_t width, size_t height)
         , _height(height)
         , _objects(nullptr)
         , _features(nullptr)
-        , _bullets(nullptr) {
+        , _bullet_factory(nullptr) 
+        , _object_factory(nullptr) 
+        {
 
     const size_t count = _width * _height;
     _objects  = new object_t  * [count];
@@ -164,7 +116,8 @@ level_state_t::~level_state_t() {
     }
     delete _objects;
     delete _features;
-    delete _bullets;
+    delete _bullet_factory;
+    delete _object_factory;
 }
 
 bool level_state_t::add_object(const object_t &obj) {
@@ -278,9 +231,13 @@ void level_state_t::spawn
     _initialized = true;
     _level = level;
 
-    if (_bullets == nullptr) {
-        _bullets = new bullet_factory_t(world);
-        _bullets->initialize();
+    if (_bullet_factory == nullptr) {
+        _bullet_factory = new bullet_factory_t(world);
+        _bullet_factory->initialize();
+    }
+    if (_object_factory == nullptr) {
+        _object_factory = new object_factory_t();
+        _object_factory->load_definitions("objects.json");
     }
 
     for (size_t i = 0; i < _width; i++) {
@@ -291,16 +248,15 @@ void level_state_t::spawn
 
             const size_t id = i + _width * j;
             const tile_t *tile = VALUE(maybe_tile);
-            const object_type_t obj_type = tile->spawned_object;
             const feature_type_t feat_type = tile->feature;
 
-            if (obj_type != OBJ_NONE && tile->spawn_probablity > 0) {
+            if (tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
-                    _objects[id] = create_object(world, obj_type, DIR_Z_PLUS, i, j);
-                    _objects[id]->can_shoot = warp_random_boolean(rand);
-                    _objects[id]->flags = random_movement_flag(rand);
-                    change_direction(_objects[id], random_direction(rand));
+                    const vec3_t pos = vec3(i, 0, j);
+                    _objects[id] = _object_factory->spawn
+                        (tile->object_id, pos, tile->object_dir, rand, world);
+                    //change_direction(_objects[id], random_direction(rand));
                 }
             }
 
@@ -448,7 +404,6 @@ void level_state_t::handle_attack(object_t *target, object_t *attacker) {
     const vec3_t push_back = vec3_add(target->position, d);
     if (can_move_to(push_back)) {
         move_object(target, push_back, false);
-        target->attacked = true;
     }
 
     const int damage = calculate_damage(*target);
@@ -476,7 +431,7 @@ void level_state_t::handle_shooting(object_t *shooter, warp::dir_t dir) {
         warp_log_e("Cannot handle shooting, null shooter.");
         return;
     }
-    if (shooter->can_shoot == false || shooter->ammo <= 0) { 
+    if ((shooter->flags & FOBJ_CAN_SHOOT) == 0 || shooter->ammo <= 0) { 
         return;
     }
 
@@ -487,7 +442,7 @@ void level_state_t::handle_shooting(object_t *shooter, warp::dir_t dir) {
     const vec3_t d = dir_to_vec3(dir);
     const vec3_t pos = vec3_add(shooter->position, vec3_scale(d, 0.5f));
     const vec3_t v = vec3_add(vec3_scale(d, speed), vec3(0.001f, 0, 0.001f));
-    _bullets->create_bullet(pos, v, BULLET_ARROW, _level);
+    _bullet_factory->create_bullet(pos, v, BULLET_ARROW, _level);
 
     const vec3_t recoil = vec3_add(shooter->position, vec3_scale(d, -1));
     shooter->entity->receive_message(CORE_DO_BOUNCE, recoil);

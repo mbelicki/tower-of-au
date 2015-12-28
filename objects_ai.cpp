@@ -26,7 +26,7 @@ static bool can_attack(const object_t *attacker, const object_t *target) {
 
 static bool can_shoot(const object_t *shooter, const object_t *target) {
     if (shooter == nullptr || target == nullptr) return false;
-    if (shooter->can_shoot == false || shooter->ammo <= 0) return false;
+    if ((shooter->flags & FOBJ_CAN_SHOOT) == 0 || shooter->ammo <= 0) return false;
     return true;
 }
 

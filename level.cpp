@@ -159,7 +159,6 @@ static void fill_empty_room(tile_t *tiles, size_t width, size_t height) {
 			tiles[index].is_walkable = is_wall == false;
 			tiles[index].is_stairs = false;
             tiles[index].spawn_probablity = 0;
-            tiles[index].spawned_object = OBJ_NONE;
             tiles[index].feature = FEAT_NONE;
         }
     }
@@ -183,14 +182,10 @@ extern level_t *generate_test_level() {
     tiles[4 + width * 2].is_stairs = true;
 
     tiles[8 + width * 1].spawn_probablity = 1;
-    tiles[8 + width * 1].spawned_object = OBJ_CHARACTER;
     tiles[9 + width * 2].spawn_probablity = 1;
-    tiles[9 + width * 2].spawned_object = OBJ_CHARACTER;
     tiles[3 + width * 5].spawn_probablity = 1;
-    tiles[3 + width * 5].spawned_object = OBJ_CHARACTER;
 
     tiles[4 + width * 7].spawn_probablity = 1;
-    tiles[4 + width * 7].spawned_object = OBJ_BOULDER;
 
     tiles[7 + width * 7].feature = FEAT_BUTTON;
     tiles[7 + width * 7].feat_target_id = 7 + width * 4;
@@ -217,11 +212,6 @@ extern level_t *generate_random_level(warp_random_t *random) {
                 tiles[index].is_walkable = is_floor;
                 if (is_floor && warp_random_float(random) < 0.05f) {
                     tiles[index].spawn_probablity = warp_random_float(random);
-                    tiles[index].spawned_object
-                        = warp_random_float(random) < 0.7f
-                        ? OBJ_CHARACTER
-                        : OBJ_BOULDER
-                        ;
                 }  
             }
         }

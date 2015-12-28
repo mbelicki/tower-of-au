@@ -170,14 +170,18 @@ static feature_type_t feature_from_string(const char *type) {
     return FEAT_NONE;
 }
 
-static object_type_t object_from_string(const char *type) {
-    if (type == nullptr) return OBJ_NONE;
-    if (strncmp(type, "OBJ_NPC_GRUNT", 9) == 0) {
-        return OBJ_CHARACTER;
-    } else if (strncmp(type, "OBJ_BOULDER", 11) == 0) {
-        return OBJ_BOULDER;
+static dir_t parse_direction(const char *dir) {
+    if (dir == nullptr) return DIR_NONE;
+    if (strncmp(dir, "x_plus", 7) == 0) {
+        return DIR_X_PLUS;
+    } else if (strncmp(dir, "x_minus", 8) == 0) {
+        return DIR_X_MINUS;
+    } else if (strncmp(dir, "z_plsu", 7) == 0) {
+        return DIR_Z_PLUS;
+    } else if (strncmp(dir, "z_minus", 8) == 0) {
+        return DIR_Z_MINUS;
     }
-    return OBJ_NONE;
+    return DIR_NONE;
 }
 
 static void fill_default_tile(tile_t *tile) {
@@ -186,7 +190,7 @@ static void fill_default_tile(tile_t *tile) {
     tile->is_walkable = true;
     tile->is_stairs = false;
     tile->spawn_probablity = 0;
-    tile->spawned_object = OBJ_NONE;
+    tile->object_dir = DIR_NONE;
     tile->feature = FEAT_NONE;
     tile->feat_target_id = 0;
 }
@@ -202,8 +206,11 @@ static tile_t parse_tile(JSON_Object *tile) {
         result.is_stairs = json_object_get_boolean(tile, "stairs");
     }
     if (json_object_get_value(tile, "object") != nullptr) {
-        const char *type = json_object_get_string(tile, "object");
-        result.spawned_object = object_from_string(type);
+        result.object_id = json_object_get_string(tile, "object");
+    }
+    if (json_object_get_value(tile, "objectDirection") != nullptr) {
+        const char *dir = json_object_get_string(tile, "objectDirection");
+        result.object_dir = parse_direction(dir);
     }
     if (json_object_get_value(tile, "feature") != nullptr) {
         const char *type = json_object_get_string(tile, "feature");
