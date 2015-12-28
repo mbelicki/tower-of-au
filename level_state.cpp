@@ -41,17 +41,6 @@ static maybe_t<entity_t *> create_door_entity
     return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
 }
 
-static maybe_t<entity_t *> create_character_entity
-        (vec3_t position, world_t *world, bool confirm_moves) {
-    maybe_t<graphics_comp_t *> graphics
-        = create_single_model_graphics(world, "npc.obj", "missing.png");
-    maybe_t<controller_comp_t *> controller
-        = create_character_controller(world, confirm_moves);
-    physics_comp_t *physics = create_object_physics(world, vec2(0.4f, 0.4f));
-
-    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
-}
-
 static feature_t *create_feature
         (world_t *world, feature_type_t type, size_t target, size_t x, size_t z) {
     const vec3_t pos = vec3(x, 0, z);
@@ -70,22 +59,6 @@ static feature_t *create_feature
     feat->state = FSTATE_INACTIVE;
 
     return feat;
-}
-
-static const int PLAYER_MAX_HP = 3;
-static const int PLAYER_MAX_AMMO = 16;
-
-extern void initialize_player_object
-        (object_t *player, vec3_t start_position, world_t *world) {
-    const maybe_t<entity_t *> avatar 
-        = create_character_entity(start_position, world, true);
-    player->entity = VALUE(avatar);
-    player->entity->set_tag("player");
-    player->position = start_position;
-    player->direction = DIR_Z_PLUS;
-    player->health = PLAYER_MAX_HP;
-    player->ammo = PLAYER_MAX_AMMO;
-    player->flags = FOBJ_PLAYER_AVATAR | FOBJ_CAN_SHOOT;
 }
 
 level_state_t::level_state_t(size_t width, size_t height) 
@@ -130,6 +103,19 @@ bool level_state_t::add_object(const object_t &obj) {
 
     _objects[x + _width * z] = new_obj;
     new_obj->entity->receive_message(CORE_DO_ROTATE, (int)new_obj->direction);
+    return true;
+}
+
+bool level_state_t::spaw_object
+        (tag_t name, vec3_t pos, warp_random_t *rand, world_t *world) {
+    const size_t x = round(pos.x);
+    const size_t z = round(pos.z);
+    if (object_at(x, z) != nullptr) return false;
+
+    object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_MINUS, rand, world);
+
+    _objects[x + _width * z] = new_obj;
+    new_obj->entity->receive_message(CORE_DO_ROTATE, (int)DIR_Z_PLUS);
     return true;
 }
 

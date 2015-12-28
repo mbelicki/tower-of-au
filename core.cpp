@@ -126,8 +126,7 @@ class core_controller_t final : public controller_impl_i {
             _level_state->spawn(_world, _level, _random);
 
             const vec3_t initial_pos = vec3(_portal.tile_x, 0, _portal.tile_z);
-            initialize_player_object(&_last_player_state, initial_pos, _world);
-            bool added = _level_state->add_object(_last_player_state);
+            bool added = _level_state->spaw_object("player", initial_pos, _random, world);
             if (added == false) {
                 warp_log_e("Failed to spawn player avatar.");
                 abort();

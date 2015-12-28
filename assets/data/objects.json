@@ -3,10 +3,6 @@
         {
             "name" : "boulder",
             "type" : "boulder",
-            "movementType" : "line",
-            "health" : 2,
-            "canShoot" : false,
-            "ammo" : 0,
             "graphics" : {
                 "mesh" : "boulder.obj",
                 "texture" : "missing.png"
@@ -19,6 +15,18 @@
             "health" : 2,
             "canShoot" : false,
             "ammo" : 0,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "missing.png"
+            }
+        },
+        {
+            "name" : "player",
+            "type" : "character",
+            "playerAvatar" : true,
+            "health" : 3,
+            "canShoot" : true,
+            "ammo" : 16,
             "graphics" : {
                 "mesh" : "npc.obj",
                 "texture" : "missing.png"

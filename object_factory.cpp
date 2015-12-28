@@ -27,6 +27,7 @@ struct object_def_t {
     int           health;
     int           ammo;
     bool          can_shoot;
+    bool          is_player;
 
     warp_str_t    mesh_name;
     warp_str_t    texture_name;
@@ -91,11 +92,11 @@ static int parse_ammo(JSON_Object *obj) {
     return (int)json_object_get_number(obj, "ammo");
 }
 
-static bool parse_can_shoot(JSON_Object *obj) {
-    if (has_json_member(obj, "canShoot") == false) {
+static bool parse_bool_flag(JSON_Object *obj, const char *name) {
+    if (has_json_member(obj, name) == false) {
         return false;
     }
-    return json_object_get_boolean(obj, "canShoot");
+    return json_object_get_boolean(obj, name);
 }
 
 static void parse_graphics(object_def_t *def, JSON_Object *object) {
@@ -119,7 +120,8 @@ static void parse_definition
     def->movement_type = parse_movement(object);
     def->health        = parse_health(object);
     def->ammo          = parse_ammo(object);
-    def->can_shoot     = parse_can_shoot(object);
+    def->can_shoot     = parse_bool_flag(object, "canShoot");
+    def->is_player     = parse_bool_flag(object, "playerAvatar");
     
     parse_graphics(def, object);
 
@@ -181,6 +183,9 @@ static object_flags_t evaluate_flags(const object_def_t *def) {
     if (def->can_shoot) {
         flags |= FOBJ_CAN_SHOOT;
     }
+    if (def->is_player) {
+        flags |= FOBJ_PLAYER_AVATAR;
+    }
     flags |= movement_to_flag(def->movement_type);
     return flags;
 }
@@ -227,7 +232,7 @@ static entity_t *create_entity
 
     entity_t *entity
         = world->create_entity(obj->position, graphics, physics, controller);
-    entity->set_tag("object");
+    entity->set_tag(def->is_player ? "player" : "object");
     return entity;
 }
 
