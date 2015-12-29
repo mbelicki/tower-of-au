@@ -266,7 +266,7 @@ object_t *object_factory_t::spawn
 
 const object_def_t *object_factory_t::get_definition(tag_t name) {
     const std::map<warp::tag_t, object_def_t *>::iterator it = _objects.find(name);
-    if (it == _objects.end()) { 
+    if (it == _objects.end()) {
         return nullptr;
     }
     return it->second;

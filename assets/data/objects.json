@@ -9,12 +9,35 @@
             }
         },
         {
+            "name" : "weak_linear",
+            "type" : "character",
+            "movementType" : "line",
+            "health" : 2,
+            "canShoot" : false,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "missing.png"
+            }
+        },
+        {
             "name" : "weak_roaming",
             "type" : "character",
             "movementType" : "roam",
             "health" : 2,
             "canShoot" : false,
             "ammo" : 0,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "missing.png"
+            }
+        },
+        {
+            "name" : "stationary_shooter",
+            "type" : "character",
+            "movementType" : "still",
+            "health" : 1024,
+            "canShoot" : true,
+            "ammo" : 1024,
             "graphics" : {
                 "mesh" : "npc.obj",
                 "texture" : "missing.png"

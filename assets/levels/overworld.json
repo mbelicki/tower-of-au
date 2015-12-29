@@ -121,9 +121,9 @@
     ],
     "portals" : [
         {
-            "region": "test_01.json",
-            "level": {"x": 0, "y": 0},
-            "tile": {"x": 2, "y": 2}
+            "region": "dungeon_00.json",
+            "level": {"x": 1, "y": 3},
+            "tile": {"x": 6, "y": 10}
         },
         {
             "region": "test_01.json",

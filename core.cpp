@@ -112,7 +112,6 @@ class core_controller_t final : public controller_impl_i {
             }
 
             _region->change_display_positions(_level_x, _level_z);
-
             _level = VALUE(_region->get_level_at(_level_x, _level_z));
             
             get_default_font(world->get_resources())
@@ -125,8 +124,8 @@ class core_controller_t final : public controller_impl_i {
             _level_state = new level_state_t(width, height);
             _level_state->spawn(_world, _level, _random);
 
-            const vec3_t initial_pos = vec3(_portal.tile_x, 0, _portal.tile_z);
-            bool added = _level_state->spaw_object("player", initial_pos, _random, world);
+            const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
+            bool added = _level_state->spaw_object("player", pos, _random, world);
             if (added == false) {
                 warp_log_e("Failed to spawn player avatar.");
                 abort();

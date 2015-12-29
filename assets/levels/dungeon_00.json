@@ -1,0 +1,325 @@
+{
+    "graphics" : [
+        {
+            "name" : "wall",
+            "mesh" : "wall.obj",
+            "texture" : "wall.png"
+        },
+        {
+            "name" : "floor",
+            "mesh" : "floor.obj",
+            "texture" : "wall.png"
+        }
+    ],
+    "tiles" : [
+        {
+            "symbol" : "#",
+            "walkable" : false,
+            "graphics" : "wall"
+        },
+        {
+            "symbol" : " ",
+            "walkable" : true,
+            "graphics" : "floor"
+        },
+        {
+            "symbol" : "B",
+            "walkable" : true,
+            "object" : "boulder",
+            "graphics" : "floor",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "D",
+            "walkable" : true,
+            "graphics" : "floor",
+            "feature" : "FEAT_DOOR",
+            "spawnRate" : 1.0
+        }
+    ],
+    "portals" : [
+        {
+            "region": "overworld.json",
+            "level": {"x": 0, "y": 0},
+            "tile": {"x": 2, "y": 2}
+        }
+    ],
+    "width" : 3,
+    "height" : 4,
+    "levels" : [
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 8, "y" : 4}
+                },
+                {
+                    "symbol" : "2",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 9, "y" : 7}
+                },
+                {
+                    "symbol" : "R",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "object" : "weak_linear",
+                    "objectDirection" : "x_plus",
+                    "spawnRate" : 1.0
+                },
+                {
+                    "symbol" : "L",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "object" : "weak_linear",
+                    "objectDirection" : "x_minus",
+                    "spawnRate" : 1.0
+                }
+            ],
+            "data": [
+                "### #########",
+                "#    #  #   #",
+                "#    # BBB  #",
+                "#    #    21 ",
+                "#    ###D####",
+                "#    #      #",
+                "#    ##R   ##",
+                "#    ####D###",
+                "#    ##   L##",
+                "#    #      #",
+                "## ###### ###"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "####     ####",
+                "##         ##",
+                "  B        B#",
+                "##         ##",
+                "####     ####",
+                "###### ######",
+                "####     ####",
+                "####     ####",
+                "####     ####",
+                "####     ####"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [
+                {
+                    "symbol" : "S",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "object" : "stationary_shooter",
+                    "objectDirection" : "z_minus",
+                    "spawnRate" : 1.0
+                },
+                {
+                    "symbol" : "s",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "object" : "stationary_shooter",
+                    "objectDirection" : "x_minus",
+                    "spawnRate" : 1.0
+                },
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 6, "y" : 4}
+                },
+                {
+                    "symbol" : "2",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 2, "y" : 7}
+                },
+                {
+                    "symbol" : "3",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 2, "y" : 2}
+                },
+                {
+                    "symbol" : "4",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 2, "y" : 1}
+                }
+            ],
+            "data": [
+                "## ###### ###",
+                "##D## 1 #   #",
+                "##D##  BB   #",
+                "#   s#   B   ",
+                "# B ##D##   #",
+                "# 4 #   #   #",
+                "# B #   #   #",
+                "##D##BB #    ",
+                "#    32 #   #",
+                "#      ##SSS#",
+                "#############"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "####     ####",
+                "#  #     #  #",
+                "#  #     #  #",
+                "   D     D   ",
+                "#  #     #  #",
+                "#  #     #  #",
+                "#  #     #  #",
+                "   D     D   ",
+                "#  #     #  #",
+                "#  #     #  #",
+                "###### ######"
+            ]
+        },
+        {
+            "tiles": [],
+            "data": [
+                "#############",
+                "#           #",
+                "#           #",
+                "            #",
+                "#           #",
+                "#           #",
+                "#           #",
+                "            #",
+                "#           #",
+                "#           #",
+                "#############"
+            ]
+        }
+    ]
+}

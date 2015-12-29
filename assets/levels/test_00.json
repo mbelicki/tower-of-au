@@ -81,7 +81,7 @@
         {
             "symbol" : "B",
             "walkable" : true,
-            "object" : "OBJ_BOULDER",
+            "object" : "boulder",
             "graphics" : "floor",
             "spawnRate" : 1.0
         }
@@ -107,7 +107,7 @@
                     "symbol" : "E",
                     "walkable" : true,
                     "graphics" : "floor",
-                    "object" : "OBJ_NPC_GRUNT",
+                    "object" : "weak_roaming",
                     "spawnRate" : 0.9
                 }
             ],
@@ -122,7 +122,7 @@
                 "R  E  R  E  L",
                 "R LR     LR L",
                 "R           L",
-                "HHHHHHHHHHHHH"
+                "HHHHHHHHH HHH"
             ]
         },
         {
@@ -144,31 +144,72 @@
         {
             "tiles": [
                 {
-                    "symbol" : "N",
+                    "symbol" : "S",
                     "walkable" : true,
                     "graphics" : "floor",
-                    "object" : "OBJ_NPC_GRUNT",
+                    "object" : "stationary_shooter",
+                    "objectDirection" : "z_minus",
                     "spawnRate" : 1.0
                 },
                 {
-                    "symbol" : "n",
+                    "symbol" : "s",
                     "walkable" : true,
                     "graphics" : "floor",
-                    "object" : "OBJ_NPC_GRUNT",
-                    "spawnRate" : 0.5
+                    "object" : "stationary_shooter",
+                    "objectDirection" : "x_minus",
+                    "spawnRate" : 1.0
+                },
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 6, "y" : 4}
+                },
+                {
+                    "symbol" : "2",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 2, "y" : 7}
+                },
+                {
+                    "symbol" : "3",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 2, "y" : 2}
+                },
+                {
+                    "symbol" : "4",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 2, "y" : 1}
+                },
+                {
+                    "symbol" : "D",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_DOOR",
+                    "spawnRate" : 1.0
                 }
             ],
             "data": [
-                "#############",
-                "#           #",
-                "# ##B###B## #",
-                "# #       # #",
-                "# B       n #",
-                "# #   N      ",
-                "# B       n #",
-                "# #       # #",
-                "# ##B###B## #",
-                "#           #",
+                "## ###### ###",
+                "##D## 1 #   #",
+                "##D##  BB   #",
+                "#   s#   B  #",
+                "# B ##D##   #",
+                "# 4 #   #    ",
+                "# B #   #   #",
+                "##D##BB #   #",
+                "#    32 #   #",
+                "#      ##SSS#",
                 "#############"
             ]
         },
