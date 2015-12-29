@@ -176,7 +176,7 @@ static dir_t parse_direction(const char *dir) {
         return DIR_X_PLUS;
     } else if (strncmp(dir, "x_minus", 8) == 0) {
         return DIR_X_MINUS;
-    } else if (strncmp(dir, "z_plsu", 7) == 0) {
+    } else if (strncmp(dir, "z_plus", 7) == 0) {
         return DIR_Z_PLUS;
     } else if (strncmp(dir, "z_minus", 8) == 0) {
         return DIR_Z_MINUS;

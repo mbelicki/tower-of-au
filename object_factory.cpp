@@ -5,6 +5,8 @@
 #include "warp/entity.h"
 #include "warp/entity-helpers.h"
 #include "warp/utils/str.h"
+#include "warp/textures.h"
+#include "warp/meshmanager.h"
 
 #include "libs/parson/parson.h"
 
@@ -152,6 +154,19 @@ bool object_factory_t::load_definitions(const char *filename) {
     return true;
 }
 
+
+void object_factory_t::load_resources(const resources_t *res) {
+    meshmanager_t *meshes = res->meshes;
+    texturemgr_t *textures = res->textures;
+
+    typedef std::map<tag_t, object_def_t *>::iterator map_it_t;
+    for (map_it_t it = _objects.begin(); it != _objects.end(); it++) {
+        const object_def_t *def = it->second;
+        meshes->add_mesh(str_value(def->mesh_name));
+        textures->add_texture(str_value(def->texture_name));
+    }
+}
+
 static dir_t random_direction(warp_random_t *rand) {
     const dir_t directions[4] { 
         DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
@@ -199,6 +214,7 @@ static graphics_comp_t *create_graphics
         (world_t *world, const object_def_t *def) {
     const char *mesh_name = str_value(def->mesh_name);
     const char *tex_name = str_value(def->texture_name);
+
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, mesh_name, tex_name);
     return VALUE(graphics);

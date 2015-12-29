@@ -9,6 +9,18 @@
             }
         },
         {
+            "name" : "weak_stationary",
+            "type" : "character",
+            "movementType" : "still",
+            "health" : 1,
+            "canShoot" : false,
+            "canRotate" : false,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "red.png"
+            }
+        },
+        {
             "name" : "weak_linear",
             "type" : "character",
             "movementType" : "line",
@@ -17,7 +29,7 @@
             "canRotate" : false,
             "graphics" : {
                 "mesh" : "npc.obj",
-                "texture" : "missing.png"
+                "texture" : "red.png"
             }
         },
         {
@@ -30,7 +42,7 @@
             "ammo" : 0,
             "graphics" : {
                 "mesh" : "npc.obj",
-                "texture" : "missing.png"
+                "texture" : "red.png"
             }
         },
         {
@@ -43,7 +55,7 @@
             "ammo" : 1024,
             "graphics" : {
                 "mesh" : "npc.obj",
-                "texture" : "missing.png"
+                "texture" : "red.png"
             }
         },
         {

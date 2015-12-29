@@ -35,6 +35,54 @@
             "graphics" : "floor",
             "feature" : "FEAT_DOOR",
             "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "R",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_linear",
+            "objectDirection" : "x_plus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "L",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_linear",
+            "objectDirection" : "x_minus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "r",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_stationary",
+            "objectDirection" : "x_plus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "l",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_stationary",
+            "objectDirection" : "x_minus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "d",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_stationary",
+            "objectDirection" : "z_plus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "u",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_stationary",
+            "objectDirection" : "z_minus",
+            "spawnRate" : 1.0
         }
     ],
     "portals" : [
@@ -102,13 +150,13 @@
                 "#           #",
                 "#           #",
                 "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#############"
+                "#L  #       #",
+                "# B##       #",
+                "#   #       #",
+                "#   ##      #",
+                "# B  #      #",
+                "#    #      #",
+                "### #########"
             ]
         },
         {
@@ -160,35 +208,19 @@
                     "feature" : "FEAT_BUTTON",
                     "spawnRate" : 1.0,
                     "target" : { "x" : 9, "y" : 7}
-                },
-                {
-                    "symbol" : "R",
-                    "walkable" : true,
-                    "graphics" : "floor",
-                    "object" : "weak_linear",
-                    "objectDirection" : "x_plus",
-                    "spawnRate" : 1.0
-                },
-                {
-                    "symbol" : "L",
-                    "walkable" : true,
-                    "graphics" : "floor",
-                    "object" : "weak_linear",
-                    "objectDirection" : "x_minus",
-                    "spawnRate" : 1.0
                 }
             ],
             "data": [
                 "### #########",
-                "#    #  #   #",
-                "#    # BBB  #",
-                "#    #    21 ",
-                "#    ###D####",
-                "#   L#      #",
-                "#R   ##R   ##",
-                "#   L####D###",
-                "#R   ##   L##",
-                "#    #      #",
+                "#Brdl#  #   #",
+                "#dr d# BBB  #",
+                "#  u #    21 ",
+                "# lrd###D####",
+                "#r d #      #",
+                "#  l ###R  ##",
+                "#    ####D###",
+                "# r  ##  L###",
+                "#u  B#      #",
                 "## ###### ###"
             ]
         },

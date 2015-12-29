@@ -224,6 +224,7 @@ void level_state_t::spawn
     if (_object_factory == nullptr) {
         _object_factory = new object_factory_t();
         _object_factory->load_definitions("objects.json");
+        _object_factory->load_resources(&world->get_resources());
     }
 
     for (size_t i = 0; i < _width; i++) {
@@ -240,9 +241,12 @@ void level_state_t::spawn
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
-                    _objects[id] = _object_factory->spawn
-                        (tile->object_id, pos, tile->object_dir, rand, world);
-                    //change_direction(_objects[id], random_direction(rand));
+                    object_t *obj = _object_factory->spawn
+                        (tile->object_id, pos, DIR_NONE, rand, world);
+                    if (obj != nullptr) {
+                        change_direction(obj, tile->object_dir);
+                        _objects[id] = obj;
+                    }
                 }
             }
 
