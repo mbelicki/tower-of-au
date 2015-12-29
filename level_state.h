@@ -22,6 +22,7 @@ enum object_flags_t {
     FOBJ_NPCMOVE_LINE  =  4,
     FOBJ_NPCMOVE_ROAM  =  8,
     FOBJ_CAN_SHOOT     = 16,
+    FOBJ_CAN_ROTATE    = 32,
 };
 
 WARP_ENABLE_FLAGS(object_flags_t)

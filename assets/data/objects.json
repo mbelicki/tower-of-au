@@ -14,6 +14,7 @@
             "movementType" : "line",
             "health" : 2,
             "canShoot" : false,
+            "canRotate" : false,
             "graphics" : {
                 "mesh" : "npc.obj",
                 "texture" : "missing.png"
@@ -23,6 +24,7 @@
             "name" : "weak_roaming",
             "type" : "character",
             "movementType" : "roam",
+            "canRotate" : true,
             "health" : 2,
             "canShoot" : false,
             "ammo" : 0,
@@ -35,6 +37,7 @@
             "name" : "stationary_shooter",
             "type" : "character",
             "movementType" : "still",
+            "canRotate" : false,
             "health" : 1024,
             "canShoot" : true,
             "ammo" : 1024,
@@ -45,6 +48,7 @@
         },
         {
             "name" : "player",
+            "canRotate" : true,
             "type" : "character",
             "playerAvatar" : true,
             "health" : 3,

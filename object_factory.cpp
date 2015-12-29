@@ -27,6 +27,7 @@ struct object_def_t {
     int           health;
     int           ammo;
     bool          can_shoot;
+    bool          can_rotate;
     bool          is_player;
 
     warp_str_t    mesh_name;
@@ -121,6 +122,7 @@ static void parse_definition
     def->health        = parse_health(object);
     def->ammo          = parse_ammo(object);
     def->can_shoot     = parse_bool_flag(object, "canShoot");
+    def->can_rotate    = parse_bool_flag(object, "canRotate");
     def->is_player     = parse_bool_flag(object, "playerAvatar");
     
     parse_graphics(def, object);
@@ -182,6 +184,9 @@ static object_flags_t evaluate_flags(const object_def_t *def) {
     object_flags_t flags = FOBJ_NONE;
     if (def->can_shoot) {
         flags |= FOBJ_CAN_SHOOT;
+    }
+    if (def->can_rotate) {
+        flags |= FOBJ_CAN_ROTATE;
     }
     if (def->is_player) {
         flags |= FOBJ_PLAYER_AVATAR;

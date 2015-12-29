@@ -14,14 +14,20 @@ extern bool needs_update(const object_t *obj) {
 }
 
 static bool can_attack(const object_t *attacker, const object_t *target) {
-    const float dx = fabs(attacker->position.x - target->position.x);
-    const float dz = fabs(attacker->position.z - target->position.z);
-    if (dx > 1.1f || dz > 1.1f) return false;
-    
-    const bool close_x = epsilon_compare(dx, 1, 0.05f);
-    const bool close_z = epsilon_compare(dz, 1, 0.05f);
+    if (attacker->flags & FOBJ_CAN_ROTATE) {
+        const float dx = fabs(attacker->position.x - target->position.x);
+        const float dz = fabs(attacker->position.z - target->position.z);
+        if (dx > 1.1f || dz > 1.1f) return false;
 
-    return close_x != close_z; /* xor */
+        const bool close_x = epsilon_compare(dx, 1, 0.05f);
+        const bool close_z = epsilon_compare(dz, 1, 0.05f);
+
+        return close_x != close_z; /* xor */
+    } else {
+        const vec3_t in_front
+            = vec3_add(attacker->position, dir_to_vec3(attacker->direction));
+        return vec3_eps_compare(in_front, target->position, 0.1f);
+    }
 }
 
 static bool can_shoot(const object_t *shooter, const object_t *target) {
@@ -48,18 +54,28 @@ static dir_t pick_shooting_direction
     };
 
     const level_t *level = state->get_current_level();
+    dir_t result = DIR_NONE;
     if (zero_x) {
-        dir_t result = dz > 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
+        dir_t maybe_result = dz > 0 ? DIR_Z_MINUS : DIR_Z_PLUS;
         const size_t dist = round(fabs(dz));
-        if (level->scan_if_all(pred, x, z, result, dist))
-            return result;
+        if (level->scan_if_all(pred, x, z, result, dist)) {
+            result = maybe_result;
+        }
     } else if (zero_z) {
-        dir_t result = dx > 0 ? DIR_X_MINUS : DIR_X_PLUS;
+        dir_t maybe_result = dx > 0 ? DIR_X_MINUS : DIR_X_PLUS;
         const size_t dist = round(fabs(dx));
-        if (level->scan_if_all(pred, x, z, result, dist))
-            return result;
+        if (level->scan_if_all(pred, x, z, result, dist)) {
+            result = maybe_result;
+        }
     }
-    return DIR_NONE;
+
+    if ((shooter->flags & FOBJ_CAN_ROTATE) == 0) {
+        if (result != shooter->direction) {
+            result = DIR_NONE;
+        }
+    }
+
+    return result;
 }
 
 static void shuffle(dir_t *array, size_t n, warp_random_t *rand) {
