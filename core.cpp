@@ -31,8 +31,9 @@ using namespace warp;
 static const float LEVEL_TRANSITION_TIME = 1.0f;
 
 enum core_state_t {
-    CSTATE_LEVEL = 0,
-    CSTATE_TRANSITION,
+    CSTATE_IDLE = 0,
+    CSTATE_LEVEL_TRANSITION,
+    CSTATE_REGION_TRANSITION,
 };
 
 static void destroy_string(void *raw_str) {
@@ -70,7 +71,7 @@ class core_controller_t final : public controller_impl_i {
                 , _level(nullptr)
                 , _level_x(0), _level_z(0)
                 , _font(nullptr)
-                , _state(CSTATE_LEVEL)
+                , _state(CSTATE_IDLE)
                 , _transition_timer(0) 
                 , _pain_texts()
                 , _random(nullptr) {
@@ -125,22 +126,26 @@ class core_controller_t final : public controller_impl_i {
             _level_state->spawn(_world, _level, _random);
 
             const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
-            bool added = _level_state->spaw_object("player", pos, _random, world);
+            bool added = _level_state->spawn_object("player", pos, _random, world);
             if (added == false) {
                 warp_log_e("Failed to spawn player avatar.");
                 abort();
             }
 
-            update_player_health_display(&_last_player_state);
-            update_player_ammo_display(&_last_player_state);
+            const object_t *player = _level_state->find_player();
+            if (player != nullptr) {
+                _last_player_state = *player;
+                update_player_health_display(&_last_player_state);
+                update_player_ammo_display(&_last_player_state);
+            }
         }
 
         void update(float dt, const input_t &) override { 
-            if (_state == CSTATE_TRANSITION) {
+            if (_state == CSTATE_LEVEL_TRANSITION) {
                 _transition_timer -= dt;
                 if (_transition_timer <= 0) {
                     _transition_timer = 0;
-                    _state = CSTATE_LEVEL;
+                    _state = CSTATE_IDLE;
                 }
 
                 const float k = 1 - _transition_timer / LEVEL_TRANSITION_TIME;
@@ -158,7 +163,7 @@ class core_controller_t final : public controller_impl_i {
                 player_pos.z += dz * (1 - t) * (11 - 1);
                 player->entity->receive_message(CORE_DO_MOVE_IMMEDIATE, player_pos);
 
-                if (_state == CSTATE_LEVEL) {
+                if (_state == CSTATE_IDLE) {
                     _region->change_display_positions(_level_x, _level_z);
                     _level_state->spawn(_world, _level, _random);
                     _level_state->add_object(_last_player_state);
@@ -175,7 +180,7 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void handle_message(const message_t &message) override {
-            if (_state == CSTATE_TRANSITION) { 
+            if (_state != CSTATE_IDLE) { 
                 return;
             }
 
@@ -304,17 +309,18 @@ class core_controller_t final : public controller_impl_i {
 
         void change_region(const portal_t *portal) {
             if (portal == nullptr) return;
-            
+
             const float change_time = 2.0f;
             create_fade_circle(_world, 700, change_time, true);
             create_region_token(_world, portal);
             _world->request_state_change("level", change_time);
+            _state = CSTATE_REGION_TRANSITION;
         }
         
         void start_level_change(const object_t *player, size_t x, size_t z) {
             if (_region->get_level_at(x, z).failed()) return;
 
-            _state = CSTATE_TRANSITION;
+            _state = CSTATE_LEVEL_TRANSITION;
             _transition_timer = LEVEL_TRANSITION_TIME;
 
             _previous_level_x = _level_x;

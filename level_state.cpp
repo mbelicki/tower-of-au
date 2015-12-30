@@ -106,13 +106,13 @@ bool level_state_t::add_object(const object_t &obj) {
     return true;
 }
 
-bool level_state_t::spaw_object
+bool level_state_t::spawn_object
         (tag_t name, vec3_t pos, warp_random_t *rand, world_t *world) {
     const size_t x = round(pos.x);
     const size_t z = round(pos.z);
     if (object_at(x, z) != nullptr) return false;
 
-    object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_MINUS, rand, world);
+    object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_PLUS, rand, world);
 
     _objects[x + _width * z] = new_obj;
     new_obj->entity->receive_message(CORE_DO_ROTATE, (int)DIR_Z_PLUS);
@@ -242,7 +242,7 @@ void level_state_t::spawn
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
                     object_t *obj = _object_factory->spawn
-                        (tile->object_id, pos, DIR_NONE, rand, world);
+                        (tile->object_id, pos, DIR_Z_MINUS, rand, world);
                     if (obj != nullptr) {
                         change_direction(obj, tile->object_dir);
                         _objects[id] = obj;

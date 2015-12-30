@@ -92,7 +92,7 @@ class level_state_t {
 
         /* single objects/featues management: */
         bool add_object(const object_t &obj);
-        bool spaw_object
+        bool spawn_object
                 ( warp::tag_t name, warp::vec3_t pos
                 , warp_random_t *rand, warp::world_t *world
                 );
