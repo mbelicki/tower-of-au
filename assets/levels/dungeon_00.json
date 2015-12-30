@@ -30,7 +30,7 @@
             "spawnRate" : 1.0
         },
         {
-            "symbol" : "D",
+            "symbol" : "-",
             "walkable" : true,
             "graphics" : "floor",
             "feature" : "FEAT_DOOR",
@@ -50,6 +50,22 @@
             "graphics" : "floor",
             "object" : "weak_linear",
             "objectDirection" : "x_minus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "D",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_linear",
+            "objectDirection" : "z_plus",
+            "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "U",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "weak_linear",
+            "objectDirection" : "z_minus",
             "spawnRate" : 1.0
         },
         {
@@ -144,33 +160,85 @@
             ]
         },
         {
-            "tiles": [],
+            "tiles": [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "spawnRate" : 1.0,
+                    "target" : { "x" : 8, "y" : 7 }
+                }
+            ],
             "data": [
                 "#############",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#L  #       #",
-                "# B##       #",
-                "#   #       #",
-                "#   ##      #",
-                "# B  #      #",
-                "#    #      #",
+                "#   # B   ###",
+                "#   #B# # ###",
+                "#     B1  ###",
+                "#L  # # #B###",
+                "# B##B      #",
+                "#   ##   ## #",
+                "#   ####-####",
+                "# B  #       ",
+                "#    #  U   #",
                 "### #########"
             ]
         },
         {
-            "tiles": [],
+            "tiles": [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 2, "y" : 2 }
+                },
+                {
+                    "symbol" : "2",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 6, "y" : 2 }
+                },
+                {
+                    "symbol" : "3",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 2, "y" : 4 }
+                },
+                {
+                    "symbol" : "4",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 10, "y" : 4 }
+                },
+                {
+                    "symbol" : "5",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 2, "y" : 6 }
+                },
+                {
+                    "symbol" : "6",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 10, "y" : 6 }
+                }
+            ],
             "data": [
-                "#############",
+                "###### ######",
+                "#BD       D #",
+                "##-#######-##",
+                "# DL1 3 2RD #",
+                "##-### ###-##",
+                "# DL5 4 6RD #",
+                "##-#######-##",
                 "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "#           #",
+                "  B         #",
                 "#           #",
                 "#############"
             ]
@@ -215,10 +283,10 @@
                 "#Brdl#  #   #",
                 "#dr d# BBB  #",
                 "#  u #    21 ",
-                "# lrd###D####",
+                "# lrd###-####",
                 "#r d #      #",
                 "#  l ###R  ##",
-                "#    ####D###",
+                "#    ####-###",
                 "# r  ##  L###",
                 "#u  B#      #",
                 "## ###### ###"
@@ -309,13 +377,13 @@
             ],
             "data": [
                 "## ###### ###",
-                "##D## 1 #   #",
-                "##D##  BB   #",
+                "##-## 1 #   #",
+                "##-##  BB   #",
                 "#   s#   B   ",
-                "# B ##D##   #",
+                "# B ##-##   #",
                 "# 4 #   #   #",
                 "# B #   #   #",
-                "##D##BB #    ",
+                "##-##BB #    ",
                 "#    32 #   #",
                 "#      ##SSS#",
                 "#############"
@@ -327,11 +395,11 @@
                 "####     ####",
                 "#  #     #  #",
                 "#  #     #  #",
-                "   D     D   ",
+                "   -     -   ",
                 "#  #     #  #",
                 "#  #     #  #",
                 "#  #     #  #",
-                "   D     D   ",
+                "   -     -   ",
                 "#  #     #  #",
                 "#  #     #  #",
                 "###### ######"

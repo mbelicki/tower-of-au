@@ -26,7 +26,7 @@
             "movementType" : "line",
             "health" : 2,
             "canShoot" : false,
-            "canRotate" : false,
+            "canRotate" : true,
             "graphics" : {
                 "mesh" : "npc.obj",
                 "texture" : "red.png"
