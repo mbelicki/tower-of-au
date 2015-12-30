@@ -24,7 +24,7 @@ static maybeunit_t reset_camera(world_t *world) {
     const float ratio = main_camera->get_aspect_ratio();
 
     const maybe_t<camera_id_t> camera_id = cameras->create_persp_camera
-        ("main", vec3(6, 9.5f, 12.5f), vec3(0.95f, 0, 0), 0.39f, ratio, 7.0f, 19.0f);
+        ("main", vec3(6, 10, 10.4f), vec3(1.12f, 0, 0), 0.44f, ratio, 7.0f, 19.0f);
     MAYBE_RETURN(camera_id, unit_t, "Failed to create camera:");
 
     return unit;

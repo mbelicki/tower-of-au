@@ -163,12 +163,14 @@ class input_controller_t final : public controller_impl_i {
 
             update_shift(shift, 0.005f);
             
+            const float max_mod_x = 48;
+            const float max_mod_y = 48;
             vec2_t mod = vec2_sub(_shift_acc, _reference_acc);
-            mod.x = saturate(mod.x, -48.0f, 48.0f);
-            mod.y = saturate(mod.y, -48.0f, 48.0f);
+            mod.x = saturate(mod.x, -max_mod_x, max_mod_x);
+            mod.y = saturate(mod.y, -max_mod_y, max_mod_y);
 
-            const vec3_t pos = vec3(6, 9.5f, 12.5f);
-            const vec3_t rot = vec3(0.95f + mod.y * 0.001f, 0, mod.x * 0.001f);
+            const vec3_t pos = vec3(6, 10, 10.4f);
+            const vec3_t rot = vec3(1.12f + mod.y * 0.001f, 0, mod.x * 0.001f);
 
             cameras_mgr_t *cameras = _world->get_resources().cameras;
             const maybe_t<camera_id_t> id = cameras->get_id_for_tag("main");
