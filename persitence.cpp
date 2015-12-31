@@ -54,6 +54,8 @@ class persistence_controller_t final : public controller_impl_i {
             _player.flags = FOBJ_NONE;
             _player.health = 0;
             _player.ammo = 0;
+
+            read_data();
         }
 
         void update(float, const input_t &) override { }
@@ -119,7 +121,18 @@ class persistence_controller_t final : public controller_impl_i {
                 _portal.region_name = str_create(region);
             }
             
-            
+            if (json_object_get_value(portal, "tile_x") != nullptr) {
+                _portal.tile_x = json_object_get_number(portal, "tile_x");
+            }
+            if (json_object_get_value(portal, "tile_z") != nullptr) {
+                _portal.tile_z = json_object_get_number(portal, "tile_z");
+            }
+            if (json_object_get_value(portal, "level_x") != nullptr) {
+                _portal.level_x = json_object_get_number(portal, "level_x");
+            }
+            if (json_object_get_value(portal, "level_z") != nullptr) {
+                _portal.level_z = json_object_get_number(portal, "level_z");
+            }
         }
 
         JSON_Value *save_vec3(vec3_t v) {
@@ -131,6 +144,14 @@ class persistence_controller_t final : public controller_impl_i {
             json_object_set_number(vector, "z", v.z);
 
             return vector_value;
+        }
+
+        vec3_t read_vec3(const JSON_Object *vector) {
+            vec3_t v;
+            v.x = json_object_get_number(vector, "x");
+            v.y = json_object_get_number(vector, "y");
+            v.z = json_object_get_number(vector, "z");
+            return v;
         }
 
         JSON_Value *save_player() {
@@ -147,6 +168,22 @@ class persistence_controller_t final : public controller_impl_i {
         }
 
         void read_player(JSON_Object *player) {
+            if (json_object_get_value(player, "health") != nullptr) {
+                _player.health = json_object_get_number(player, "health");
+            }
+            if (json_object_get_value(player, "ammo") != nullptr) {
+                _player.ammo = json_object_get_number(player, "ammo");
+            }
+            if (json_object_get_value(player, "flags") != nullptr) {
+                _player.flags = (object_flags_t) json_object_get_number(player, "flags");
+            }
+            if (json_object_get_value(player, "direction") != nullptr) {
+                _player.direction = (dir_t) json_object_get_number(player, "direction");
+            }
+            if (json_object_get_value(player, "position") != nullptr) {
+                const JSON_Object *vector = json_object_get_object(player, "position");
+                _player.position = read_vec3(vector);
+            }
         }
 
         void save_data() {

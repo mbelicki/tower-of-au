@@ -389,6 +389,10 @@ class core_controller_t final : public controller_impl_i {
 
             _last_player_state = *player;
             _last_player_state.position = player_pos;
+
+            save_portal(_world, &_portal);
+            save_player_state(_world, &_last_player_state);
+            _world->broadcast_message(CORE_SAVE_TO_FILE, 0);
         }
 
         const char *get_pain_text() {
