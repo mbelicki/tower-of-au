@@ -3,11 +3,16 @@
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
+#include "warp/io.h"
+
+#include "libs/parson/parson.h"
 
 #include "region.h"
 #include "level_state.h"
 
 using namespace warp;
+
+static const char *SAVE_PATH = "./save.json";
 
 class persistence_controller_t final : public controller_impl_i {
     public:
@@ -54,7 +59,10 @@ class persistence_controller_t final : public controller_impl_i {
         void update(float, const input_t &) override { }
 
         bool accepts(messagetype_t type) const override {
-            return type == CORE_SAVE_PORTAL || type == CORE_SAVE_PLAYER;
+            return type == CORE_SAVE_PORTAL 
+                || type == CORE_SAVE_PLAYER
+                || type == CORE_SAVE_TO_FILE
+                ;
         }
 
         void handle_message(const message_t &message) override { 
@@ -79,6 +87,8 @@ class persistence_controller_t final : public controller_impl_i {
                 str_destroy(_portal.region_name);
                 _portal = *portal;
                 _portal.region_name = str_copy(portal->region_name);
+            } else if (type == CORE_SAVE_TO_FILE) {
+                save_data();
             }
         }
 
@@ -88,6 +98,94 @@ class persistence_controller_t final : public controller_impl_i {
 
         portal_t _portal;
         object_t _player;
+
+        JSON_Value *save_portal() {
+            JSON_Value *portal_value = json_value_init_object();
+            JSON_Object *portal = json_value_get_object(portal_value);
+            
+            json_object_set_string(portal, "region_name", str_value(_portal.region_name)); 
+            json_object_set_number(portal, "tile_x", _portal.tile_x); 
+            json_object_set_number(portal, "tile_z", _portal.tile_z); 
+            json_object_set_number(portal, "level_x", _portal.level_x); 
+            json_object_set_number(portal, "level_z", _portal.level_z); 
+
+            return portal_value;
+        }
+
+        void read_portal(JSON_Object *portal) {
+            const char *region = json_object_get_string(portal, "region_name");
+            if (region != nullptr) {
+                str_destroy(_portal.region_name);
+                _portal.region_name = str_create(region);
+            }
+            
+            
+        }
+
+        JSON_Value *save_vec3(vec3_t v) {
+            JSON_Value *vector_value = json_value_init_object();
+            JSON_Object *vector = json_value_get_object(vector_value);
+
+            json_object_set_number(vector, "x", v.x);
+            json_object_set_number(vector, "y", v.y);
+            json_object_set_number(vector, "z", v.z);
+
+            return vector_value;
+        }
+
+        JSON_Value *save_player() {
+            JSON_Value *player_value = json_value_init_object();
+            JSON_Object *player = json_value_get_object(player_value);
+            
+            json_object_set_number(player, "health", _player.health); 
+            json_object_set_number(player, "ammo", _player.ammo); 
+            json_object_set_number(player, "flags", _player.flags); 
+            json_object_set_number(player, "direction", _player.direction); 
+            json_object_set_value(player, "position", save_vec3(_player.position)); 
+
+            return player_value;
+        }
+
+        void read_player(JSON_Object *player) {
+        }
+
+        void save_data() {
+            JSON_Value *root_value = json_value_init_object();
+            JSON_Object *root_object = json_value_get_object(root_value);
+
+            json_object_set_value(root_object, "portal", save_portal());
+            json_object_set_value(root_object, "player", save_player());
+
+            char *serialized = json_serialize_to_string_pretty(root_value);
+            const size_t size = strnlen(serialized, 4096);
+            save_file(SAVE_PATH, serialized, size).log_failure();
+
+            json_free_serialized_string(serialized);
+            json_value_free(root_value);
+        }
+
+        void read_data() {
+            char path[1024]; 
+            maybeunit_t path_found = find_path(SAVE_PATH, ".", path, 1024);
+            if (path_found.failed()) {
+                path_found.log_failure();
+                return;
+            }
+
+            /* TODO: check if file exists */
+
+            JSON_Value *root_value = json_parse_file(path);
+            if (json_value_get_type(root_value) != JSONObject) {
+                warp_log_e("Failed to load JSON file: %s.", path);
+                return; 
+            }
+            const JSON_Object *root = json_value_get_object(root_value);
+            
+            read_portal(json_object_get_object(root, "portal"));
+            read_player(json_object_get_object(root, "player"));
+
+            json_value_free(root_value);
+        }
 };
 
 entity_t *get_persitent_data(world_t *world) {

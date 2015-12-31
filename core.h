@@ -34,6 +34,7 @@ enum core_msgs_t : unsigned int {
 
     CORE_SAVE_PLAYER,
     CORE_SAVE_PORTAL,
+    CORE_SAVE_TO_FILE,
 };
 
 enum move_dir_t : int {

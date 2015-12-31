@@ -351,6 +351,8 @@ class core_controller_t final : public controller_impl_i {
             save_player_state(_world, &_last_player_state);
             _world->request_state_change("level", change_time);
             _state = CSTATE_REGION_TRANSITION;
+
+            _world->broadcast_message(CORE_SAVE_TO_FILE, 0);
         }
         
         void start_level_change(const object_t *player, size_t x, size_t z) {
