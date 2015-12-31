@@ -184,6 +184,7 @@ class persistence_controller_t final : public controller_impl_i {
                 const JSON_Object *vector = json_object_get_object(player, "position");
                 _player.position = read_vec3(vector);
             }
+            _player.type = OBJ_CHARACTER;
         }
 
         void save_data() {
