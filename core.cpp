@@ -176,6 +176,7 @@ class core_controller_t final : public controller_impl_i {
                 || type == CORE_TRY_SHOOT
                 || type == CORE_MOVE_DONE
                 || type == CORE_BULLET_HIT
+                || type == CORE_RESTART_LEVEL
                 ;
         }
 
@@ -186,7 +187,9 @@ class core_controller_t final : public controller_impl_i {
 
             const messagetype_t type = message.type;
             const object_t *player = _level_state->find_player();
-            if (type == CORE_BULLET_HIT) {
+            if (type == CORE_RESTART_LEVEL) {
+                change_region(&_portal);
+            } else if (type == CORE_BULLET_HIT) {
                 rt_event_t event = {RT_EVENT_BULETT_HIT, message.data};
                 _level_state->process_real_time_event(event);
 

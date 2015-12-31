@@ -12,6 +12,7 @@
 #include "persitence.h"
 #include "text-label.h"
 #include "transition_effect.h"
+#include "button.h"
 
 using namespace warp;
 
@@ -53,11 +54,15 @@ void level_transition_t::initialize_state
                 .with_value([](entity_t *e){
             e->set_tag("health_label");
         });
-        create_label(world, *font, LABEL_LARGE | LABEL_POS_RIGHT | LABEL_POS_TOP)
-                .with_value([](entity_t *e){
+        create_label(world, *font, LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP)
+                .with_value([](entity_t *e) {
             e->set_tag("ammo_label");
+            const vec3_t pos = e->get_position();
+            e->receive_message(MSG_PHYSICS_MOVE, vec3_add(pos, vec3(0, -48, 0)));
         });
     });
+
+    create_button(world, vec2(380, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");
 
     portal_t default_portal;
     default_portal.region_name = str_create("overworld.json");

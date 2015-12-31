@@ -11,6 +11,7 @@
 #include "warp/textures.h"
 
 #include "core.h"
+#include "button.h"
 
 using namespace warp;
 
@@ -103,8 +104,8 @@ class input_controller_t final : public controller_impl_i {
             pos.y = -pos.y;
 
             const vec2_t diff = vec2_sub(pos, ATTACK_POSITION.get_xy());
-            return diff.x < ATTACK_SIZE.x * 0.5f 
-                && diff.y < ATTACK_SIZE.y * 0.5f;
+            return fabs(diff.x) < ATTACK_SIZE.x * 0.5f 
+                && fabs(diff.y) < ATTACK_SIZE.y * 0.5f;
         }
 
         void handle_message(const message_t &message) override {
@@ -190,49 +191,17 @@ class input_controller_t final : public controller_impl_i {
         }
 };
 
-static maybeunit_t fill_texured_quad
-        ( model_t * const model, const resources_t &resources
-        , const vec2_t size, const char * const texture_name
-        ) {
-    meshmanager_t * const meshes = resources.meshes;
-    texturemgr_t * const textures = resources.textures;
-    
-    maybe_t<mesh_id_t> maybe_quad_id
-        = meshes->generate_xy_quad_mesh(vec2(0, 0), size);
-    MAYBE_RETURN(maybe_quad_id, unit_t, "Failed to get mesh:");
-    mesh_id_t mesh_id = VALUE(maybe_quad_id);
-
-    maybe_t<size_t> maybe_tex_id = textures->add_texture(texture_name);
-    MAYBE_RETURN(maybe_tex_id, unit_t, "Failed to get texture:");
-    const tex_id_t tex_id = VALUE(maybe_tex_id);
-
-    model->initialize(mesh_id, tex_id);
-    return unit;
-}
-
-static maybe_t<graphics_comp_t *> create_button_graphics(world_t *world) {
-    model_t model;
-    const resources_t &res = world->get_resources();
-    maybeunit_t maybe_filled
-        = fill_texured_quad(&model, res, ATTACK_SIZE, "button.png");
-    MAYBE_RETURN(maybe_filled, graphics_comp_t *, "Failed to create quad:");
-
-    graphics_comp_t *graphics = world->create_graphics();
-    if (graphics == nullptr)
-        return nothing<graphics_comp_t *>("Failed to create graphics.");
-    graphics->add_model(model);
-    graphics->set_pass_tag("ui");
-    return graphics;
-}
-
 maybe_t<entity_t *> create_input_controller(world_t *world) {
-    maybe_t<graphics_comp_t *> graphics = create_button_graphics(world);
-    MAYBE_RETURN(graphics, entity_t *, "Failed to create graphics:");
+    graphics_comp_t *graphics = create_button_graphics(world, ATTACK_SIZE, "button.png");
+    if (graphics == nullptr) { 
+        warp_log_e("Failed to create input controller graphics.");
+        return nullptr;
+    }
 
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new input_controller_t);
 
-    entity_t *entity = world->create_entity(ATTACK_POSITION, VALUE(graphics), nullptr, controller);
-
+    entity_t *entity = world->create_entity(ATTACK_POSITION, graphics, nullptr, controller);
+    entity->set_tag("input");
     return entity;
 }

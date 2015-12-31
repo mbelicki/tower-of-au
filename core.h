@@ -29,6 +29,8 @@ enum core_msgs_t : unsigned int {
 
     CORE_SHOW_KNOWN_TEXT,
     CORE_SHOW_TAG_TEXT,
+
+    CORE_RESTART_LEVEL,
 };
 
 enum move_dir_t : int {
