@@ -119,6 +119,21 @@ bool level_state_t::spawn_object
     return true;
 }
 
+void level_state_t::set_object_flag(const object_t *obj, object_flags_t flag) {
+    if (obj == nullptr) {
+        warp_log_e("Cannot set flag, null object.");
+        return;
+    }
+
+    object_t *object = (object_t *)object_at_position(obj->position);
+    if (object == nullptr) {
+        warp_log_e("Cannot set flag, object is not there.");
+        return;
+    }
+
+    object->flags |= flag;
+}
+
 const object_t *level_state_t::object_at_position(warp::vec3_t pos) const {
     const size_t x = round(pos.x);
     const size_t z = round(pos.z);
@@ -370,7 +385,11 @@ void level_state_t::handle_move(object_t *target, warp::vec3_t pos) {
     } else {
         object_t *npc = (object_t *)object_at_position(pos);
         if (npc != nullptr) {
-            handle_attack(npc, target);
+            if (npc->type == OBJ_TERMINAL) {
+                handle_interaction(npc, target);
+            } else {
+                handle_attack(npc, target);
+            }
         } else {
             target->entity->receive_message(CORE_DO_BOUNCE, pos);
         }
@@ -381,18 +400,43 @@ static int calculate_damage(const object_t &target) {
     return target.type == OBJ_BOULDER ? 0 : 1;
 }
 
+void level_state_t::handle_interaction
+        (object_t *terminal, object_t *character) {
+    if (character == nullptr) { 
+        warp_log_e("Cannot handle interaction, null character.");
+        return;
+    }
+    if (terminal == nullptr) { 
+        warp_log_e("Cannot handle interaction, null terminal.");
+        return;
+    }
+
+    character->entity->receive_message(CORE_DO_BOUNCE, terminal->position);
+    if (character->flags & FOBJ_PLAYER_AVATAR) {
+        event_t event = {*terminal, EVENT_PLAYER_ACTIVATED_TERMINAL};
+        _events.push_back(event);
+    }
+}
+
 void level_state_t::handle_attack(object_t *target, object_t *attacker) {
     if (target == nullptr) { 
         warp_log_e("Cannot handle attack, null target.");
         return;
     }
+    const bool attacker_can_push = (attacker->flags & FOBJ_CAN_PUSH) != 0;
+    const bool target_is_boulder = target->type == OBJ_BOULDER;
     /* TODO: shouldn't this be a separate function? */
     const vec3_t original_position = target->position;
     const vec3_t attacker_position
         = attacker == nullptr ? original_position : attacker->position;
     const vec3_t d = vec3_sub(original_position, attacker_position);
     const vec3_t push_back = vec3_add(target->position, d);
-    if (can_move_to(push_back)) {
+    bool can_push_back = can_move_to(push_back);
+    if (target_is_boulder) {
+        can_push_back = can_push_back && attacker_can_push;
+    }
+
+    if (can_push_back) {
         move_object(target, push_back, false);
     }
 
@@ -404,8 +448,8 @@ void level_state_t::handle_attack(object_t *target, object_t *attacker) {
         const vec3_t diff = vec3_sub(target->position, original_position);
         change_direction(attacker, vec3_to_dir(diff));
         
-        if (target->type == OBJ_BOULDER) {
-            if (can_move_to(original_position)) {
+        if (target_is_boulder) {
+            if (can_move_to(original_position) && attacker_can_push) {
                 move_object(attacker, original_position, false);
             } else {
                 attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);

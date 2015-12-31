@@ -30,6 +30,7 @@ struct object_def_t {
     int           ammo;
     bool          can_shoot;
     bool          can_rotate;
+    bool          can_push;
     bool          is_player;
 
     warp_str_t    mesh_name;
@@ -62,6 +63,8 @@ static object_type_t parse_type(JSON_Object *obj) {
         return OBJ_CHARACTER;
     } else if (strncmp("boulder", value, 8) == 0) {
         return OBJ_BOULDER;
+    } else if (strncmp("terminal", value, 9) == 0) {
+        return OBJ_TERMINAL;
     }
     return OBJ_NONE;
 }
@@ -125,6 +128,7 @@ static void parse_definition
     def->ammo          = parse_ammo(object);
     def->can_shoot     = parse_bool_flag(object, "canShoot");
     def->can_rotate    = parse_bool_flag(object, "canRotate");
+    def->can_push      = parse_bool_flag(object, "canPush");
     def->is_player     = parse_bool_flag(object, "playerAvatar");
     
     parse_graphics(def, object);
@@ -202,6 +206,9 @@ static object_flags_t evaluate_flags(const object_def_t *def) {
     }
     if (def->can_rotate) {
         flags |= FOBJ_CAN_ROTATE;
+    }
+    if (def->can_push) {
+        flags |= FOBJ_CAN_PUSH;
     }
     if (def->is_player) {
         flags |= FOBJ_PLAYER_AVATAR;

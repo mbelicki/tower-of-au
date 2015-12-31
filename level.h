@@ -20,12 +20,6 @@ enum feature_type_t : int {
     FEAT_DOOR,
 };
 
-enum object_type_t {
-    OBJ_NONE = 0,
-    OBJ_CHARACTER,
-    OBJ_BOULDER,
-};
-
 struct tile_t {
     bool is_walkable;
     bool is_stairs;

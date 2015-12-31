@@ -59,8 +59,18 @@
             }
         },
         {
+            "name" : "terminal_push",
+            "type" : "terminal",
+            "canPush" : true,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "missing.png"
+            }
+        },
+        {
             "name" : "player",
             "canRotate" : true,
+            "canPush" : false,
             "type" : "character",
             "playerAvatar" : true,
             "health" : 3,

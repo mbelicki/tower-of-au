@@ -266,11 +266,19 @@ class core_controller_t final : public controller_impl_i {
                         }
                     });
                 } else if (type == EVENT_OBJECT_HURT) {
-                    const vec3_t pos = vec3_add(obj->position, vec3(0, 1.3f, -0.1f));
-                    create_speech_bubble(_world, *_font, pos, get_pain_text());
+                    emit_speech(obj, get_pain_text());
                 } else if (type == EVENT_OBJECT_KILLED) {
                     if ((obj->flags & FOBJ_PLAYER_AVATAR) != 0) {
                         change_region(&_portal);
+                    }
+                } else if (type == EVENT_PLAYER_ACTIVATED_TERMINAL) {
+                    const object_t *player = _level_state->find_player();
+                    /* push terminal: */
+                    if (obj->flags & FOBJ_CAN_PUSH) {
+                        if ((player->flags & FOBJ_CAN_PUSH) == 0) {
+                            emit_speech(obj, "gained\n push");
+                            _level_state->set_object_flag(player, FOBJ_CAN_PUSH);
+                        }
                     }
                 }
             }
@@ -280,6 +288,19 @@ class core_controller_t final : public controller_impl_i {
                 update_player_health_display(player);
                 update_player_ammo_display(player);
             }
+        }
+
+        void emit_speech(const object_t *obj, const char* text) {
+            if (obj == nullptr) {
+                warp_log_e("Cannot emit speech bubule, null object.");
+                return;
+            }
+            if (text == nullptr) {
+                warp_log_e("Cannot emit speech bubule, null text.");
+                return;
+            }
+            const vec3_t pos = vec3_add(obj->position, vec3(0, 1.3f, -0.1f));
+            create_speech_bubble(_world, *_font, pos, text);
         }
 
         void update_player_health_display(const object_t *player) {

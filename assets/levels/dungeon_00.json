@@ -266,7 +266,6 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "spawnRate" : 1.0,
                     "target" : { "x" : 8, "y" : 4}
                 },
                 {
@@ -274,7 +273,6 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "spawnRate" : 1.0,
                     "target" : { "x" : 9, "y" : 7}
                 }
             ],
@@ -293,11 +291,19 @@
             ]
         },
         {
-            "tiles": [],
+            "tiles": [
+                {
+                    "symbol" : "T",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "object" : "terminal_push",
+                    "spawnRate" : 1.0
+                }
+            ],
             "data": [
                 "#############",
                 "####     ####",
-                "##         ##",
+                "##    T    ##",
                 "  B        B#",
                 "##         ##",
                 "####     ####",

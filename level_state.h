@@ -15,6 +15,13 @@ namespace warp {
 
 class bullet_factory_t;
 
+enum object_type_t {
+    OBJ_NONE = 0,
+    OBJ_CHARACTER,
+    OBJ_BOULDER,
+    OBJ_TERMINAL,
+};
+
 enum object_flags_t {
     FOBJ_NONE          =  0,
     FOBJ_PLAYER_AVATAR =  1,
@@ -23,6 +30,7 @@ enum object_flags_t {
     FOBJ_NPCMOVE_ROAM  =  8,
     FOBJ_CAN_SHOOT     = 16,
     FOBJ_CAN_ROTATE    = 32,
+    FOBJ_CAN_PUSH      = 64,
 };
 
 WARP_ENABLE_FLAGS(object_flags_t)
@@ -67,6 +75,7 @@ enum event_type_t : int {
     EVENT_PLAYER_ENTER_PORTAL,
     EVENT_OBJECT_HURT,
     EVENT_OBJECT_KILLED,
+    EVENT_PLAYER_ACTIVATED_TERMINAL,
 };
 
 struct event_t {
@@ -96,6 +105,7 @@ class level_state_t {
                 ( warp::tag_t name, warp::vec3_t pos
                 , warp_random_t *rand, warp::world_t *world
                 );
+        void set_object_flag(const object_t *obj, object_flags_t flag);
 
         const object_t *object_at_position(warp::vec3_t pos) const;
         const object_t *object_at(size_t x, size_t y) const;
@@ -122,6 +132,7 @@ class level_state_t {
     private:
         void update_object(const object_t *obj, const warp::message_t &command);
         void handle_move(object_t *target, warp::vec3_t pos);
+        void handle_interaction(object_t *terminal, object_t *character);
         void handle_attack(object_t *target, object_t *attacker);
         void handle_shooting(object_t *shooter, warp::dir_t dir);
 

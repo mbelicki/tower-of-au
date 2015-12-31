@@ -62,7 +62,7 @@ void level_transition_t::initialize_state
         });
     });
 
-    create_button(world, vec2(380, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");
+    create_button(world, vec2(410, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");
 
     portal_t default_portal;
     default_portal.region_name = str_create("overworld.json");
