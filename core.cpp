@@ -125,19 +125,30 @@ class core_controller_t final : public controller_impl_i {
             _level_state = new level_state_t(width, height);
             _level_state->spawn(_world, _level, _random);
 
+            initialize_player();
+        }
+
+        void initialize_player() {
+            const object_t *player = get_saved_player_state(_world);
             const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
-            bool added = _level_state->spawn_object("player", pos, _random, world);
-            if (added == false) {
-                warp_log_e("Failed to spawn player avatar.");
-                abort();
+            
+            if (player == nullptr || player->type == OBJ_NONE) {
+                bool added = _level_state->spawn_object("player", pos, _random, _world);
+                if (added == false) {
+                    warp_log_e("Failed to spawn player avatar.");
+                    abort();
+                }
+                player = _level_state->find_player();
+                save_player_state(_world, player);
+                _last_player_state = *player;
+            } else {
+                _last_player_state = *player;
+                _last_player_state.position = pos;
+                _level_state->add_object(_last_player_state, "player", _world);
             }
 
-            const object_t *player = _level_state->find_player();
-            if (player != nullptr) {
-                _last_player_state = *player;
-                update_player_health_display(&_last_player_state);
-                update_player_ammo_display(&_last_player_state);
-            }
+            update_player_health_display(&_last_player_state);
+            update_player_ammo_display(&_last_player_state);
         }
 
         void update(float dt, const input_t &) override { 
@@ -166,7 +177,7 @@ class core_controller_t final : public controller_impl_i {
                 if (_state == CSTATE_IDLE) {
                     _region->change_display_positions(_level_x, _level_z);
                     _level_state->spawn(_world, _level, _random);
-                    _level_state->add_object(_last_player_state);
+                    _level_state->add_object(_last_player_state, "player", _world);
                 }
             }
         }
@@ -336,7 +347,8 @@ class core_controller_t final : public controller_impl_i {
 
             const float change_time = 2.0f;
             create_fade_circle(_world, 700, change_time, true);
-            create_region_token(_world, portal);
+            save_portal(_world, portal);
+            save_player_state(_world, &_last_player_state);
             _world->request_state_change("level", change_time);
             _state = CSTATE_REGION_TRANSITION;
         }

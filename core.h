@@ -31,6 +31,9 @@ enum core_msgs_t : unsigned int {
     CORE_SHOW_TAG_TEXT,
 
     CORE_RESTART_LEVEL,
+
+    CORE_SAVE_PLAYER,
+    CORE_SAVE_PORTAL,
 };
 
 enum move_dir_t : int {

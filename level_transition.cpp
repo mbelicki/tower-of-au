@@ -39,7 +39,7 @@ void level_transition_t::configure_renderer(renderer_t *render) const {
 }
 
 bool level_transition_t::is_entity_kept(const entity_t *entity) const {
-    return entity->get_tag() == "region_data";
+    return entity->get_tag() == "persistent_data";
 }
 
 void level_transition_t::initialize_state
@@ -64,25 +64,9 @@ void level_transition_t::initialize_state
 
     create_button(world, vec2(410, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");
 
-    portal_t default_portal;
-    default_portal.region_name = str_create("overworld.json");
-    default_portal.level_x = 1;
-    default_portal.level_z = 1;
-    default_portal.tile_x = 6;
-    default_portal.tile_z = 5;
-
-    const portal_t *portal = &default_portal;
-    entity_t *region_data = world->find_entity("region_data");
-    if (region_data != nullptr) {
-        region_data->get_property("portal")
-                .get_pointer().with_value([&portal](void *ptr) {
-            portal = (const portal_t *) ptr;
-        });
-    }
-
+    const portal_t *portal = get_saved_portal(world);
     create_core(world, portal);
+
     create_input_controller(world);
     create_fade_circle(world, 700, 1.2f, false);
-
-    str_destroy(default_portal.region_name);
 }

@@ -11,6 +11,7 @@ struct object_t;
 
 namespace warp {
     class world_t;
+    class entity_t;
     struct resources_t;
 }
 
@@ -20,6 +21,11 @@ class object_factory_t {
         ~object_factory_t();
         bool load_definitions(const char *filename);
         void load_resources(const warp::resources_t *res);
+
+        warp::entity_t *create_object_entity
+            ( const object_t *obj, const warp::tag_t &def_name
+            , warp::world_t *world
+            );
 
         object_t *spawn
             ( warp::tag_t name, warp::vec3_t pos

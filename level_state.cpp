@@ -93,13 +93,18 @@ level_state_t::~level_state_t() {
     delete _object_factory;
 }
 
-bool level_state_t::add_object(const object_t &obj) {
+bool level_state_t::add_object
+        (const object_t &obj, const tag_t &def_name, world_t *world) {
     const size_t x = round(obj.position.x);
     const size_t z = round(obj.position.z);
     if (object_at(x, z) != nullptr) return false;
     
     object_t *new_obj = new object_t;
     *new_obj = obj;
+    if (new_obj->entity == nullptr) {
+        new_obj->entity
+            = _object_factory->create_object_entity(new_obj, def_name, world);
+    }
 
     _objects[x + _width * z] = new_obj;
     new_obj->entity->receive_message(CORE_DO_ROTATE, (int)new_obj->direction);
@@ -423,7 +428,8 @@ void level_state_t::handle_attack(object_t *target, object_t *attacker) {
         warp_log_e("Cannot handle attack, null target.");
         return;
     }
-    const bool attacker_can_push = (attacker->flags & FOBJ_CAN_PUSH) != 0;
+    const bool attacker_can_push
+        = attacker == nullptr ? false : (attacker->flags & FOBJ_CAN_PUSH) != 0;
     const bool target_is_boulder = target->type == OBJ_BOULDER;
     /* TODO: shouldn't this be a separate function? */
     const vec3_t original_position = target->position;

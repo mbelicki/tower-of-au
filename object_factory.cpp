@@ -282,6 +282,16 @@ static object_t *evaluate_definition
     return obj;
 }
 
+entity_t *object_factory_t::create_object_entity
+            (const object_t *obj, const tag_t &def_name, world_t *world) {
+    const object_def_t *def = get_definition(def_name);
+    if (def == nullptr) {
+        warp_log_e("Couldn't find definition for object: %s.", def_name.get_text());
+        return nullptr;
+    }
+    return create_entity(world, def, obj);
+}
+
 object_t *object_factory_t::spawn
         (tag_t name, vec3_t pos, dir_t dir, warp_random_t *rand, world_t *world) {
     const object_def_t *def = get_definition(name);

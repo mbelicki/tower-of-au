@@ -100,7 +100,10 @@ class level_state_t {
         ~level_state_t();
 
         /* single objects/featues management: */
-        bool add_object(const object_t &obj);
+        bool add_object
+                ( const object_t &obj, const warp::tag_t &def_name
+                , warp::world_t *world
+                );
         bool spawn_object
                 ( warp::tag_t name, warp::vec3_t pos
                 , warp_random_t *rand, warp::world_t *world
