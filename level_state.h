@@ -143,6 +143,8 @@ class level_state_t {
         void move_object(object_t *target, warp::vec3_t pos, bool immediate);
         bool hurt_object(object_t *target, int damage);
 
+        void destroy_object(object_t *obj);
+
     private:
         bool _initialized;
         size_t _width, _height;

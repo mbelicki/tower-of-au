@@ -21,6 +21,7 @@ enum core_msgs_t : unsigned int {
     CORE_DO_HURT,
     CORE_DO_DIE,
     CORE_DO_ROTATE,
+    CORE_DO_FALL,
 
     CORE_MOVE_DONE,
 

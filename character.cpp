@@ -15,6 +15,7 @@ using namespace warp;
 static const float MOVE_MOVE_TIME   = 0.1f;
 static const float MOVE_BOUNCE_TIME = 0.15f;
 static const float MOVE_ATTACK_TIME = 0.3f;
+static const float MOVE_FALL_TIME   = 0.3f;
 
 static const float HEAL_DYING_TIME  = MOVE_ATTACK_TIME;
 static const float HEAL_HURT_TIME   = MOVE_ATTACK_TIME;
@@ -26,6 +27,7 @@ enum movement_state_t : unsigned int {
     MOVE_MOVING,
     MOVE_BOUNCING,
     MOVE_ATTACKING,
+    MOVE_FALLING,
 };
 
 enum rotation_state_t : unsigned int {
@@ -44,6 +46,7 @@ static float get_time_for_char_state(movement_state_t state) {
         case MOVE_MOVING:    return MOVE_MOVE_TIME;
         case MOVE_BOUNCING:  return MOVE_BOUNCE_TIME;
         case MOVE_ATTACKING: return MOVE_ATTACK_TIME;
+        case MOVE_FALLING:   return MOVE_FALL_TIME;
         default: return 0;
     }
 }
@@ -108,6 +111,8 @@ class movement_controller_t final : public controller_impl_i {
                 update_bouncing(t);
             } else if (_state == MOVE_ATTACKING) {
                 update_attacking(t);
+            } else if (_state == MOVE_FALLING) {
+                update_falling(t);
             }
         }
 
@@ -116,6 +121,7 @@ class movement_controller_t final : public controller_impl_i {
                 || type == CORE_DO_MOVE_IMMEDIATE
                 || type == CORE_DO_ATTACK
                 || type == CORE_DO_BOUNCE
+                || type == CORE_DO_FALL
                 ;
         }
 
@@ -130,6 +136,8 @@ class movement_controller_t final : public controller_impl_i {
                 change_state(MOVE_BOUNCING, VALUE(maybe_pos));
             } else if (type == CORE_DO_ATTACK) {
                 change_state(MOVE_ATTACKING, VALUE(maybe_pos));
+            } else if (type == CORE_DO_FALL) {
+                change_state(MOVE_FALLING, VALUE(maybe_pos));
             }
         }
 
@@ -175,6 +183,14 @@ class movement_controller_t final : public controller_impl_i {
             _owner->receive_message(MSG_PHYSICS_MOVE, position);
         }
 
+        void update_falling(float t) {
+            const float k = ease_elastic(t);
+            const float target_y = lerp(-0.5f, 0, k);
+
+            vec3_t position = vec3_lerp(_target_pos, _old_pos, t);
+            position.y = target_y;
+            _owner->receive_message(MSG_PHYSICS_MOVE, position);
+        }
 };
 
 class rotation_controller_t final : public controller_impl_i {

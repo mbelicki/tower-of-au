@@ -67,7 +67,7 @@ static feature_t *create_feature
     feat->target_id = target;
     feat->entity = entity;
     feat->entity->set_tag("feature");
-    feat->state = FSTATE_INACTIVE;
+    feat->state = type == FEAT_SPIKES ? FSTATE_ACTIVE : FSTATE_INACTIVE;
 
     return feat;
 }
@@ -572,7 +572,14 @@ void level_state_t::move_object
         if (type == FEAT_BUTTON) {
             change_button_state(old_feat, FSTATE_ACTIVE);
         } else if (type == FEAT_SPIKES) {
-            hurt_object(target, target->health);
+            if (new_feat->state == FSTATE_ACTIVE) {
+                hurt_object(target, target->health);
+                if (target->type == OBJ_BOULDER) {
+                    destroy_object(target);
+                    new_feat->state = FSTATE_INACTIVE;
+                }
+                target->entity->receive_message(CORE_DO_FALL, pos);
+            }
         }
     }
 }
@@ -585,20 +592,18 @@ bool level_state_t::hurt_object(object_t *target, int damage) {
     if (damage <= 0) {
         return true;
     }
+    if (target->type == OBJ_BOULDER) {
+        return true;
+    }
 
     const int health_left = target->health - damage;
     target->health = health_left;
     if (health_left <= 0) {
-        const size_t x = round(target->position.x);
-        const size_t z = round(target->position.z);
-
-        _objects[x + _width * z] = nullptr;
         target->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
-
         event_t event = {*target, EVENT_OBJECT_KILLED};
         _events.push_back(event);
         
-        delete target;
+        destroy_object(target);
     } else {
         if (target->type != OBJ_BOULDER) {
             target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
@@ -608,5 +613,12 @@ bool level_state_t::hurt_object(object_t *target, int damage) {
     }
 
     return health_left > 0;
+}
+
+void level_state_t::destroy_object(object_t *obj) {
+    const size_t x = round(obj->position.x);
+    const size_t z = round(obj->position.z);
+    _objects[x + _width * z] = nullptr;
+    delete obj;
 }
 
