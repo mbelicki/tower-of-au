@@ -60,7 +60,6 @@ struct feature_t {
     feature_type_t type;
     warp::entity_t *entity;
 
-    warp::vec3_t position;
     size_t target_id;
     feat_state_t state;
 };
@@ -138,6 +137,8 @@ class level_state_t {
         void handle_interaction(object_t *terminal, object_t *character);
         void handle_attack(object_t *target, object_t *attacker);
         void handle_shooting(object_t *shooter, warp::dir_t dir);
+
+        void change_button_state(feature_t *feat, feat_state_t state);
 
         void move_object(object_t *target, warp::vec3_t pos, bool immediate);
         bool hurt_object(object_t *target, int damage);

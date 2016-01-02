@@ -62,9 +62,8 @@ static feature_t *create_feature
         return nullptr;
     }
 
-    feature_t *feat = new (std::nothrow) feature_t;
+    feature_t *feat = new feature_t;
     feat->type = type;
-    feat->position = pos;
     feat->target_id = target;
     feat->entity = entity;
     feat->entity->set_tag("feature");
@@ -454,12 +453,13 @@ void level_state_t::handle_attack(object_t *target, object_t *attacker) {
         can_push_back = can_push_back && attacker_can_push;
     }
 
-    if (can_push_back) {
+    const int damage = calculate_damage(*target);
+    const bool alive = hurt_object(target, damage);
+
+    if (alive && can_push_back) {
         move_object(target, push_back, false);
     }
 
-    const int damage = calculate_damage(*target);
-    hurt_object(target, damage);
 
     if (attacker != nullptr) {
         /* rotate attacker */
@@ -501,6 +501,24 @@ void level_state_t::handle_shooting(object_t *shooter, warp::dir_t dir) {
     shooter->ammo -= 1;
 }
 
+void level_state_t::change_button_state(feature_t *feat, feat_state_t state) {
+    if (feat == nullptr) {
+        warp_log_e("Cannot change state of null feature.");
+        return;
+    }
+    if (feat->type != FEAT_BUTTON) {
+        warp_log_e("Expected feature to be of button type.");
+        return;
+    }
+
+    feat->state = state;
+    feature_t *target = _features[feat->target_id];
+    if (target != nullptr) {
+        target->state = state;
+        target->entity->receive_message(CORE_FEAT_STATE_CHANGE, target->state);
+    }
+}
+
 void level_state_t::move_object
         (object_t *target, warp::vec3_t pos, bool immediate) {
     if (target == nullptr) {
@@ -524,29 +542,7 @@ void level_state_t::move_object
     feature_t *old_feat = (feature_t *)feature_at(old_x, old_z);
     if (old_feat != nullptr) {
         if (old_feat->type == FEAT_BUTTON) {
-            old_feat->state = FSTATE_INACTIVE;
-            feature_t *target = _features[old_feat->target_id];
-            if (target != nullptr) {
-                target->state = FSTATE_INACTIVE;
-                target->entity->receive_message
-                    (CORE_FEAT_STATE_CHANGE, target->state);
-            }
-        }
-    }
-
-    feature_t *new_feat = (feature_t *)feature_at(new_x, new_z);
-    if (new_feat != nullptr) {
-        const feature_type_t type = new_feat->type;
-        if (type == FEAT_BUTTON) {
-            new_feat->state = FSTATE_ACTIVE;
-            feature_t *target = _features[new_feat->target_id];
-            if (target != nullptr) {
-                target->state = FSTATE_ACTIVE;
-                target->entity->receive_message
-                    (CORE_FEAT_STATE_CHANGE, target->state);
-            }
-        } else if (type == FEAT_SPIKES) {
-            hurt_object(target, target->health);
+            change_button_state(old_feat, FSTATE_INACTIVE);
         }
     }
 
@@ -569,14 +565,24 @@ void level_state_t::move_object
             });
         }
     }
+
+    feature_t *new_feat = (feature_t *)feature_at(new_x, new_z);
+    if (new_feat != nullptr) {
+        const feature_type_t type = new_feat->type;
+        if (type == FEAT_BUTTON) {
+            change_button_state(old_feat, FSTATE_ACTIVE);
+        } else if (type == FEAT_SPIKES) {
+            hurt_object(target, target->health);
+        }
+    }
 }
 
 bool level_state_t::hurt_object(object_t *target, int damage) {
-    if (target == nullptr || damage < 0) { 
+    if (target == nullptr) {
         warp_log_e("Cannot hurt object, target is null.");
         return false;
     }
-    if (damage <= 0) { 
+    if (damage <= 0) {
         return true;
     }
 
@@ -591,7 +597,7 @@ bool level_state_t::hurt_object(object_t *target, int damage) {
 
         event_t event = {*target, EVENT_OBJECT_KILLED};
         _events.push_back(event);
-
+        
         delete target;
     } else {
         if (target->type != OBJ_BOULDER) {
