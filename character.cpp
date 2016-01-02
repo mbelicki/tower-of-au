@@ -15,7 +15,7 @@ using namespace warp;
 static const float MOVE_MOVE_TIME   = 0.1f;
 static const float MOVE_BOUNCE_TIME = 0.15f;
 static const float MOVE_ATTACK_TIME = 0.3f;
-static const float MOVE_FALL_TIME   = 0.3f;
+static const float MOVE_FALL_TIME   = 0.2f;
 
 static const float HEAL_DYING_TIME  = MOVE_ATTACK_TIME;
 static const float HEAL_HURT_TIME   = MOVE_ATTACK_TIME;

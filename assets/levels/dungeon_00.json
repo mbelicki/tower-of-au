@@ -203,53 +203,53 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "target" : { "x" : 2, "y" : 2 }
+                    "target" : { "x" : 2, "y" : 3 }
                 },
                 {
                     "symbol" : "2",
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "target" : { "x" : 6, "y" : 2 }
+                    "target" : { "x" : 10, "y" : 3 }
                 },
                 {
                     "symbol" : "3",
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "target" : { "x" : 2, "y" : 4 }
+                    "target" : { "x" : 2, "y" : 5 }
                 },
                 {
                     "symbol" : "4",
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "target" : { "x" : 10, "y" : 4 }
+                    "target" : { "x" : 10, "y" : 5 }
                 },
                 {
                     "symbol" : "5",
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "target" : { "x" : 2, "y" : 6 }
+                    "target" : { "x" : 2, "y" : 7 }
                 },
                 {
                     "symbol" : "6",
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "target" : { "x" : 10, "y" : 6 }
+                    "target" : { "x" : 10, "y" : 7 }
                 }
             ],
             "data": [
                 "###### ######",
-                "#BD       D #",
-                "##-#######-##",
-                "# DL1 3 2RD #",
-                "##-### ###-##",
-                "# DL5 4 6RD #",
-                "##-#######-##",
+                "#B          #",
                 "#           #",
+                "#^-^^^^^^^-^#",
+                "#L  1 3B2   #",
+                "#^-^^^d^^^-^#",
+                "#   5 4 6B R#",
+                "#^-^^^^^^^-^#",
                 "  B         #",
                 "#           #",
                 "#############"

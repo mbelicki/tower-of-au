@@ -570,7 +570,7 @@ void level_state_t::move_object
     if (new_feat != nullptr) {
         const feature_type_t type = new_feat->type;
         if (type == FEAT_BUTTON) {
-            change_button_state(old_feat, FSTATE_ACTIVE);
+            change_button_state(new_feat, FSTATE_ACTIVE);
         } else if (type == FEAT_SPIKES) {
             if (new_feat->state == FSTATE_ACTIVE) {
                 hurt_object(target, target->health);
