@@ -201,17 +201,19 @@ class core_controller_t final : public controller_impl_i {
             if (type == CORE_RESTART_LEVEL) {
                 change_region(&_portal);
             } else if (type == CORE_BULLET_HIT) {
+                warp_log_d("real time event");
                 rt_event_t event = {RT_EVENT_BULETT_HIT, message.data};
                 _level_state->process_real_time_event(event);
 
                 check_events();
             } else if (type == CORE_MOVE_DONE && _waiting_for_animation) {
-                /* let NPC make moves */
+                warp_log_d("NPC turn");
                 _waiting_for_animation = false;
                 next_turn();
 
                 check_events();
             } else if (is_idle(player)) {
+                warp_log_d("player turn");
                 command_t cmd = {player, message};
                 std::vector<command_t> commands;
                 commands.push_back(cmd);
@@ -419,13 +421,14 @@ class core_controller_t final : public controller_impl_i {
 
 extern maybe_t<entity_t *> create_core(world_t *world, const portal_t *start) {
     if (start == nullptr) {
-        return nothing<entity_t *>("Region is null.");
+        return nothing<entity_t *>("Cannot create entity with null portal.");
     }
 
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new core_controller_t(start));
 
     entity_t *entity = world->create_entity(vec3(0, 0, 0), nullptr, nullptr, controller);
+    entity->set_tag("core");
 
     return entity;
 }

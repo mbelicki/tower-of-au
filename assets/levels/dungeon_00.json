@@ -3,12 +3,17 @@
         {
             "name" : "wall",
             "mesh" : "wall.obj",
-            "texture" : "wall.png"
+            "texture" : "atlas.png"
         },
         {
             "name" : "floor",
             "mesh" : "floor.obj",
-            "texture" : "wall.png"
+            "texture" : "atlas.png"
+        },
+        {
+            "name" : "pit",
+            "mesh" : "pit.obj",
+            "texture" : "atlas.png"
         }
     ],
     "tiles" : [
@@ -99,6 +104,13 @@
             "object" : "weak_stationary",
             "objectDirection" : "z_minus",
             "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "^",
+            "walkable" : true,
+            "graphics" : "pit",
+            "feature" : "FEAT_SPIKES",
+            "spawnRate" : 1.0
         }
     ],
     "portals" : [
@@ -176,9 +188,9 @@
                 "#   #B# # ###",
                 "#     B1  ###",
                 "#L  # # #B###",
-                "# B##B      #",
+                "#^B##B      #",
                 "#   ##   ## #",
-                "#   ####-####",
+                "#^^^####-####",
                 "# B  #       ",
                 "#    #  U   #",
                 "### #########"

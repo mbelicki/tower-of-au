@@ -19,11 +19,10 @@ static physics_comp_t *create_object_physics(world_t *world, vec2_t size) {
         physics->_velocity = vec2(0, 0);
         physics->_bounds = rectangle_t(vec2(0, 0), size);
     }
-
     return physics;
 }
 
-static maybe_t<entity_t *> create_button_entity
+static entity_t *create_button_entity
         (vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "button.obj", "missing.png");
@@ -31,7 +30,14 @@ static maybe_t<entity_t *> create_button_entity
     return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
 }
 
-static maybe_t<entity_t *> create_door_entity
+static entity_t *create_spikes_entity
+        (vec3_t position, world_t *world) {
+    maybe_t<graphics_comp_t *> graphics
+        = create_single_model_graphics(world, "spikes.obj", "atlas.png");
+    return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
+}
+
+static entity_t *create_door_entity
         (vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, "door.obj", "missing.png");
@@ -44,17 +50,23 @@ static maybe_t<entity_t *> create_door_entity
 static feature_t *create_feature
         (world_t *world, feature_type_t type, size_t target, size_t x, size_t z) {
     const vec3_t pos = vec3(x, 0, z);
-    const maybe_t<entity_t *> entity 
-        = type == FEAT_BUTTON 
-        ? create_button_entity(pos, world)
-        : create_door_entity(pos, world)
-        ;
+    entity_t *entity = nullptr;
+    if (type == FEAT_BUTTON) {
+        entity = create_button_entity(pos, world);
+    } else if (type == FEAT_DOOR) {
+        entity = create_door_entity(pos, world);
+    } else if (type == FEAT_SPIKES) {
+        entity = create_spikes_entity(pos, world);
+    } else {
+        warp_log_e("Unsupported type of feature: %d", (int)type);
+        return nullptr;
+    }
 
     feature_t *feat = new (std::nothrow) feature_t;
     feat->type = type;
     feat->position = pos;
     feat->target_id = target;
-    feat->entity = VALUE(entity);
+    feat->entity = entity;
     feat->entity->set_tag("feature");
     feat->state = FSTATE_INACTIVE;
 
@@ -68,9 +80,7 @@ level_state_t::level_state_t(size_t width, size_t height)
         , _objects(nullptr)
         , _features(nullptr)
         , _bullet_factory(nullptr) 
-        , _object_factory(nullptr) 
-        {
-
+        , _object_factory(nullptr) {
     const size_t count = _width * _height;
     _objects  = new object_t  * [count];
     _features = new feature_t * [count];
@@ -84,8 +94,8 @@ level_state_t::level_state_t(size_t width, size_t height)
 level_state_t::~level_state_t() {
     const size_t count = _width * _height;
     for (size_t i = 0; i < count; i++) {
-        if (_objects) delete _objects[i];
-        if (_features) delete _features[i];
+        delete _objects[i];
+        delete _features[i];
     }
     delete _objects;
     delete _features;
@@ -257,7 +267,7 @@ void level_state_t::spawn
             const tile_t *tile = VALUE(maybe_tile);
             const feature_type_t feat_type = tile->feature;
 
-            if (tile->spawn_probablity > 0) {
+            if (tile->object_id != "" && tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
@@ -315,10 +325,12 @@ void level_state_t::clear(world_t *world) {
     for (entity_t *npc : buffer) {
         world->destroy_later(npc);
     }
+    buffer.clear();
     world->find_all_entities("feature", &buffer);
     for (entity_t *feature : buffer) {
         world->destroy_later(feature);
     }
+    buffer.clear();
     world->find_all_entities("bullet", &buffer);
     for (entity_t *bullet : buffer) {
         world->destroy_later(bullet);
@@ -524,7 +536,8 @@ void level_state_t::move_object
 
     feature_t *new_feat = (feature_t *)feature_at(new_x, new_z);
     if (new_feat != nullptr) {
-        if (new_feat->type == FEAT_BUTTON) {
+        const feature_type_t type = new_feat->type;
+        if (type == FEAT_BUTTON) {
             new_feat->state = FSTATE_ACTIVE;
             feature_t *target = _features[new_feat->target_id];
             if (target != nullptr) {
@@ -532,6 +545,8 @@ void level_state_t::move_object
                 target->entity->receive_message
                     (CORE_FEAT_STATE_CHANGE, target->state);
             }
+        } else if (type == FEAT_SPIKES) {
+            hurt_object(target, target->health);
         }
     }
 
