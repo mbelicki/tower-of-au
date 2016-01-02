@@ -168,7 +168,9 @@ static feature_type_t feature_from_string(const char *type) {
         return FEAT_BUTTON;
     } else if (strncmp(type, "FEAT_SPIKES", 11) == 0) {
         return FEAT_SPIKES;
-    }
+    } else if (strncmp(type, "FEAT_BREAKABLE_FLOOR", 20) == 0) {
+        return FEAT_BREAKABLE_FLOOR;
+    } 
     return FEAT_NONE;
 }
 

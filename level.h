@@ -19,6 +19,7 @@ enum feature_type_t : int {
     FEAT_BUTTON,
     FEAT_DOOR,
     FEAT_SPIKES,
+    FEAT_BREAKABLE_FLOOR,
 };
 
 struct tile_t {

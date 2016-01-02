@@ -95,17 +95,16 @@ class object_factory_t;
 
 class level_state_t {
     public:
-        level_state_t(size_t level_width, size_t level_height);
+        level_state_t(warp::world_t *world, size_t level_width, size_t level_height);
         ~level_state_t();
 
         /* single objects/featues management: */
         bool add_object
                 ( const object_t &obj, const warp::tag_t &def_name
-                , warp::world_t *world
                 );
         bool spawn_object
                 ( warp::tag_t name, warp::vec3_t pos
-                , warp_random_t *rand, warp::world_t *world
+                , warp_random_t *rand
                 );
         void set_object_flag(const object_t *obj, object_flags_t flag);
 
@@ -120,10 +119,10 @@ class level_state_t {
         bool can_move_to(warp::vec3_t new_pos) const;
     
         /* global state changes: */
-        void spawn(warp::world_t *world, const level_t *level, warp_random_t *rand);
+        void spawn(const level_t *level, warp_random_t *rand);
         void next_turn(const std::vector<command_t> &commands);
         void process_real_time_event(const rt_event_t &event);
-        void clear(warp::world_t *world);
+        void clear();
 
         const std::vector<event_t> &get_last_turn_events() const {
             return _events;
@@ -144,9 +143,11 @@ class level_state_t {
         bool hurt_object(object_t *target, int damage);
 
         void destroy_object(object_t *obj);
+        void destroy_feature(feature_t *feat);
 
     private:
         bool _initialized;
+        warp::world_t *_world;
         size_t _width, _height;
         object_t  **_objects;
         feature_t **_features;

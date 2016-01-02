@@ -38,8 +38,7 @@
             "symbol" : "-",
             "walkable" : true,
             "graphics" : "floor",
-            "feature" : "FEAT_DOOR",
-            "spawnRate" : 1.0
+            "feature" : "FEAT_DOOR"
         },
         {
             "symbol" : "R",
@@ -109,8 +108,13 @@
             "symbol" : "^",
             "walkable" : true,
             "graphics" : "pit",
-            "feature" : "FEAT_SPIKES",
-            "spawnRate" : 1.0
+            "feature" : "FEAT_SPIKES"
+        },
+        {
+            "symbol" : "x",
+            "walkable" : true,
+            "graphics" : "pit",
+            "feature" : "FEAT_BREAKABLE_FLOOR"
         }
     ],
     "portals" : [
@@ -318,11 +322,11 @@
                 "##    T    ##",
                 "  B        B#",
                 "##         ##",
-                "####     ####",
-                "###### ######",
-                "####     ####",
-                "####     ####",
-                "####     ####",
+                "####   x ####",
+                "######x######",
+                "####xxxxx####",
+                "#### xx  ####",
+                "####x xx ####",
                 "####     ####"
             ]
         },

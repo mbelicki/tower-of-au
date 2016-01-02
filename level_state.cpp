@@ -37,6 +37,14 @@ static entity_t *create_spikes_entity
     return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
 }
 
+static entity_t *create_breakable_entity
+        (vec3_t position, world_t *world) {
+    maybe_t<graphics_comp_t *> graphics
+        = create_single_model_graphics(world, "cracked_floor.obj", "atlas.png");
+    maybe_t<controller_comp_t *> controller = create_door_controller(world);
+    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+}
+
 static entity_t *create_door_entity
         (vec3_t position, world_t *world) {
     maybe_t<graphics_comp_t *> graphics
@@ -57,6 +65,8 @@ static feature_t *create_feature
         entity = create_door_entity(pos, world);
     } else if (type == FEAT_SPIKES) {
         entity = create_spikes_entity(pos, world);
+    } else if (type == FEAT_BREAKABLE_FLOOR) {
+        entity = create_breakable_entity(pos, world);
     } else {
         warp_log_e("Unsupported type of feature: %d", (int)type);
         return nullptr;
@@ -72,8 +82,9 @@ static feature_t *create_feature
     return feat;
 }
 
-level_state_t::level_state_t(size_t width, size_t height) 
+level_state_t::level_state_t(world_t *world, size_t width, size_t height) 
         : _initialized(false)
+        , _world(world)
         , _width(width)
         , _height(height)
         , _objects(nullptr)
@@ -103,7 +114,7 @@ level_state_t::~level_state_t() {
 }
 
 bool level_state_t::add_object
-        (const object_t &obj, const tag_t &def_name, world_t *world) {
+        (const object_t &obj, const tag_t &def_name) {
     const size_t x = round(obj.position.x);
     const size_t z = round(obj.position.z);
     if (object_at(x, z) != nullptr) return false;
@@ -112,7 +123,7 @@ bool level_state_t::add_object
     *new_obj = obj;
     if (new_obj->entity == nullptr) {
         new_obj->entity
-            = _object_factory->create_object_entity(new_obj, def_name, world);
+            = _object_factory->create_object_entity(new_obj, def_name, _world);
     }
 
     _objects[x + _width * z] = new_obj;
@@ -121,12 +132,12 @@ bool level_state_t::add_object
 }
 
 bool level_state_t::spawn_object
-        (tag_t name, vec3_t pos, warp_random_t *rand, world_t *world) {
+        (tag_t name, vec3_t pos, warp_random_t *rand) {
     const size_t x = round(pos.x);
     const size_t z = round(pos.z);
     if (object_at(x, z) != nullptr) return false;
 
-    object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_PLUS, rand, world);
+    object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_PLUS, rand, _world);
 
     _objects[x + _width * z] = new_obj;
     new_obj->entity->receive_message(CORE_DO_ROTATE, (int)DIR_Z_PLUS);
@@ -221,8 +232,7 @@ static void change_direction(object_t *obj, dir_t dir) {
     }
 }
 
-void level_state_t::spawn
-        (world_t *world, const level_t *level, warp_random_t *rand) {
+void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
     if (level == nullptr) {
         warp_log_e("Cannot spawn objects, null level.");
         return;
@@ -247,13 +257,13 @@ void level_state_t::spawn
     _level = level;
 
     if (_bullet_factory == nullptr) {
-        _bullet_factory = new bullet_factory_t(world);
+        _bullet_factory = new bullet_factory_t(_world);
         _bullet_factory->initialize();
     }
     if (_object_factory == nullptr) {
         _object_factory = new object_factory_t();
         _object_factory->load_definitions("objects.json");
-        _object_factory->load_resources(&world->get_resources());
+        _object_factory->load_resources(&_world->get_resources());
     }
 
     for (size_t i = 0; i < _width; i++) {
@@ -271,7 +281,7 @@ void level_state_t::spawn
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
                     object_t *obj = _object_factory->spawn
-                        (tile->object_id, pos, DIR_Z_MINUS, rand, world);
+                        (tile->object_id, pos, DIR_Z_MINUS, rand, _world);
                     if (obj != nullptr) {
                         change_direction(obj, tile->object_dir);
                         _objects[id] = obj;
@@ -281,7 +291,7 @@ void level_state_t::spawn
 
             if (feat_type != FEAT_NONE) {
                 const size_t target = tile->feat_target_id;
-                _features[id] = create_feature(world, feat_type, target, i, j);
+                _features[id] = create_feature(_world, feat_type, target, i, j);
             }
         }
     }
@@ -312,7 +322,7 @@ void level_state_t::process_real_time_event(const rt_event_t &event) {
     }
 }
 
-void level_state_t::clear(world_t *world) {
+void level_state_t::clear() {
     if (_initialized == false) {
         warp_log_e("Cannot clear, already cleared.");
         return;
@@ -320,19 +330,19 @@ void level_state_t::clear(world_t *world) {
     _initialized = false;
 
     std::vector<entity_t *> buffer;
-    world->find_all_entities("object", &buffer);
+    _world->find_all_entities("object", &buffer);
     for (entity_t *npc : buffer) {
-        world->destroy_later(npc);
+        _world->destroy_later(npc);
     }
     buffer.clear();
-    world->find_all_entities("feature", &buffer);
+    _world->find_all_entities("feature", &buffer);
     for (entity_t *feature : buffer) {
-        world->destroy_later(feature);
+        _world->destroy_later(feature);
     }
     buffer.clear();
-    world->find_all_entities("bullet", &buffer);
+    _world->find_all_entities("bullet", &buffer);
     for (entity_t *bullet : buffer) {
-        world->destroy_later(bullet);
+        _world->destroy_later(bullet);
     }
 
     const size_t count = _width * _height;
@@ -543,6 +553,11 @@ void level_state_t::move_object
     if (old_feat != nullptr) {
         if (old_feat->type == FEAT_BUTTON) {
             change_button_state(old_feat, FSTATE_INACTIVE);
+        } else if (old_feat->type == FEAT_BREAKABLE_FLOOR) {
+            delete old_feat;
+            old_feat->entity->receive_message(CORE_FEAT_STATE_CHANGE, FSTATE_ACTIVE);
+            _features[old_x + _width * old_z]
+                = create_feature(_world, FEAT_SPIKES, 0, old_x, old_z);
         }
     }
 

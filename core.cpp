@@ -125,8 +125,8 @@ class core_controller_t final : public controller_impl_i {
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
-            _level_state = new level_state_t(width, height);
-            _level_state->spawn(_world, _level, _random);
+            _level_state = new level_state_t(_world, width, height);
+            _level_state->spawn(_level, _random);
 
             initialize_player();
         }
@@ -136,7 +136,7 @@ class core_controller_t final : public controller_impl_i {
             const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
             
             if (player == nullptr || player->type == OBJ_NONE) {
-                bool added = _level_state->spawn_object("player", pos, _random, _world);
+                bool added = _level_state->spawn_object("player", pos, _random);
                 if (added == false) {
                     warp_log_e("Failed to spawn player avatar.");
                     abort();
@@ -147,7 +147,7 @@ class core_controller_t final : public controller_impl_i {
             } else {
                 _last_player_state = *player;
                 _last_player_state.position = pos;
-                _level_state->add_object(_last_player_state, "player", _world);
+                _level_state->add_object(_last_player_state, "player");
             }
 
             update_player_health_display(&_last_player_state);
@@ -179,8 +179,8 @@ class core_controller_t final : public controller_impl_i {
 
                 if (_state == CSTATE_IDLE) {
                     _region->change_display_positions(_level_x, _level_z);
-                    _level_state->spawn(_world, _level, _random);
-                    _level_state->add_object(_last_player_state, "player", _world);
+                    _level_state->spawn(_level, _random);
+                    _level_state->add_object(_last_player_state, "player");
                 }
             }
         }
@@ -376,7 +376,7 @@ class core_controller_t final : public controller_impl_i {
             if (maybe_level.failed()) return;
 
             _level = VALUE(maybe_level);
-            _level_state->clear(_world);
+            _level_state->clear();
 
             const int dx = x - _level_x;
             const int dz = z - _level_z;
