@@ -376,18 +376,26 @@
             ]
         },
         {
-            "tiles": [],
+            "tiles": [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 8, "y" : 8 }
+                }
+            ],
             "data": [
                 "##  #########",
-                "#   ^       #",
-                "#^B^^       #",
-                "   B^       #",
-                "#^^^^       #",
-                "#   ^       #",
-                "#####       #",
-                "#           #",
-                "#           #",
-                "#           #",
+                "#   ^^^r1 ###",
+                "#^ ^^  ^x   #",
+                "   ^^   x   #",
+                "#^B^^   B  ^#",
+                "#  ^^   U^  #",
+                "#  l# ^^ ^B #",
+                "#r x     lB #",
+                "#^^^#^^#-#  #",
+                "#   #    #^^#",
                 "###### ######"
             ]
         },
@@ -509,18 +517,40 @@
             ]
         },
         {
-            "tiles": [],
+            "tiles": [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 11, "y" : 4 }
+                },
+                {
+                    "symbol" : "2",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 11, "y" : 6 }
+                },
+                {
+                    "symbol" : "3",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 4, "y" : 7 }
+                }
+            ],
             "data": [
                 "###### ######",
-                "#           #",
-                "#           #",
-                "            #",
-                "#           #",
-                "#           #",
-                "#           #",
-                "            #",
-                "#           #",
-                "#           #",
+                "#Bd##  ###^^#",
+                "#d ## B l   #",
+                "   ##r ^B ^ #",
+                "# ^#2^ ^  #-#",
+                "# ^#^B  # x #",
+                "# ^^1   B #-#",
+                "   #-###### #",
+                "#    #3   B #",
+                "#B ^^^^^ux  #",
                 "#############"
             ]
         }
