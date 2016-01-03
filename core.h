@@ -55,5 +55,4 @@ static inline bool operator==
     return static_cast<int>(a) == static_cast<int>(b);
 }
 
-warp::maybe_t<warp::entity_t *> create_core
-        (warp::world_t *world, const portal_t *start_point);
+warp::entity_t *create_core(warp::world_t *world, const portal_t *start_point);

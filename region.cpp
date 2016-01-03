@@ -4,6 +4,7 @@
 #include <map>
 
 #include "warp/io.h"
+#include "warp/renderer.h"
 
 #include "libs/parson/parson.h"
 
@@ -36,6 +37,12 @@ region_t::region_t(level_t **levels, size_t width, size_t height)
 
     _graphics = array_create_typed(tile_graphics_t, 16, destroy_tile_graphics);
     _portals  = array_create_typed(portal_t, 16, destroy_portal);
+    
+    light_settings_t defaults;
+    fill_default_light_settings(&defaults);
+    _lighting.sun_color = defaults.sun_color;
+    _lighting.sun_direction = defaults.sun_direction;
+    _lighting.ambient_color = defaults.ambient_color;
 }
 
 region_t::~region_t() {
@@ -79,6 +86,12 @@ bool region_t::add_tile_graphics
         (const tag_t &name, const char *mesh, const char *tex) {
     const tile_graphics_t g = { name, str_create(mesh), str_create(tex) };
     return array_append(&_graphics, &g, 1);
+}
+
+void region_t::set_lighting(const region_lighting_t *lighting) {
+    if (lighting != nullptr) {
+        _lighting = *lighting;
+    }
 }
 
 const portal_t *region_t::get_portal(size_t id) {
@@ -331,30 +344,81 @@ static void add_portals(region_t *region, JSON_Array *portals) {
     }
 }
 
-maybe_t<region_t *> load_region(const char *name) {
+static void parse_vec3(const JSON_Object *vector, vec3_t *output) {
+    if (vector == nullptr) {
+        warp_log_e("Cannot parse empty vector.");
+        return;
+    }
+    if (output == nullptr) {
+        warp_log_e("Cannot parse empty output.");
+        return;
+    }
+
+    output->x = json_object_get_number(vector, "x");
+    output->y = json_object_get_number(vector, "y");
+    output->z = json_object_get_number(vector, "z");
+}
+
+static void parse_color(const JSON_Object *color, vec3_t *output) {
+    if (color == nullptr) {
+        warp_log_e("Cannot parse empty color.");
+        return;
+    }
+    if (output == nullptr) {
+        warp_log_e("Cannot parse empty output.");
+        return;
+    }
+
+    output->x = json_object_get_number(color, "r");
+    output->y = json_object_get_number(color, "g");
+    output->z = json_object_get_number(color, "b");
+}
+
+static void parse_lighting(JSON_Object *object, region_lighting_t *lighting) {
+    if (lighting == nullptr) {
+        warp_log_e("Cannot parse region lighting, null lighting.");
+    }
+    if (object == nullptr) {
+        warp_log_e("Cannot parse region lighting, null object.");
+    }
+
+    parse_color(json_object_get_object(object, "sunColor"), &lighting->sun_color);
+    parse_vec3(json_object_get_object(object, "sunDirection"), &lighting->sun_direction);
+    parse_color(json_object_get_object(object, "ambientColor"), &lighting->ambient_color);
+
+    warp_log_d( "sun color: %f, %f, %f"
+              , lighting->sun_color.x, lighting->sun_color.y, lighting->sun_color.z);
+}
+
+region_t *load_region(const char *name) {
     char path[1024]; 
     maybeunit_t path_found = find_path(name, "assets/levels", path, 1024);
-    MAYBE_RETURN(path_found, region_t *, "Failed to find region path:");
+    if (path_found.failed()) {
+        path_found.log_failure();
+        return nullptr;
+    } 
 
     const JSON_Value *root_value = json_parse_file(path);
     if (json_value_get_type(root_value) != JSONObject) {
-        return nothing<region_t *>
-            ("Cannot parse %s: root element is not an object.", path);
+        warp_log_e("Cannot parse %s: root element is not an object.", path);
+        return nullptr;
     }
     const JSON_Object *root = json_value_get_object(root_value);
 
-    const size_t width = json_object_dotget_number(root, "width");
-    const size_t height = json_object_dotget_number(root, "height");
+    const size_t width = json_object_get_number(root, "width");
+    const size_t height = json_object_get_number(root, "height");
     const size_t count = width * height;
 
-    JSON_Array *levels = json_object_dotget_array(root, "levels");
+    JSON_Array *levels = json_object_get_array(root, "levels");
     if (json_array_get_count(levels) != count) {
-        return nothing<region_t *>
-            ("Cannot parse %s: width, height and size of 'levels' are inconsitent.", path);
+        warp_log_e( "Cannot parse %s: width, height and size of"
+                    " 'levels' are inconsitent.", path
+                  );
+        return nullptr;
     }
 
     std::map<char, tile_t> global_map;
-    JSON_Array *global_tiles = json_object_dotget_array(root, "tiles");
+    JSON_Array *global_tiles = json_object_get_array(root, "tiles");
     fill_tiles_map(&global_map, global_tiles);
 
     level_t **parsed_levels = new level_t * [count];
@@ -366,11 +430,16 @@ maybe_t<region_t *> load_region(const char *name) {
     region_t *region = new region_t(parsed_levels, width, height);
     delete parsed_levels;
     
-    JSON_Array *portals = json_object_dotget_array(root, "portals");
+    JSON_Array *portals = json_object_get_array(root, "portals");
     add_portals(region, portals);
 
-    JSON_Array *graphics = json_object_dotget_array(root, "graphics");
+    JSON_Array *graphics = json_object_get_array(root, "graphics");
     add_graphics(region, graphics);
+
+    JSON_Object *lighting = json_object_get_object(root, "lighting");
+    region_lighting_t lights = *region->get_region_lighting();
+    parse_lighting(lighting, &lights);
+    region->set_lighting(&lights);
     
     return region;
 }

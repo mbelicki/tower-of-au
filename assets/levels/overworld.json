@@ -1,4 +1,9 @@
 {
+    "lighting" : {
+        "sunColor" : { "r" : 1.1, "g" : 1.1, "b" : 0.9 },
+        "sunDirection" : { "x" : 0.3, "y" : 1.0, "z" : 0.5 },
+        "ambientColor" : { "r" : 0.2, "g" : 0, "b" : 0.4 }
+    },
     "graphics" : [
         {
             "name" : "grass",
@@ -93,12 +98,6 @@
             "graphics" : "grass"
         },
         {
-            "symbol" : "S",
-            "stairs" : true,
-            "graphics" : "stairs",
-            "portalId": 0
-        },
-        {
             "symbol" : "Q",
             "walkable" : false,
             "graphics" : "floor"
@@ -180,6 +179,14 @@
             ]
         },
         {
+            "tiles" : [
+                {
+                    "symbol" : "S",
+                    "stairs" : true,
+                    "graphics" : "stairs",
+                    "portalId": 0
+                }
+            ],
             "data": [
                 "GGGGGGGSGGGGG",
                 "RHHHHR   QQQQ",
@@ -189,8 +196,8 @@
                 "R  QQQQQQQQQQ",
                 "R XQQQQQQQQQQ",
                 "R   QQQQQQQQQ",
-                "      QQQQQQQ",
-                "        QQQQQ",
+                "      QQQ   l",
+                "          lHH",
                 "HHHHR   lHHHH"
             ]
         },
@@ -210,6 +217,14 @@
             ]
         },
         {
+            "tiles" : [
+                {
+                    "symbol" : "S",
+                    "stairs" : true,
+                    "graphics" : "stairs",
+                    "portalId": 1
+                }
+            ],
             "data": [
                 "GGGGGGGR  gGG",
                 "R #####    lH",

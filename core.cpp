@@ -91,7 +91,10 @@ class core_controller_t final : public controller_impl_i {
             warp_random_destroy(_random);
         }
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const tag_t &name) const override {
+            if (name == "lighting") {
+                return (void *)_region->get_region_lighting();
+            }
             return dynval_t::make_null();
         }
 
@@ -102,13 +105,13 @@ class core_controller_t final : public controller_impl_i {
             _level_x = _portal.level_x;
             _level_z = _portal.level_z;
 
-            maybe_t<region_t *> region = load_region(str_value(_portal.region_name));
-            if (region.failed()) {
-                warp_log_e("Failed to load region: %s", region.get_message().c_str());
+            const char *region_name = str_value(_portal.region_name); 
+            _region = load_region(region_name);
+            if (_region == nullptr) {
+                warp_log_e("Failed to load region: '%s'", region_name);
                 abort();
             }
 
-            _region = VALUE(region);
             maybeunit_t init_result = _region->initialize(_world);
             if (init_result.failed()) {
                 warp_log_e("Failed to initialize region: %s", init_result.get_message().c_str());
@@ -422,9 +425,10 @@ class core_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<entity_t *> create_core(world_t *world, const portal_t *start) {
+extern entity_t *create_core(world_t *world, const portal_t *start) {
     if (start == nullptr) {
-        return nothing<entity_t *>("Cannot create entity with null portal.");
+        warp_log_e("Cannot create core with null portal.");
+        return nullptr;
     }
 
     controller_comp_t *controller = world->create_controller();

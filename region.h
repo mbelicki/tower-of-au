@@ -26,6 +26,12 @@ struct tile_graphics_t {
     warp_str_t texture;
 };
 
+struct region_lighting_t {
+    warp::vec3_t sun_color;
+    warp::vec3_t sun_direction;
+    warp::vec3_t ambient_color;
+};
+
 class region_t {
     public:
         region_t(level_t **levels, size_t width, size_t height);
@@ -42,6 +48,7 @@ class region_t {
             );
         bool add_tile_graphics
             (const warp::tag_t &name, const char *mesh, const char *texture);
+        void set_lighting(const region_lighting_t *lighting);
 
         inline bool is_initialized() const { return _initialized; }
         inline size_t get_width() const { return _width; }
@@ -50,6 +57,7 @@ class region_t {
         warp::maybe_t<level_t *> get_level_at(size_t x, size_t y) const;
         const portal_t *get_portal(size_t id);
         const tile_graphics_t *get_tile_graphics(const warp::tag_t &id) const;
+        const region_lighting_t *get_region_lighting() const { return &_lighting; }
 
     private:
         bool _initialized;
@@ -61,7 +69,9 @@ class region_t {
         
         warp_array_t _portals;
         warp_array_t _graphics;
+
+        region_lighting_t _lighting;
 };
 
 region_t *generate_random_region(warp_random_t *random);
-warp::maybe_t<region_t *> load_region(const char* path);
+region_t *load_region(const char *path);
