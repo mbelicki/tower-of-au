@@ -44,6 +44,15 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
     string(REGEX REPLACE "/EH[a-z]+" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
+# Get version:
+exec_program (
+    "git"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ARGS "describe" "--tags" "--dirty" "--always"
+    OUTPUT_VARIABLE VERSION
+)
+add_definitions( -DVERSION="${VERSION}" )
+
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR})
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(PROJECT_LIB_DIR libs)

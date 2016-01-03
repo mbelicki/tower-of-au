@@ -14,7 +14,7 @@
 #endif
 
 #ifndef APP_NAME
-#define APP_NAME "Unknown Application"
+#define APP_NAME "Tower of Au"
 #endif
 
 struct cliopts_t {
@@ -52,7 +52,7 @@ static int initialize_and_run() {
     fill_default_config(&config);
 
     config.max_entites_count = 512;
-    config.window_name = "Tower of Au";
+    config.window_name = APP_NAME;
 
     warp::game_t *game = new warp::game_t;
     warp::maybeunit_t maybe_initialized = game->initialize(config, states);
