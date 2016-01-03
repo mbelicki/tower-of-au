@@ -116,6 +116,14 @@
             "objectDirection" : "x_plus",
             "graphics" : "grass",
             "spawnRate" : 1.0
+        },
+        {
+            "symbol" : "x",
+            "walkable" : true,
+            "object" : "weak_roaming",
+            "objectDirection" : "x_plus",
+            "graphics" : "grass",
+            "spawnRate" : 0.5
         }
     ],
     "portals" : [
@@ -244,11 +252,11 @@
                 "GGGR  gGGGGGG",
                 "HR     gHHHHH",
                 "R        gHHH",
-                "R  #X  X# lHH",
+                "R  #x  X# lHH",
                 "          gHH",
                 "     ##      ",
-                "         X   ",
-                "R   #X   # lH",
+                "         x   ",
+                "R   #x   # lH",
                 "HR         lH",
                 "HR      LHHHH",
                 "HHHR  LHHHHHH"

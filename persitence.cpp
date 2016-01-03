@@ -13,6 +13,7 @@
 using namespace warp;
 
 static const char *SAVE_PATH = "./save.json";
+static const uint32_t DEFAULT_SEED = 314;
 
 class persistence_controller_t final : public controller_impl_i {
     public:
@@ -30,6 +31,8 @@ class persistence_controller_t final : public controller_impl_i {
                 return (void *)&_portal;
             } else if (name == "player") {
                 return (void *)&_player;
+            } else if (name == "seed") {
+                return *(int *)&_seed;
             }
 
             return dynval_t::make_null();
@@ -55,6 +58,9 @@ class persistence_controller_t final : public controller_impl_i {
             _player.health = 0;
             _player.ammo = 0;
 
+            /* default seed */
+            _seed = DEFAULT_SEED;
+
             read_data();
         }
 
@@ -63,6 +69,7 @@ class persistence_controller_t final : public controller_impl_i {
         bool accepts(messagetype_t type) const override {
             return type == CORE_SAVE_PORTAL 
                 || type == CORE_SAVE_PLAYER
+                || type == CORE_SAVE_SEED
                 || type == CORE_SAVE_TO_FILE
                 ;
         }
@@ -89,6 +96,14 @@ class persistence_controller_t final : public controller_impl_i {
                 str_destroy(_portal.region_name);
                 _portal = *portal;
                 _portal.region_name = str_copy(portal->region_name);
+            } else if (type == CORE_SAVE_SEED) {
+                maybe_t<int> maybe_value = message.data.get_int();
+                if (maybe_value.failed()) {
+                    maybe_value.log_failure();
+                    return;
+                }
+                const int packed_seed = VALUE(maybe_value);
+                _seed = *(uint32_t *)&packed_seed;
             } else if (type == CORE_SAVE_TO_FILE) {
                 save_data();
             }
@@ -100,6 +115,7 @@ class persistence_controller_t final : public controller_impl_i {
 
         portal_t _portal;
         object_t _player;
+        uint32_t _seed;
 
         JSON_Value *save_portal() {
             JSON_Value *portal_value = json_value_init_object();
@@ -193,6 +209,7 @@ class persistence_controller_t final : public controller_impl_i {
 
             json_object_set_value(root_object, "portal", save_portal());
             json_object_set_value(root_object, "player", save_player());
+            json_object_set_number(root_object, "seed", (double)_seed);
 
             char *serialized = json_serialize_to_string_pretty(root_value);
             const size_t size = strnlen(serialized, 4096);
@@ -221,12 +238,13 @@ class persistence_controller_t final : public controller_impl_i {
             
             read_portal(json_object_get_object(root, "portal"));
             read_player(json_object_get_object(root, "player"));
+            _seed = json_object_get_number(root, "seed");
 
             json_value_free(root_value);
         }
 };
 
-entity_t *get_persitent_data(world_t *world) {
+extern entity_t *get_persitent_data(world_t *world) {
     entity_t *data = world->find_entity("persistent_data");
     if (data == nullptr) {
         data = create_persitent_data(world);
@@ -234,7 +252,7 @@ entity_t *get_persitent_data(world_t *world) {
     return data;
 }
 
-entity_t *create_persitent_data(world_t *world) {
+extern entity_t *create_persitent_data(world_t *world) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new persistence_controller_t);
 
@@ -255,20 +273,37 @@ static void *get_saved_data(world_t *world, const tag_t &name) {
     return VALUE(maybe_value);
 }
 
-const object_t *get_saved_player_state(world_t *world) {
+extern const object_t *get_saved_player_state(world_t *world) {
     return (const object_t *)get_saved_data(world, "player");
 }
 
-const portal_t *get_saved_portal(world_t *world) {
+extern const portal_t *get_saved_portal(world_t *world) {
     return (const portal_t *)get_saved_data(world, "portal");
 }
 
-void save_player_state(world_t *world, const object_t *player) {
+extern uint32_t get_saved_seed(world_t *world) {
+    entity_t *data = get_persitent_data(world);
+    maybe_t<int> maybe_value = data->get_property("seed").get_int();
+    if (maybe_value.failed()) {
+        maybe_value.log_failure();
+        return DEFAULT_SEED;
+    }
+    const int packed_seed = VALUE(maybe_value);
+    return *(uint32_t *)&packed_seed;
+}
+
+extern void save_player_state(world_t *world, const object_t *player) {
     entity_t *data = get_persitent_data(world);
     data->receive_message(CORE_SAVE_PLAYER, (void *)player);
 }
 
-void save_portal(world_t *world, const portal_t *portal) {
+extern void save_portal(world_t *world, const portal_t *portal) {
     entity_t *data = get_persitent_data(world);
     data->receive_message(CORE_SAVE_PORTAL, (void *)portal);
+}
+
+extern void save_random_seed(world_t *world, uint32_t seed) {
+    entity_t *data = get_persitent_data(world);
+    const int packed_seed = *(int*)&seed;
+    data->receive_message(CORE_SAVE_SEED, packed_seed);
 }

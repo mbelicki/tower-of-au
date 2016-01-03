@@ -78,7 +78,6 @@ class core_controller_t final : public controller_impl_i {
                 , _transition_timer(0) 
                 , _pain_texts()
                 , _random(nullptr) {
-            _random = warp_random_create(314);
             _portal.region_name = str_copy(start->region_name);
             _pain_texts = create_pain_texts();
         }
@@ -104,6 +103,9 @@ class core_controller_t final : public controller_impl_i {
 
             _level_x = _portal.level_x;
             _level_z = _portal.level_z;
+
+            const uint32_t seed = get_saved_seed(_world);
+            _random = warp_random_create(seed);
 
             const char *region_name = str_value(_portal.region_name); 
             _region = load_region(region_name);
@@ -398,8 +400,13 @@ class core_controller_t final : public controller_impl_i {
             _last_player_state = *player;
             _last_player_state.position = player_pos;
 
+            const uint32_t new_seed = warp_random_next(_random);
+            warp_random_seed(_random, new_seed);
+
             save_portal(_world, &_portal);
             save_player_state(_world, &_last_player_state);
+            save_random_seed(_world, new_seed);
+
             _world->broadcast_message(CORE_SAVE_TO_FILE, 0);
         }
 
