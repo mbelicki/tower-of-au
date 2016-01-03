@@ -124,13 +124,19 @@
             "objectDirection" : "x_plus",
             "graphics" : "grass",
             "spawnRate" : 0.5
+        },
+        {
+            "symbol" : "-",
+            "walkable" : true,
+            "graphics" : "grass",
+            "feature" : "FEAT_DOOR"
         }
     ],
     "portals" : [
         {
             "region": "dungeon_00.json",
             "level": {"x": 1, "y": 3},
-            "tile": {"x": 6, "y": 10}
+            "tile": {"x": 6, "y": 9}
         },
         {
             "region": "test_01.json",
@@ -144,30 +150,30 @@
         {
             "data": [
                 "GGGGGGGGGGGGG",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R            ",
-                "R            ",
-                "R           L",
-                "R           L",
-                "HHHHH  lHHHHH"
-            ]
-        },
-        {
-            "data": [
-                "GGGGGGGGGGGGG",
                 "HHHHR  LR gHH",
                 "HHR      B gH",
                 "HR          l",
                 "HR  #X      g",
                 "R      X#    ",
-                "     X       ",
-                "     #      L",
+                "R    X       ",
+                "R    #      L",
                 "HHR     #   l",
-                "HHHHHR     LH",
+                "HHHHR      LH",
+                "HHHHHR   lHHH"
+            ]
+        },
+        {
+            "data": [
+                "GGGGGGGGGGGGG",
+                "HHHR     gHHH",
+                "HR        lHH",
+                "HR    x   gHH",
+                "R     ###  gH",
+                "    x   #x   ",
+                "    #        ",
+                "R   # x##   l",
+                "HHR         l",
+                "HHHHR  x   lH",
                 "HHHHHHHR  lHH"
             ]
         },
@@ -211,17 +217,17 @@
         },
         {
             "data": [
-                "GGGGG  gGGGGG",
+                "GGGGGR   gGGG",
+                "HHHHR       l",
+                "HHR    # ## l",
+                "HR     x    g",
+                "R x  ###     ",
+                "R    # x     ",
+                "R    #  ##  L",
+                "R   x#  x    ",
                 "R           l",
-                "R           l",
-                "R           g",
-                "R            ",
-                "R            ",
-                "R           L",
-                "R            ",
-                "R           l",
-                "R           l",
-                "H  gHHHH  gHH"
+                "R   lHR     l",
+                "R  gHHHH  gHH"
             ]
         },
         {
@@ -278,62 +284,80 @@
             ]
         },
         {
+            "tiles" : [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "grass",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 5, "y" : 5 }
+                }
+            ],
             "data": [
-                "GGGGGGGGGGGGG",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
+                "R  gGGGR  lGG",
+                "R   gR    gHH",
+                "HR   B     gH",
+                "HR   1  x   l",
+                "HHR         g",
+                "HHR##-###    ",
+                "HHR     # x  ",
+                "HR X    #    ",
+                "R    X BB   l",
+                "HR  LHR #  lH",
                 "HHHHHHHHHHHHH"
             ]
         },
         {
             "data": [
                 "GGGGGGGGGGGGG",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
+                "HHR LHR    lH",
+                "HR         gH",
+                "HR  x   x   l",
+                "R       #   g",
+                "      X      ",
+                "   ###       ",
+                "   x    x   l",
+                "R      ##   l",
+                "HR   ####  lH",
+                "HHHHHHHHHHHHH"
+            ]
+        },
+        {
+            "tiles" : [
+                {
+                    "symbol" : "1",
+                    "walkable" : true,
+                    "graphics" : "grass",
+                    "feature" : "FEAT_BUTTON",
+                    "target" : { "x" : 6, "y" : 8 }
+                }
+            ],
+            "data": [
+                "GGGR  gGGGGGG",
+                "RR         gH",
+                "R x         g",
+                "R B          ",
+                "R    #x      ",
+                "    X       l",
+                "          X g",
+                "R            ",
+                "HR  ##-##1   ",
+                "HHHR#   #  lH",
                 "HHHHHHHHHHHHH"
             ]
         },
         {
             "data": [
-                "GGGGGGGGGGGGG",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "HHHHHHHHHHHHH"
-            ]
-        },
-        {
-            "data": [
-                "GGGGGGGGGGGGG",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
-                "R           L",
+                "GR   gGGGR  l",
+                "R   X LHR   l",
+                "R      #   lH",
+                "  X    #   gH",
+                "      X  x  l",
+                "R     #     l",
+                "R  x      B l",
+                "   B     B lH",
+                "       x  lHH",
+                "R   lR  lHHHH",
                 "HHHHHHHHHHHHH"
             ]
         }
