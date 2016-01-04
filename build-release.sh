@@ -2,6 +2,19 @@
 # usage: ./build-release.sh project-name /path/to/project/srouce/root/dir
 
 project_name=$1
+if [ -z $project_name ]; then
+    echo "Missing project name."
+    echo "Usage: ./build-release.sh project-name /path/to/project/srouce/root/dir"
+    exit 1
+fi
+
+source=$2
+if [ -z $source ]; then
+    echo "Missing source directory."
+    echo "Usage: ./build-release.sh project-name /path/to/project/srouce/root/dir"
+    exit 1
+fi
+
 start_dir=`pwd`
 source_dir=`cd "$2"; pwd`
 release_dir="$source_dir/../$project_name-release"
