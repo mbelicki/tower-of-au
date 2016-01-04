@@ -54,6 +54,7 @@ class label_controller_t final : public controller_impl_i {
         bool accepts(messagetype_t type) const override {
             return type == CORE_SHOW_KNOWN_TEXT
                 || type == CORE_SHOW_TAG_TEXT
+                || type == CORE_SHOW_POINTER_TEXT
                 ;
         }
 
@@ -67,6 +68,9 @@ class label_controller_t final : public controller_impl_i {
             } else if (type == CORE_SHOW_TAG_TEXT) {
                 const tag_t tag = VALUE(message.data.get_tag());
                 result = recreate_text_mesh(tag.get_text());
+            } else if (type == CORE_SHOW_POINTER_TEXT) {
+                const char *text = (const char *)VALUE(message.data.get_pointer());
+                result = recreate_text_mesh(text);
             }
 
             if (result.failed()) {

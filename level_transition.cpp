@@ -59,6 +59,13 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
             const vec3_t pos = e->get_position();
             e->receive_message(MSG_PHYSICS_MOVE, vec3_add(pos, vec3(0, -48, 0)));
         });
+        create_label(world, *font, LABEL_POS_LEFT)
+                .with_value([](entity_t *e) {
+            e->set_tag("diag_label");
+            e->receive_message(MSG_PHYSICS_MOVE, vec3(-340, 340, 8));
+            e->receive_message(MSG_PHYSICS_SCALE, vec3(0.8f, 0.8f, 0.8f));
+            e->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
+        });
     });
 
     create_button(world, vec2(410, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");

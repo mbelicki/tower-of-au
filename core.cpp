@@ -4,6 +4,8 @@
 #include <time.h>
 #include <vector>
 
+#include "warp/keycodes.h"
+
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
@@ -25,6 +27,10 @@
 #include "text-label.h"
 #include "transition_effect.h"
 #include "objects_ai.h"
+
+#ifndef VERSION
+    #define VERSION "missing version info."
+#endif
 
 using namespace warp;
 
@@ -77,7 +83,10 @@ class core_controller_t final : public controller_impl_i {
                 , _state(CSTATE_IDLE)
                 , _transition_timer(0) 
                 , _pain_texts()
-                , _random(nullptr) {
+                , _random(nullptr) 
+                , _diagnostics(false)
+                , _diag_label(nullptr)
+                , _diag_buffer(nullptr) {
             _portal.region_name = str_copy(start->region_name);
             _pain_texts = create_pain_texts();
         }
@@ -159,7 +168,9 @@ class core_controller_t final : public controller_impl_i {
             update_player_ammo_display(&_last_player_state);
         }
 
-        void update(float dt, const input_t &) override { 
+        void update(float dt, const input_t &) override {
+            update_diagnostics();
+
             if (_state == CSTATE_LEVEL_TRANSITION) {
                 _transition_timer -= dt;
                 if (_transition_timer <= 0) {
@@ -196,15 +207,22 @@ class core_controller_t final : public controller_impl_i {
                 || type == CORE_MOVE_DONE
                 || type == CORE_BULLET_HIT
                 || type == CORE_RESTART_LEVEL
+                || type == MSG_INPUT_KEYUP
                 ;
         }
 
         void handle_message(const message_t &message) override {
+            const messagetype_t type = message.type;
+            if (type == MSG_INPUT_KEYUP) {
+                SDL_Keycode code = VALUE(message.data.get_int());
+                if (code == SDLK_g) {
+                    enable_diagnostics(_diagnostics == false);
+                }
+            }
             if (_state != CSTATE_IDLE) { 
                 return;
             }
 
-            const messagetype_t type = message.type;
             const object_t *player = _level_state->find_player();
             if (type == CORE_RESTART_LEVEL) {
                 change_region(&_portal);
@@ -256,6 +274,44 @@ class core_controller_t final : public controller_impl_i {
 
         warp_array_t _pain_texts;
         warp_random_t *_random;
+
+        bool _diagnostics;
+        entity_t *_diag_label;
+        char *_diag_buffer;
+
+        void enable_diagnostics(bool enable) {
+            _diagnostics = enable;
+            _diag_label = _world->find_entity("diag_label");
+            _diag_label->receive_message(MSG_GRAPHICS_VISIBLITY, (int)enable);
+            if (_diag_buffer == nullptr) {
+                _diag_buffer = new char [1024];
+            }
+        }
+
+        void update_diagnostics() {
+            if (_diagnostics == false || _diag_label == nullptr) return;
+
+            size_t x = 0; 
+            size_t z = 0; 
+            const object_t *player = _level_state->find_player();
+            if (player != nullptr) {
+                x = round(player->position.x);
+                z = round(player->position.z);
+            }
+            
+            const stats_t &stats = _world->get_statistics();
+
+            snprintf
+                ( _diag_buffer, 1024
+                , "%s\n%s\nlevel x: %zu z: %zu, tile x: %zu z: %zu\n%f fps"
+                , VERSION
+                , str_value(_portal.region_name)
+                , _level_x, _level_z, x, z
+                , stats.avg_fps
+                );
+
+            _diag_label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)_diag_buffer);
+        }
 
         void check_events() {
             for (const event_t &event : _level_state->get_last_turn_events()) {
