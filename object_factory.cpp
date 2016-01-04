@@ -144,7 +144,12 @@ bool object_factory_t::load_definitions(const char *filename) {
         return false;
     }
 
-    const JSON_Value *root_value = json_parse_file(path);
+    maybe_t<const char *> file = read_file(path);
+    if (file.failed()) {
+        file.log_failure();
+        return false;
+    }
+    const JSON_Value *root_value = json_parse_string(VALUE(file));
     if (json_value_get_type(root_value) != JSONObject) {
        warp_log_e("Cannot parse %s: root element is not an object.", path);
     }

@@ -398,7 +398,12 @@ region_t *load_region(const char *name) {
         return nullptr;
     } 
 
-    const JSON_Value *root_value = json_parse_file(path);
+    maybe_t<const char *> file = read_file(path);
+    if (file.failed()) {
+        file.log_failure();
+        return nullptr;
+    }
+    const JSON_Value *root_value = json_parse_string(VALUE(file));
     if (json_value_get_type(root_value) != JSONObject) {
         warp_log_e("Cannot parse %s: root element is not an object.", path);
         return nullptr;

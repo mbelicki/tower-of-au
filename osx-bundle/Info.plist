@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleGetInfoString</key><string>Tower of Au</string>
+  <key>CFBundleExecutable</key><string>tower-of-au</string>
+  <key>CFBundleIdentifier</key><string>net.belickim.osx.tower-of-au</string>
+  <key>CFBundleName</key><string>Tower Of Au</string>
+  <key>CFBundleIconFile</key><string>Icon.icns</string>
+  <key>CFBundleShortVersionString</key><string>APP_VERSION</string>
+  <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>IFMajorVersion</key><integer>0</integer>
+  <key>IFMinorVersion</key><integer>0</integer>
+</dict>
+</plist>

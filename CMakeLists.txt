@@ -10,6 +10,7 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 # APPLE variable does not mean OS X
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 
     add_definitions(-DOSX)
+    set(OSX True)
 endif()
 
 # detect compiler
@@ -60,7 +61,6 @@ set(ASSETS_DIRECTORY ${CMAKE_SOURCE_DIR}/assets)
 
 if(DEFINED ENV{ASSET_DIR})
     set(ASSETS_DIRECTORY ${CMAKE_SOURCE_DIR}/$ENV{ASSET_DIR})
-    message("### hey, hey! " ${ASSETS_DIRECTORY})
 endif()
 
 set(PARSON_SOURCES "${PROJECT_LIB_DIR}/parson/parson.c")
@@ -87,8 +87,16 @@ if(WIN32)
     target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
 endif()
 
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${ASSETS_DIRECTORY} $<TARGET_FILE_DIR:${PROJECT_NAME}>/assets
+add_custom_target(
+    copy_assets ALL
+    ${CMAKE_COMMAND} -E copy_directory ${ASSETS_DIRECTORY} ${PROJECT_BINARY_DIR}/assets
 )
+
+if(OSX)
+    set(MAKE_BUNDLE ${PROJECT_SOURCE_DIR}/osx-bundle/make-bundle.sh)
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${MAKE_BUNDLE} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR} ${PROJECT_NAME}
+    )
+endif()
+
