@@ -77,7 +77,7 @@
             "canShoot" : true,
             "ammo" : 16,
             "graphics" : {
-                "mesh" : "npc.obj",
+                "mesh" : "player.obj",
                 "texture" : "missing.png"
             }
         }
