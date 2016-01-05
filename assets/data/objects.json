@@ -78,7 +78,7 @@
             "ammo" : 16,
             "graphics" : {
                 "mesh" : "player.obj",
-                "texture" : "missing.png"
+                "texture" : "player.png"
             }
         }
     ]
