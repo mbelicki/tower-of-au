@@ -52,7 +52,7 @@ class level_t {
         inline size_t get_width() const { return _width; }
         inline size_t get_height() const { return _height; }
 
-        warp::maybe_t<const tile_t *> get_tile_at(size_t x, size_t y) const;
+        warp::maybe_t<const tile_t *> get_tile_at(int x, int y) const;
 
         bool is_point_walkable(const warp::vec3_t point) const;
 

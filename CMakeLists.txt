@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
 project(tower-of-au)
+set(APP_NAME "Tower of Au")
 
 # required since warp/opengl.h is leaking :/
 # detect OS
@@ -52,7 +53,10 @@ exec_program (
     ARGS "describe" "--tags" "--dirty" "--always"
     OUTPUT_VARIABLE VERSION
 )
-add_definitions( -DVERSION="${VERSION}" )
+configure_file(
+    "${PROJECT_SOURCE_DIR}/version_gen.h.in"
+    "${PROJECT_BINARY_DIR}/version_gen.h"
+)
 
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR})
 set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

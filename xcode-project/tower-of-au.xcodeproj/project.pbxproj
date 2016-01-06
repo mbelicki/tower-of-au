@@ -7,6 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		610910861C3C849B0088DD09 /* button.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6109107C1C3C849B0088DD09 /* button.cpp */; };
+		610910871C3C849B0088DD09 /* level_state.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6109107E1C3C849B0088DD09 /* level_state.cpp */; };
+		610910881C3C849B0088DD09 /* object_factory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 610910801C3C849B0088DD09 /* object_factory.cpp */; };
+		610910891C3C849B0088DD09 /* objects_ai.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 610910821C3C849B0088DD09 /* objects_ai.cpp */; };
+		6109108A1C3C849B0088DD09 /* transition_effect.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 610910841C3C849B0088DD09 /* transition_effect.cpp */; };
+		610910951C3C85000088DD09 /* dungeon_00.json in Resources */ = {isa = PBXBuildFile; fileRef = 610910941C3C85000088DD09 /* dungeon_00.json */; };
+		6109109C1C3C851A0088DD09 /* cracked_floor.obj in Resources */ = {isa = PBXBuildFile; fileRef = 610910961C3C851A0088DD09 /* cracked_floor.obj */; };
+		6109109D1C3C851A0088DD09 /* pit.obj in Resources */ = {isa = PBXBuildFile; fileRef = 610910971C3C851A0088DD09 /* pit.obj */; };
+		6109109E1C3C851A0088DD09 /* player.obj in Resources */ = {isa = PBXBuildFile; fileRef = 610910981C3C851A0088DD09 /* player.obj */; };
+		6109109F1C3C851A0088DD09 /* rock_hglc_wall.obj in Resources */ = {isa = PBXBuildFile; fileRef = 610910991C3C851A0088DD09 /* rock_hglc_wall.obj */; };
+		610910A01C3C851A0088DD09 /* rock_vgl_wall.obj in Resources */ = {isa = PBXBuildFile; fileRef = 6109109A1C3C851A0088DD09 /* rock_vgl_wall.obj */; };
+		610910A11C3C851A0088DD09 /* spikes.obj in Resources */ = {isa = PBXBuildFile; fileRef = 6109109B1C3C851A0088DD09 /* spikes.obj */; };
+		610910A31C3C85280088DD09 /* player.png in Resources */ = {isa = PBXBuildFile; fileRef = 610910A21C3C85280088DD09 /* player.png */; };
+		610910A51C3C85330088DD09 /* reset-button.png in Resources */ = {isa = PBXBuildFile; fileRef = 610910A41C3C85330088DD09 /* reset-button.png */; };
+		610910AA1C3C85580088DD09 /* objects.json in Resources */ = {isa = PBXBuildFile; fileRef = 610910A91C3C85580088DD09 /* objects.json */; };
+		610910AC1C3C8D620088DD09 /* red.png in Resources */ = {isa = PBXBuildFile; fileRef = 610910AB1C3C8D620088DD09 /* red.png */; };
 		613A258C1BE68047008A4D22 /* atlas.png in Resources */ = {isa = PBXBuildFile; fileRef = 613A258B1BE68047008A4D22 /* atlas.png */; };
 		613A258F1BE68089008A4D22 /* grass.obj in Resources */ = {isa = PBXBuildFile; fileRef = 613A258E1BE68089008A4D22 /* grass.obj */; };
 		6154D8951BBC66FF00B4D95B /* character.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6154D8891BBC66FF00B4D95B /* character.cpp */; };
@@ -68,6 +84,27 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6109107C1C3C849B0088DD09 /* button.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = button.cpp; sourceTree = "<group>"; };
+		6109107D1C3C849B0088DD09 /* button.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = button.h; sourceTree = "<group>"; };
+		6109107E1C3C849B0088DD09 /* level_state.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = level_state.cpp; sourceTree = "<group>"; };
+		6109107F1C3C849B0088DD09 /* level_state.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = level_state.h; sourceTree = "<group>"; };
+		610910801C3C849B0088DD09 /* object_factory.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = object_factory.cpp; sourceTree = "<group>"; };
+		610910811C3C849B0088DD09 /* object_factory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = object_factory.h; sourceTree = "<group>"; };
+		610910821C3C849B0088DD09 /* objects_ai.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objects_ai.cpp; sourceTree = "<group>"; };
+		610910831C3C849B0088DD09 /* objects_ai.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objects_ai.h; sourceTree = "<group>"; };
+		610910841C3C849B0088DD09 /* transition_effect.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = transition_effect.cpp; sourceTree = "<group>"; };
+		610910851C3C849B0088DD09 /* transition_effect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = transition_effect.h; sourceTree = "<group>"; };
+		610910941C3C85000088DD09 /* dungeon_00.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = dungeon_00.json; sourceTree = "<group>"; };
+		610910961C3C851A0088DD09 /* cracked_floor.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = cracked_floor.obj; sourceTree = "<group>"; };
+		610910971C3C851A0088DD09 /* pit.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = pit.obj; sourceTree = "<group>"; };
+		610910981C3C851A0088DD09 /* player.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = player.obj; sourceTree = "<group>"; };
+		610910991C3C851A0088DD09 /* rock_hglc_wall.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rock_hglc_wall.obj; sourceTree = "<group>"; };
+		6109109A1C3C851A0088DD09 /* rock_vgl_wall.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = rock_vgl_wall.obj; sourceTree = "<group>"; };
+		6109109B1C3C851A0088DD09 /* spikes.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = spikes.obj; sourceTree = "<group>"; };
+		610910A21C3C85280088DD09 /* player.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = player.png; sourceTree = "<group>"; };
+		610910A41C3C85330088DD09 /* reset-button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "reset-button.png"; sourceTree = "<group>"; };
+		610910A91C3C85580088DD09 /* objects.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = objects.json; path = data/objects.json; sourceTree = "<group>"; };
+		610910AB1C3C8D620088DD09 /* red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red.png; sourceTree = "<group>"; };
 		613A258B1BE68047008A4D22 /* atlas.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = atlas.png; sourceTree = "<group>"; };
 		613A258E1BE68089008A4D22 /* grass.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = grass.obj; sourceTree = "<group>"; };
 		6154D86A1BBC662000B4D95B /* tower-of-au.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "tower-of-au.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,7 +120,6 @@
 		6154D8911BBC66FF00B4D95B /* level.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = level.cpp; sourceTree = "<group>"; };
 		6154D8921BBC66FF00B4D95B /* level.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = level.h; sourceTree = "<group>"; };
 		6154D8931BBC66FF00B4D95B /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		6154D8941BBC66FF00B4D95B /* random.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = random.h; sourceTree = "<group>"; };
 		6154D89E1BBC675800B4D95B /* warp.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = warp.xcodeproj; path = "warp/xcode-project/warp.xcodeproj"; sourceTree = "<group>"; };
 		6154D8C11BBC698400B4D95B /* libSDL2_image.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSDL2_image.a; path = "../warp/libs/SDL_Image/project/build/Debug-iphoneos/libSDL2_image.a"; sourceTree = "<group>"; };
 		6154D8C21BBC698400B4D95B /* libSDL2_mixer.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libSDL2_mixer.a; path = "../warp/libs/SDL_mixer/project/build/Debug-iphoneos/libSDL2_mixer.a"; sourceTree = "<group>"; };
@@ -157,6 +193,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		610910A61C3C853B0088DD09 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				610910A91C3C85580088DD09 /* objects.json */,
+			);
+			name = Data;
+			sourceTree = "<group>";
+		};
 		6154D8611BBC662000B4D95B = {
 			isa = PBXGroup;
 			children = (
@@ -189,6 +233,16 @@
 		6154D8881BBC66C800B4D95B /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				6109107C1C3C849B0088DD09 /* button.cpp */,
+				6109107D1C3C849B0088DD09 /* button.h */,
+				6109107E1C3C849B0088DD09 /* level_state.cpp */,
+				6109107F1C3C849B0088DD09 /* level_state.h */,
+				610910801C3C849B0088DD09 /* object_factory.cpp */,
+				610910811C3C849B0088DD09 /* object_factory.h */,
+				610910821C3C849B0088DD09 /* objects_ai.cpp */,
+				610910831C3C849B0088DD09 /* objects_ai.h */,
+				610910841C3C849B0088DD09 /* transition_effect.cpp */,
+				610910851C3C849B0088DD09 /* transition_effect.h */,
 				61E897711BDBDA7E00C3ABE0 /* text-label.cpp */,
 				61E897721BDBDA7E00C3ABE0 /* text-label.h */,
 				616FFC2F1BDADC5E00AA3C60 /* persitence.cpp */,
@@ -210,7 +264,6 @@
 				6154D8911BBC66FF00B4D95B /* level.cpp */,
 				6154D8921BBC66FF00B4D95B /* level.h */,
 				6154D8931BBC66FF00B4D95B /* main.cpp */,
-				6154D8941BBC66FF00B4D95B /* random.h */,
 			);
 			name = Sources;
 			path = ..;
@@ -257,6 +310,7 @@
 		6154D8DC1BBC6B2600B4D95B /* Assets */ = {
 			isa = PBXGroup;
 			children = (
+				610910A61C3C853B0088DD09 /* Data */,
 				616FFC261BDADA7900AA3C60 /* Levels */,
 				6154D8DE1BBC6B5100B4D95B /* Meshes */,
 				6154D8DD1BBC6B4A00B4D95B /* Images */,
@@ -268,6 +322,9 @@
 		6154D8DD1BBC6B4A00B4D95B /* Images */ = {
 			isa = PBXGroup;
 			children = (
+				610910AB1C3C8D620088DD09 /* red.png */,
+				610910A41C3C85330088DD09 /* reset-button.png */,
+				610910A21C3C85280088DD09 /* player.png */,
 				613A258B1BE68047008A4D22 /* atlas.png */,
 				61E8976E1BDBDA7000C3ABE0 /* font.png */,
 				61F98E0D1BCEE58D00EEF945 /* button.png */,
@@ -280,6 +337,12 @@
 		6154D8DE1BBC6B5100B4D95B /* Meshes */ = {
 			isa = PBXGroup;
 			children = (
+				610910961C3C851A0088DD09 /* cracked_floor.obj */,
+				610910971C3C851A0088DD09 /* pit.obj */,
+				610910981C3C851A0088DD09 /* player.obj */,
+				610910991C3C851A0088DD09 /* rock_hglc_wall.obj */,
+				6109109A1C3C851A0088DD09 /* rock_vgl_wall.obj */,
+				6109109B1C3C851A0088DD09 /* spikes.obj */,
 				61EDEFD51BFBC15F00A1A7E2 /* rock_hg_wall.obj */,
 				61EDEFD61BFBC15F00A1A7E2 /* rock_hlc_wall.obj */,
 				61EDEFD71BFBC15F00A1A7E2 /* rock_hrc_wall.obj */,
@@ -302,6 +365,7 @@
 		616FFC261BDADA7900AA3C60 /* Levels */ = {
 			isa = PBXGroup;
 			children = (
+				610910941C3C85000088DD09 /* dungeon_00.json */,
 				61EDEFDE1BFBC16800A1A7E2 /* overworld.json */,
 				616FFC271BDADAD000AA3C60 /* test_00.json */,
 				616FFC281BDADAD000AA3C60 /* test_01.json */,
@@ -394,16 +458,24 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				610910A01C3C851A0088DD09 /* rock_vgl_wall.obj in Resources */,
 				61F98E0E1BCEE58D00EEF945 /* button.png in Resources */,
 				613A258C1BE68047008A4D22 /* atlas.png in Resources */,
+				610910A11C3C851A0088DD09 /* spikes.obj in Resources */,
 				61F98E051BCD970300EEF945 /* boulder.obj in Resources */,
+				610910A51C3C85330088DD09 /* reset-button.png in Resources */,
 				6154D8E61BBC6B7B00B4D95B /* npc.obj in Resources */,
 				616FFC291BDADAD000AA3C60 /* test_00.json in Resources */,
 				613A258F1BE68089008A4D22 /* grass.obj in Resources */,
+				6109109E1C3C851A0088DD09 /* player.obj in Resources */,
+				6109109F1C3C851A0088DD09 /* rock_hglc_wall.obj in Resources */,
 				61E897751BE0153B00C3ABE0 /* speech.obj in Resources */,
 				6154D8E81BBC6B7B00B4D95B /* wall.obj in Resources */,
+				6109109C1C3C851A0088DD09 /* cracked_floor.obj in Resources */,
 				61EDEFDF1BFBC16800A1A7E2 /* overworld.json in Resources */,
 				61EDEFDB1BFBC15F00A1A7E2 /* rock_hrc_wall.obj in Resources */,
+				610910951C3C85000088DD09 /* dungeon_00.json in Resources */,
+				6109109D1C3C851A0088DD09 /* pit.obj in Resources */,
 				61F98E0C1BCEE55200EEF945 /* arrow.obj in Resources */,
 				61EDEFDC1BFBC15F00A1A7E2 /* rock_hwall.obj in Resources */,
 				61EDEFD91BFBC15F00A1A7E2 /* rock_hg_wall.obj in Resources */,
@@ -413,8 +485,11 @@
 				6154D8E51BBC6B7B00B4D95B /* floor.obj in Resources */,
 				61F98E071BCD970300EEF945 /* door.obj in Resources */,
 				6154D8E01BBC6B6D00B4D95B /* missing.png in Resources */,
+				610910A31C3C85280088DD09 /* player.png in Resources */,
 				616FFC2A1BDADAD000AA3C60 /* test_01.json in Resources */,
 				61EDEFDA1BFBC15F00A1A7E2 /* rock_hlc_wall.obj in Resources */,
+				610910AC1C3C8D620088DD09 /* red.png in Resources */,
+				610910AA1C3C85580088DD09 /* objects.json in Resources */,
 				61F98E061BCD970300EEF945 /* button.obj in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -428,11 +503,16 @@
 			files = (
 				6154D8971BBC66FF00B4D95B /* input_controller.cpp in Sources */,
 				6154D8961BBC66FF00B4D95B /* core.cpp in Sources */,
+				610910891C3C849B0088DD09 /* objects_ai.cpp in Sources */,
 				61F98E001BCD96EB00EEF945 /* features.cpp in Sources */,
+				6109108A1C3C849B0088DD09 /* transition_effect.cpp in Sources */,
 				616FFC311BDADC5E00AA3C60 /* persitence.cpp in Sources */,
 				6154D89A1BBC66FF00B4D95B /* main.cpp in Sources */,
+				610910861C3C849B0088DD09 /* button.cpp in Sources */,
 				6154D8951BBC66FF00B4D95B /* character.cpp in Sources */,
+				610910881C3C849B0088DD09 /* object_factory.cpp in Sources */,
 				61F98E111BD2F6EA00EEF945 /* region.cpp in Sources */,
+				610910871C3C849B0088DD09 /* level_state.cpp in Sources */,
 				616FFC2E1BDADB6500AA3C60 /* parson.c in Sources */,
 				6154D8981BBC66FF00B4D95B /* level_transition.cpp in Sources */,
 				61E897731BDBDA7E00C3ABE0 /* text-label.cpp in Sources */,

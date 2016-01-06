@@ -39,11 +39,11 @@ void level_t::set_visiblity(bool visible) {
     _entity->receive_message(MSG_GRAPHICS_VISIBLITY, (int)visible);
 }
 
-maybe_t<const tile_t *> level_t::get_tile_at(size_t x, size_t y) const {
-    if (x >= _width) {
+maybe_t<const tile_t *> level_t::get_tile_at(int x, int y) const {
+    if (x < 0 || x >= (int)_width) {
         return nothing<const tile_t *>("Illegal x value.");
     }
-    if (y >= _height) {
+    if (x < 0 || y >= (int)_height) {
         return nothing<const tile_t *>("Illegal y value.");
     }
     

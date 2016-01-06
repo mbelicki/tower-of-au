@@ -8,14 +8,7 @@
 #include "warp/statemanager.h"
 
 #include "level_transition.h"
-
-#ifndef VERSION
-#define VERSION "missing version information."
-#endif
-
-#ifndef APP_NAME
-#define APP_NAME "Tower of Au"
-#endif
+#include "version.h"
 
 struct cliopts_t {
     bool show_version;

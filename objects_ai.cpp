@@ -80,7 +80,7 @@ static dir_t pick_shooting_direction
 
 static void shuffle(dir_t *array, size_t n, warp_random_t *rand) {
     for (size_t i = 0; i < n - 1; i++) {
-        const size_t j = i + warp_random_from_range(rand, 0, n - i);
+        const size_t j = i + warp_random_from_range(rand, 0, n - i - 1);
         dir_t tmp = array[j];
         array[j] = array[i];
         array[i] = tmp;
@@ -94,12 +94,12 @@ static dir_t pick_roam_direction
     const vec3_t diff = vec3_sub(other.position, npc.position);
     const dir_t dir = vec3_to_dir(diff);
     const vec3_t position = vec3_add(npc.position, dir_to_vec3(dir));
+    dir_t directions[4] {
+        DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
+    };
     if (state->can_move_to(position)) {
         return dir;
     } else {
-        dir_t directions[4] {
-            DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
-        };
         shuffle(directions, 4, rand);
 
         const vec3_t position = npc.position;

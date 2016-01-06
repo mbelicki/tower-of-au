@@ -27,10 +27,7 @@
 #include "text-label.h"
 #include "transition_effect.h"
 #include "objects_ai.h"
-
-#ifndef VERSION
-    #define VERSION "missing version info."
-#endif
+#include "version.h"
 
 using namespace warp;
 

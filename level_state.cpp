@@ -203,8 +203,8 @@ const feature_t *level_state_t::feature_at(size_t x, size_t y) const {
 }
 
 bool level_state_t::can_move_to(vec3_t new_pos) const {
-    const size_t x = round(new_pos.x);
-    const size_t z = round(new_pos.z);
+    const int x = round(new_pos.x);
+    const int z = round(new_pos.z);
 
     maybe_t<const tile_t *> maybe_tile = _level->get_tile_at(x, z);
     if (maybe_tile.failed()) return true;
