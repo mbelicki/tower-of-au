@@ -413,6 +413,8 @@ void level_state_t::handle_move(object_t *target, warp::vec3_t pos) {
         if (npc != nullptr) {
             if (npc->type == OBJ_TERMINAL) {
                 handle_interaction(npc, target);
+            } else if (npc->type == OBJ_PICK_UP) {
+                handle_picking_up(npc, target);
             } else {
                 handle_attack(npc, target);
             }
@@ -424,6 +426,27 @@ void level_state_t::handle_move(object_t *target, warp::vec3_t pos) {
 
 static int calculate_damage(const object_t &target) {
     return target.type == OBJ_BOULDER ? 0 : 1;
+}
+
+void level_state_t::handle_picking_up
+        (object_t *pick_up, object_t *character) {
+    if (character == nullptr) { 
+        warp_log_e("Cannot handle picking up, null character.");
+        return;
+    }
+    if (pick_up == nullptr) { 
+        warp_log_e("Cannot handle picking up, null pick up.");
+        return;
+    }
+
+    character->health += pick_up->health;
+    character->ammo += pick_up->ammo;
+
+    const vec3_t pick_up_pos = pick_up->position;
+    pick_up->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
+    destroy_object(pick_up);
+
+    move_object(character, pick_up_pos, false);
 }
 
 void level_state_t::handle_interaction

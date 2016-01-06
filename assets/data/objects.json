@@ -80,6 +80,16 @@
                 "mesh" : "player.obj",
                 "texture" : "player.png"
             }
+        },
+        {
+            "name" : "hp-pickup",
+            "type" : "pick-up",
+            "health" : 1,
+            "ammo" : 0,
+            "graphics" : {
+                "mesh" : "hp-pickup.obj",
+                "texture" : "red.png"
+            }
         }
     ]
 }

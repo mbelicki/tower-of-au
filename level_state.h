@@ -20,6 +20,7 @@ enum object_type_t {
     OBJ_CHARACTER,
     OBJ_BOULDER,
     OBJ_TERMINAL,
+    OBJ_PICK_UP,
 };
 
 enum object_flags_t {
@@ -133,6 +134,7 @@ class level_state_t {
     private:
         void update_object(const object_t *obj, const warp::message_t &command);
         void handle_move(object_t *target, warp::vec3_t pos);
+        void handle_picking_up(object_t *pick_up, object_t *character);
         void handle_interaction(object_t *terminal, object_t *character);
         void handle_attack(object_t *target, object_t *attacker);
         void handle_shooting(object_t *shooter, warp::dir_t dir);

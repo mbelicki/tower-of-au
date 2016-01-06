@@ -127,6 +127,14 @@
             "walkable" : true,
             "graphics" : "pit",
             "feature" : "FEAT_BREAKABLE_FLOOR"
+        },
+        {
+            "symbol" : "*",
+            "walkable" : true,
+            "graphics" : "floor",
+            "object" : "hp-pickup",
+            "objectDirection" : "z_plus",
+            "spawnRate" : 1.0
         }
     ],
     "width" : 3,
@@ -505,7 +513,7 @@
             "data": [
                 "####     ####",
                 "# 1#   x #3 #",
-                "#  #     #  #",
+                "# *#     #  #",
                 "   -     -   ",
                 "#B #     #  #",
                 "#  #     #  #",

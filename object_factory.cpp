@@ -65,6 +65,8 @@ static object_type_t parse_type(JSON_Object *obj) {
         return OBJ_BOULDER;
     } else if (strncmp("terminal", value, 9) == 0) {
         return OBJ_TERMINAL;
+    } else if (strncmp("pick-up", value, 8) == 0) {
+        return OBJ_PICK_UP;
     }
     return OBJ_NONE;
 }
