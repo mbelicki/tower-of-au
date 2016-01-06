@@ -3,7 +3,7 @@
 #include <cstring> /* memmove */
 #include <map>
 
-#include "warp/io.h"
+#include "warp/utils/io.h"
 #include "warp/renderer.h"
 
 #include "libs/parson/parson.h"
@@ -14,14 +14,14 @@ using namespace warp;
 
 static void destroy_portal(void *raw_portal) {
     portal_t *portal = (portal_t *)raw_portal;
-    str_destroy(portal->region_name);
+    warp_str_destroy(&portal->region_name);
 }
 
 static void destroy_tile_graphics(void *raw_graphics) {
     tile_graphics_t *graphics = (tile_graphics_t *)raw_graphics;
     graphics->name.~tag_t();
-    str_destroy(graphics->mesh);
-    str_destroy(graphics->texture);
+    warp_str_destroy(&graphics->mesh);
+    warp_str_destroy(&graphics->texture);
 }
 
 region_t::region_t(level_t **levels, size_t width, size_t height)
@@ -35,8 +35,8 @@ region_t::region_t(level_t **levels, size_t width, size_t height)
     _levels = new (std::nothrow) level_t * [tiles_count];
     memmove(_levels, levels, tiles_count * sizeof (level_t *));
 
-    _graphics = array_create_typed(tile_graphics_t, 16, destroy_tile_graphics);
-    _portals  = array_create_typed(portal_t, 16, destroy_portal);
+    _graphics = warp_array_create_typed(tile_graphics_t, 16, destroy_tile_graphics);
+    _portals  = warp_array_create_typed(portal_t, 16, destroy_portal);
     
     light_settings_t defaults;
     fill_default_light_settings(&defaults);
@@ -47,8 +47,8 @@ region_t::region_t(level_t **levels, size_t width, size_t height)
 
 region_t::~region_t() {
     delete [] _levels;
-    array_destroy(_graphics);
-    array_destroy(_portals);
+    warp_array_destroy(&_graphics);
+    warp_array_destroy(&_portals);
 }
 
 maybeunit_t region_t::initialize(world_t *world) {
@@ -73,19 +73,19 @@ bool region_t::add_portal
             ) {
     portal_t portal;
 
-    portal.region_name = str_create(region_name);
+    portal.region_name = warp_str_create(region_name);
     portal.level_x = level_x;
     portal.level_z = level_z;
     portal.tile_x = tile_x;
     portal.tile_z = tile_z;
 
-    return array_append(&_portals, &portal, 1);
+    return warp_array_append(&_portals, &portal, 1);
 }
 
 bool region_t::add_tile_graphics
         (const tag_t &name, const char *mesh, const char *tex) {
-    const tile_graphics_t g = { name, str_create(mesh), str_create(tex) };
-    return array_append(&_graphics, &g, 1);
+    const tile_graphics_t g = { name, warp_str_create(mesh), warp_str_create(tex) };
+    return warp_array_append(&_graphics, &g, 1);
 }
 
 void region_t::set_lighting(const region_lighting_t *lighting) {
@@ -95,13 +95,13 @@ void region_t::set_lighting(const region_lighting_t *lighting) {
 }
 
 const portal_t *region_t::get_portal(size_t id) {
-    return (const portal_t *) array_get(&_portals, id);
+    return (const portal_t *) warp_array_get(&_portals, id);
 }
 
 const tile_graphics_t *region_t::get_tile_graphics(const tag_t &tag) const {
-    const size_t count = array_get_size(&_graphics);
+    const size_t count = warp_array_get_size(&_graphics);
     for (size_t i = 0; i < count; i++) {
-        const tile_graphics_t *tg = (const tile_graphics_t *)array_get(&_graphics, i);
+        const tile_graphics_t *tg = (const tile_graphics_t *)warp_array_get(&_graphics, i);
         if (tg->name == tag) return tg;
     }
     return NULL;
@@ -390,34 +390,15 @@ static void parse_lighting(JSON_Object *object, region_lighting_t *lighting) {
               , lighting->sun_color.x, lighting->sun_color.y, lighting->sun_color.z);
 }
 
-region_t *load_region(const char *name) {
-    char path[1024]; 
-    maybeunit_t path_found = find_path(name, "assets/levels", path, 1024);
-    if (path_found.failed()) {
-        path_found.log_failure();
-        return nullptr;
-    } 
-
-    maybe_t<const char *> file = read_file(path);
-    if (file.failed()) {
-        file.log_failure();
-        return nullptr;
-    }
-    const JSON_Value *root_value = json_parse_string(VALUE(file));
-    if (json_value_get_type(root_value) != JSONObject) {
-        warp_log_e("Cannot parse %s: root element is not an object.", path);
-        return nullptr;
-    }
-    const JSON_Object *root = json_value_get_object(root_value);
-
+static region_t *parse_json(const JSON_Object *root) {
     const size_t width = json_object_get_number(root, "width");
     const size_t height = json_object_get_number(root, "height");
     const size_t count = width * height;
 
     JSON_Array *levels = json_object_get_array(root, "levels");
     if (json_array_get_count(levels) != count) {
-        warp_log_e( "Cannot parse %s: width, height and size of"
-                    " 'levels' are inconsitent.", path
+        warp_log_e( "Cannot parse region: width, height and size of"
+                    " 'levels' are inconsitent."
                   );
         return nullptr;
     }
@@ -447,5 +428,54 @@ region_t *load_region(const char *name) {
     region->set_lighting(&lights);
     
     return region;
+}
+
+extern region_t *load_region(const char *name) {
+    region_t *result = NULL;
+    const char *filepath = NULL;
+    const char *content = NULL;
+
+    warp_array_t bytes = { NULL };
+
+    warp_str_t path = warp_str_format("assets/levels/%s", name);
+    warp_str_t out_path = { NULL };
+    
+    warp_result_t find_result;
+    warp_result_t read_result;
+
+    JSON_Value *root_value = NULL;
+    const JSON_Object *root = NULL;
+
+    find_result = find_path(&path, &out_path);
+    if (WARP_FAILED(find_result)) {
+        warp_result_log("Failed to find region file path", &find_result);
+        warp_result_destory(&find_result);
+        goto cleanup;
+    }
+
+    filepath = warp_str_value(&out_path);
+    read_result = read_file(filepath, &bytes);
+    if (WARP_FAILED(read_result)) {
+        warp_result_log("Failed to read region file", &read_result);
+        warp_result_destory(&read_result);
+        goto cleanup;
+    }
+
+    content = (char *) warp_array_get(&bytes, 0);
+    root_value = json_parse_string(content);
+    if (json_value_get_type(root_value) != JSONObject) {
+       warp_log_e("Cannot parse %s: root element is not an object.", path);
+       goto cleanup;
+    }
+    root = json_value_get_object(root_value);
+    result = parse_json(root);
+    
+cleanup:
+    warp_str_destroy(&path);
+    warp_str_destroy(&out_path);
+    warp_array_destroy(&bytes);
+    json_value_free(root_value);
+
+    return result;
 }
 

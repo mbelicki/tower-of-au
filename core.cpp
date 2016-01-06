@@ -40,18 +40,18 @@ enum core_state_t {
 };
 
 static void destroy_string(void *raw_str) {
-    str_destroy(* (warp_str_t *)raw_str);
+    warp_str_destroy((warp_str_t *)raw_str);
 }
 
 /* TODO: move this to file */
 static warp_array_t create_pain_texts() {
-    warp_array_t array = array_create_typed(warp_str_t, 16, destroy_string);
-    array_append_value(warp_str_t, &array, str_create("ouch!"));
-    array_append_value(warp_str_t, &array, str_create("argh!"));
-    array_append_value(warp_str_t, &array, str_create("oww!"));
-    array_append_value(warp_str_t, &array, str_create("au!"));
-    array_append_value(warp_str_t, &array, str_create("uggh!"));
-    array_append_value(warp_str_t, &array, str_create("agh!"));
+    warp_array_t array = warp_array_create_typed(warp_str_t, 16, destroy_string);
+    warp_array_append_value(warp_str_t, &array, warp_str_create("ouch!"));
+    warp_array_append_value(warp_str_t, &array, warp_str_create("argh!"));
+    warp_array_append_value(warp_str_t, &array, warp_str_create("oww!"));
+    warp_array_append_value(warp_str_t, &array, warp_str_create("au!"));
+    warp_array_append_value(warp_str_t, &array, warp_str_create("uggh!"));
+    warp_array_append_value(warp_str_t, &array, warp_str_create("agh!"));
     return array;
 }
 
@@ -84,15 +84,15 @@ class core_controller_t final : public controller_impl_i {
                 , _diagnostics(false)
                 , _diag_label(nullptr)
                 , _diag_buffer(nullptr) {
-            _portal.region_name = str_copy(start->region_name);
+            _portal.region_name = warp_str_copy(&start->region_name);
             _pain_texts = create_pain_texts();
         }
 
         ~core_controller_t() {
             delete _level_state;
 
-            str_destroy(_portal.region_name);
-            array_destroy(_pain_texts);
+            warp_str_destroy(&_portal.region_name);
+            warp_array_destroy(&_pain_texts);
             warp_random_destroy(_random);
         }
 
@@ -113,7 +113,7 @@ class core_controller_t final : public controller_impl_i {
             const uint32_t seed = get_saved_seed(_world);
             _random = warp_random_create(seed);
 
-            const char *region_name = str_value(_portal.region_name); 
+            const char *region_name = warp_str_value(&_portal.region_name); 
             _region = load_region(region_name);
             if (_region == nullptr) {
                 warp_log_e("Failed to load region: '%s'", region_name);
@@ -302,7 +302,7 @@ class core_controller_t final : public controller_impl_i {
                 ( _diag_buffer, 1024
                 , "%s\n%s\nlevel x: %zu z: %zu, tile x: %zu z: %zu\n%f fps"
                 , VERSION
-                , str_value(_portal.region_name)
+                , warp_str_value(&_portal.region_name)
                 , _level_x, _level_z, x, z
                 , stats.avg_fps
                 );
@@ -464,10 +464,10 @@ class core_controller_t final : public controller_impl_i {
         }
 
         const char *get_pain_text() {
-            const int max_index = array_get_size(&_pain_texts) - 1; 
+            const int max_index = warp_array_get_size(&_pain_texts) - 1; 
             const int index = warp_random_from_range(_random, 0, max_index);
-            const warp_str_t text = array_get_value(warp_str_t, &_pain_texts, index);
-            return str_value(text);
+            const warp_str_t text = warp_array_get_value(warp_str_t, &_pain_texts, index);
+            return warp_str_value(&text);
         }
 
         void next_turn() {

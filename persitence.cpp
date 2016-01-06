@@ -3,17 +3,39 @@
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
-#include "warp/io.h"
+#include "warp/utils/io.h"
 
 #include "libs/parson/parson.h"
 
 #include "region.h"
 #include "level_state.h"
+#include "version.h"
 
 using namespace warp;
 
-static const char *SAVE_PATH = "./save.json";
+static const char *SAVE_FILENAME = "save.json";
 static const uint32_t DEFAULT_SEED = 314;
+
+static bool get_save_path(warp_str_t *out_path) {
+    bool result = true;
+    const char *dir_path = NULL;
+    warp_str_t directory; 
+
+    warp_result_t get_result = get_writable_directory(&directory);
+    if (WARP_FAILED(get_result)) {
+        warp_result_log("Cannot get directory for game save", &get_result);
+        warp_result_destory(&get_result);
+        goto cleanup;
+    }
+
+    dir_path = warp_str_value(&directory);
+    *out_path = warp_str_format("%s/%s-%s", dir_path, PROJECT_NAME, SAVE_FILENAME);
+
+cleanup:
+    warp_str_destroy(&directory);
+    
+    return result;
+}
 
 class persistence_controller_t final : public controller_impl_i {
     public:
@@ -23,7 +45,7 @@ class persistence_controller_t final : public controller_impl_i {
         }
 
         ~persistence_controller_t() {
-            str_destroy(_portal.region_name);
+            warp_str_destroy(&_portal.region_name);
         }
 
         dynval_t get_property(const tag_t &name) const override {
@@ -43,7 +65,7 @@ class persistence_controller_t final : public controller_impl_i {
             _world = world;
 
             /* default portal */
-            _portal.region_name = str_create("overworld.json");
+            _portal.region_name = warp_str_create("overworld.json");
             _portal.level_x = 1;
             _portal.level_z = 1;
             _portal.tile_x = 6;
@@ -93,9 +115,9 @@ class persistence_controller_t final : public controller_impl_i {
                     return;
                 }
                 const portal_t *portal = (portal_t *) VALUE(maybe_value);
-                str_destroy(_portal.region_name);
+                warp_str_destroy(&_portal.region_name);
                 _portal = *portal;
-                _portal.region_name = str_copy(portal->region_name);
+                _portal.region_name = warp_str_copy(&portal->region_name);
             } else if (type == CORE_SAVE_SEED) {
                 maybe_t<int> maybe_value = message.data.get_int();
                 if (maybe_value.failed()) {
@@ -121,7 +143,7 @@ class persistence_controller_t final : public controller_impl_i {
             JSON_Value *portal_value = json_value_init_object();
             JSON_Object *portal = json_value_get_object(portal_value);
             
-            json_object_set_string(portal, "region_name", str_value(_portal.region_name)); 
+            json_object_set_string(portal, "region_name", warp_str_value(&_portal.region_name)); 
             json_object_set_number(portal, "tile_x", _portal.tile_x); 
             json_object_set_number(portal, "tile_z", _portal.tile_z); 
             json_object_set_number(portal, "level_x", _portal.level_x); 
@@ -133,8 +155,8 @@ class persistence_controller_t final : public controller_impl_i {
         void read_portal(JSON_Object *portal) {
             const char *region = json_object_get_string(portal, "region_name");
             if (region != nullptr) {
-                str_destroy(_portal.region_name);
-                _portal.region_name = str_create(region);
+                warp_str_destroy(&_portal.region_name);
+                _portal.region_name = warp_str_create(region);
             }
             
             if (json_object_get_value(portal, "tile_x") != nullptr) {
@@ -213,21 +235,25 @@ class persistence_controller_t final : public controller_impl_i {
 
             char *serialized = json_serialize_to_string_pretty(root_value);
             const size_t size = strnlen(serialized, 4096);
-            save_file(SAVE_PATH, serialized, size).log_failure();
+            
+            warp_str_t save_path;
+            get_save_path(&save_path);
+            const char *path = warp_str_value(&save_path);
+
+            warp_result_t save_result = save_file(path, serialized, size);
+            if (WARP_FAILED(save_result)) {
+                warp_result_log("Failed to save game", &save_result);
+                warp_result_destory(&save_result);
+            }
 
             json_free_serialized_string(serialized);
             json_value_free(root_value);
         }
 
         void read_data() {
-            char path[1024]; 
-            maybeunit_t path_found = find_path(SAVE_PATH, ".", path, 1024);
-            if (path_found.failed()) {
-                path_found.log_failure();
-                return;
-            }
-
-            /* TODO: check if file exists */
+            warp_str_t save_path;
+            get_save_path(&save_path);
+            const char *path = warp_str_value(&save_path);
 
             JSON_Value *root_value = json_parse_file(path);
             if (json_value_get_type(root_value) != JSONObject) {

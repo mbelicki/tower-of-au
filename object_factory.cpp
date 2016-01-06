@@ -1,6 +1,6 @@
 #include "object_factory.h"
 
-#include "warp/io.h"
+#include "warp/utils/io.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/entity-helpers.h"
@@ -48,8 +48,8 @@ object_factory_t::~object_factory_t() {
     typedef std::map<tag_t, object_def_t *>::iterator map_it_t;
     for (map_it_t it = _objects.begin(); it != _objects.end(); it++) {
         object_def_t *def = it->second;
-        str_destroy(def->mesh_name);
-        str_destroy(def->texture_name);
+        warp_str_destroy(&def->mesh_name);
+        warp_str_destroy(&def->texture_name);
         delete def;
     }
 }
@@ -109,8 +109,8 @@ static void parse_graphics(object_def_t *def, JSON_Object *object) {
     const char *mesh_name = json_object_dotget_string(object, "graphics.mesh");
     const char *tex_name  = json_object_dotget_string(object, "graphics.texture");
     
-    def->mesh_name = str_create(mesh_name == nullptr ? "npc.obj" : mesh_name);
-    def->texture_name = str_create(tex_name == nullptr ? "missing.png" : tex_name);
+    def->mesh_name = warp_str_create(mesh_name == nullptr ? "npc.obj" : mesh_name);
+    def->texture_name = warp_str_create(tex_name == nullptr ? "missing.png" : tex_name);
 }
 
 static void parse_definition
@@ -137,30 +137,60 @@ static void parse_definition
 }
 
 bool object_factory_t::load_definitions(const char *filename) {
-    char path[1024]; 
-    maybeunit_t path_found = find_path(filename, "assets/data", path, 1024);
-    if (path_found.failed()) {
-        path_found.log_failure();
-        return false;
+    bool result = true;
+    const char *filepath = NULL;
+    const char *content = NULL;
+
+    warp_array_t bytes;
+
+    warp_str_t path = warp_str_format("assets/data/%s", filename);
+    warp_str_t out_path;
+    
+    warp_result_t find_result;
+    warp_result_t read_result;
+
+    JSON_Value *root_value = NULL;
+    const JSON_Object *root = NULL;
+    const JSON_Array *objects = NULL;
+
+    find_result = find_path(&path, &out_path);
+    if (WARP_FAILED(find_result)) {
+        warp_result_log("Failed to find texture path", &find_result);
+        warp_result_destory(&find_result);
+        result = false;
+        goto cleanup;
     }
 
-    maybe_t<const char *> file = read_file(path);
-    if (file.failed()) {
-        file.log_failure();
-        return false;
+    filepath = warp_str_value(&out_path);
+    read_result = read_file(filepath, &bytes);
+    if (WARP_FAILED(read_result)) {
+        warp_result_log("Failed to find texture path", &read_result);
+        warp_result_destory(&read_result);
+        result = false;
+        goto cleanup;
     }
-    const JSON_Value *root_value = json_parse_string(VALUE(file));
+
+    content = (char *) warp_array_get(&bytes, 0);
+    root_value = json_parse_string(content);
     if (json_value_get_type(root_value) != JSONObject) {
        warp_log_e("Cannot parse %s: root element is not an object.", path);
+       result = false;
+       goto cleanup;
     }
-    const JSON_Object *root = json_value_get_object(root_value);
-    JSON_Array *objects = json_object_dotget_array(root, "objects");
+
+    root = json_value_get_object(root_value);
+    objects = json_object_dotget_array(root, "objects");
     for (size_t i = 0; i < json_array_get_count(objects); i++) {
         JSON_Object *object = json_array_get_object(objects, i);
         parse_definition(object, &_objects);
     }
 
-    return true;
+cleanup:
+    warp_str_destroy(&path);
+    warp_str_destroy(&out_path);
+    json_value_free(root_value);
+
+    return result;
 }
 
 
@@ -171,8 +201,8 @@ void object_factory_t::load_resources(const resources_t *res) {
     typedef std::map<tag_t, object_def_t *>::iterator map_it_t;
     for (map_it_t it = _objects.begin(); it != _objects.end(); it++) {
         const object_def_t *def = it->second;
-        meshes->add_mesh(str_value(def->mesh_name));
-        textures->add_texture(str_value(def->texture_name));
+        meshes->add_mesh(warp_str_value(&def->mesh_name));
+        textures->add_texture(warp_str_value(&def->texture_name));
     }
 }
 
@@ -224,8 +254,8 @@ static object_flags_t evaluate_flags(const object_def_t *def) {
 
 static graphics_comp_t *create_graphics
         (world_t *world, const object_def_t *def) {
-    const char *mesh_name = str_value(def->mesh_name);
-    const char *tex_name = str_value(def->texture_name);
+    const char *mesh_name = warp_str_value(&def->mesh_name);
+    const char *tex_name = warp_str_value(&def->texture_name);
 
     maybe_t<graphics_comp_t *> graphics
         = create_single_model_graphics(world, mesh_name, tex_name);

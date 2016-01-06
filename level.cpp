@@ -103,7 +103,7 @@ static maybeunit_t append_tile
         return nothing<unit_t>
             ("Failed to get tile graphics with id: %s.", tile.graphics_id.get_text());
     }
-    const char *mesh_name = str_value(graphics->mesh);
+    const char *mesh_name = warp_str_value(&graphics->mesh);
     const maybe_t<mesh_id_t> maybe_id = meshes->add_mesh(mesh_name);
     MAYBE_RETURN(maybe_id, unit_t, "Failed to get tile mesh:");
 
