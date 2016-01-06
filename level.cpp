@@ -43,7 +43,7 @@ maybe_t<const tile_t *> level_t::get_tile_at(int x, int y) const {
     if (x < 0 || x >= (int)_width) {
         return nothing<const tile_t *>("Illegal x value.");
     }
-    if (x < 0 || y >= (int)_height) {
+    if (y < 0 || y >= (int)_height) {
         return nothing<const tile_t *>("Illegal y value.");
     }
     
