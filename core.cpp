@@ -126,7 +126,10 @@ class core_controller_t final : public controller_impl_i {
             }
 
             _region->change_display_positions(_level_x, _level_z);
-            _level = VALUE(_region->get_level_at(_level_x, _level_z));
+            _level = _region->get_level_at(_level_x, _level_z);
+            if (_level == NULL) {
+                warp_critical("Failed to get level font.");
+            }
             
             _font = get_default_font(world->get_resources());
             if (_font == NULL) {
@@ -439,7 +442,7 @@ class core_controller_t final : public controller_impl_i {
         }
         
         void start_level_change(const object_t *player, size_t x, size_t z) {
-            if (_region->get_level_at(x, z).failed()) return;
+            if (_region->get_level_at(x, z) == NULL) return;
 
             _state = CSTATE_LEVEL_TRANSITION;
             _transition_timer = LEVEL_TRANSITION_TIME;
@@ -450,10 +453,13 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void change_level(const object_t *player, size_t x, size_t z) {
-            const maybe_t<level_t *> maybe_level = _region->get_level_at(x, z);
-            if (maybe_level.failed()) return;
+            level_t *level = _region->get_level_at(x, z);
+            if (level == NULL) {
+                warp_log_e("Cannot change level, no level at: %zu, %zu.", x, z);
+                return;
+            }
 
-            _level = VALUE(maybe_level);
+            _level = level;
             _level_state->clear();
 
             const int dx = x - _level_x;

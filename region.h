@@ -54,7 +54,7 @@ class region_t {
         inline size_t get_width() const { return _width; }
         inline size_t get_height() const { return _height; }
 
-        warp::maybe_t<level_t *> get_level_at(size_t x, size_t y) const;
+        level_t *get_level_at(size_t x, size_t y) const;
         const portal_t *get_portal(size_t id);
         const tile_graphics_t *get_tile_graphics(const warp::tag_t &id) const;
         const region_lighting_t *get_region_lighting() const { return &_lighting; }

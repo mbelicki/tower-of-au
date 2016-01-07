@@ -51,6 +51,7 @@ class level_t {
         inline bool is_initialized() const { return _initialized; }
         inline size_t get_width() const { return _width; }
         inline size_t get_height() const { return _height; }
+        inline warp::entity_t *get_entity() const { return _entity; }
 
         warp::maybe_t<const tile_t *> get_tile_at(int x, int y) const;
 

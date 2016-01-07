@@ -144,9 +144,11 @@ void region_t::change_display_positions(size_t current_x, size_t current_z) {
     }
 }
 
-maybe_t<level_t *> region_t::get_level_at(size_t x, size_t y) const {
-    if (x >= _width)  return nothing<level_t *>("Illegal x value.");
-    if (y >= _height) return nothing<level_t *>("Illegal y value.");
+level_t *region_t::get_level_at(size_t x, size_t y) const {
+    if (x >= _width || y >= _height) {
+        warp_log_e("Cannot obtain level at: %zu, %zu.", x, y);
+        return NULL;
+    }
     return _levels[x + _width * y];
 }
 
