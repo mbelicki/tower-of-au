@@ -69,7 +69,10 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
         });
     }
 
-    create_button(world, vec2(410, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");
+    std::function<void(void)> reset_handler = [=]() {
+        world->broadcast_message(CORE_RESTART_LEVEL, 0);
+    };
+    create_button(world, vec2(410, 280), vec2(60, 60), reset_handler, "reset-button.png");
 
     const portal_t *portal = get_saved_portal(world);
     entity_t *core = create_core(world, portal);

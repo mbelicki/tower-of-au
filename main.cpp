@@ -38,8 +38,13 @@ static void print_version() {
 }
 
 static int initialize_and_run(bool launch_editor) {
+    shared_editor_state_t *editor_state = new shared_editor_state_t;
+
     std::shared_ptr<warp::transition_i> start_level(new level_transition_t);
-    std::shared_ptr<warp::transition_i> start_editor(new enter_editor_transition_t);
+    std::shared_ptr<warp::transition_i> start_editor
+            (new enter_editor_transition_t(editor_state));
+    std::shared_ptr<warp::transition_i> edit_region
+            (new edit_region_transition_t(editor_state));
     //std::shared_ptr<warp::transition_i> end_level(new gameover_transition_t);
 
     warp::statemanager_t states = {
@@ -48,7 +53,7 @@ static int initialize_and_run(bool launch_editor) {
     states.insert_transition(START_STATE, "level", start_level, false);
     states.insert_transition("level", "level", start_level, false);
     states.insert_transition(START_STATE, "editor-region-sel", start_editor, false);
-    //states.insert_transition("editor-region-sel", "editor-region", start_editor, false);
+    states.insert_transition("editor-region-sel", "editor-region", edit_region, false);
     //states.insert_transition("level", END_STATE, end_level, false);
 
     warp::game_config_t config;

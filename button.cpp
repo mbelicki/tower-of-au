@@ -15,10 +15,11 @@ static const float BUTTON_ANIM_TIME = 1.0f;
 
 class button_controller_t final : public controller_impl_i {
     public:
-        button_controller_t(vec2_t pos, vec2_t size, int msg_type)
+        button_controller_t
+                (vec2_t pos, vec2_t size, std::function<void(void)> handler)
             : _pos(pos)
             , _size(size)
-            , _msg_type(msg_type)
+            , _handler(handler)
             , _timer(0)
         {}
 
@@ -61,7 +62,7 @@ class button_controller_t final : public controller_impl_i {
                 const gesture_t g = VALUE(message.data.get_gesture());
                 if (g.kind == GESTURE_TAP 
                         && is_touching_button(g.final_position)) {
-                    _world->broadcast_message(_msg_type, 0);
+                    _handler();
                     _timer = BUTTON_ANIM_TIME;
                 }
             }
@@ -72,14 +73,16 @@ class button_controller_t final : public controller_impl_i {
         world_t *_world;
         vec2_t _screen_size;
         vec2_t _pos, _size;
-        int _msg_type;
+        std::function<void(void)> _handler;
         float _timer;
 };
 
-controller_comp_t *create_button_controller
-        (world_t *world, vec2_t pos, vec2_t size, int msg_type) {
+extern controller_comp_t *create_button_controller
+        ( world_t *world, vec2_t pos, vec2_t size
+        , std::function<void(void)> handler
+        ) {
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new button_controller_t(pos, size, msg_type));
+    controller->initialize(new button_controller_t(pos, size, handler));
     return controller;
 }
 
@@ -142,7 +145,9 @@ extern entity_t *create_ui_background(world_t *world, vec4_t color) {
 }
 
 extern entity_t *create_button
-        (world_t *world, vec2_t pos, vec2_t size, int msg_type, const char *tex) {
+        ( world_t *world, vec2_t pos, vec2_t size
+        , std::function<void(void)> handler, const char *tex
+        ) {
     graphics_comp_t *graphics
             = create_button_graphics(world, size, tex, vec4(1, 1, 1, 1));
     if (graphics == nullptr) {
@@ -151,7 +156,7 @@ extern entity_t *create_button
     }
 
     controller_comp_t *controller
-        = create_button_controller(world, pos, size, msg_type);
+        = create_button_controller(world, pos, size, handler);
     if (graphics == nullptr) {
         warp_log_e("Failed to create button controller.");
         return nullptr;
@@ -164,7 +169,9 @@ extern entity_t *create_button
 }
 
 extern entity_t *create_text_button
-        (world_t *world, vec2_t pos, vec2_t size, int msg_type, const char *text) {
+        ( world_t *world, vec2_t pos, vec2_t size
+        , std::function<void(void)> handler, const char *text
+        ) {
     graphics_comp_t *graphics
             = create_button_graphics(world, size, "blank.png", vec4(0.8f, 0.8f, 0.8f, 1));
     if (graphics == nullptr) {
@@ -173,7 +180,7 @@ extern entity_t *create_text_button
     }
 
     controller_comp_t *controller
-        = create_button_controller(world, pos, size, msg_type);
+        = create_button_controller(world, pos, size, handler);
     if (graphics == nullptr) {
         warp_log_e("Failed to create button controller.");
         return nullptr;
