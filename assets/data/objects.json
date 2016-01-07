@@ -68,13 +68,22 @@
             }
         },
         {
+            "name" : "terminal_shoot",
+            "type" : "terminal",
+            "canShoot" : true,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "missing.png"
+            }
+        },
+        {
             "name" : "player",
             "canRotate" : true,
             "canPush" : false,
             "type" : "character",
             "playerAvatar" : true,
             "health" : 3,
-            "canShoot" : true,
+            "canShoot" : false,
             "ammo" : 16,
             "graphics" : {
                 "mesh" : "player.obj",

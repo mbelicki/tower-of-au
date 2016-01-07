@@ -43,11 +43,21 @@ class input_controller_t final : public controller_impl_i {
             _owner = owner;
             _world = world;
 
+            _screen_size = vec2(1, 1);
+            
+            _is_shooting_enabled = false;
+            _owner->receive_message
+                (MSG_GRAPHICS_VISIBLITY, (int)_is_shooting_enabled);
+
             _is_button_touched = false;
             _is_move_touched = false;
             _button_scale = 1;
 
             _acc_initialized = false;
+
+            _shift_acc = vec2(0, 0);
+            _reference_acc = vec2(0, 0);
+
         }
 
         void update(float, const input_t &input) override {
@@ -56,10 +66,10 @@ class input_controller_t final : public controller_impl_i {
 
             bool any_touched_button = false;
             bool any_touched_elswhere = false;
-            if (input.touch_points->size() > 0) {
+            if (input.touch_points != NULL && input.touch_points->size() > 0) {
                 for (const touch_point_t *point : *input.touch_points) {
                     const vec2_t start = point->start_position;
-                    if (is_touching_button(start)) {
+                    if (is_touching_button(start) && _is_shooting_enabled) {
                         any_touched_button = true;
                         _button_gesture = detect_gesture(*point);
                     } else {
@@ -96,7 +106,9 @@ class input_controller_t final : public controller_impl_i {
         }
 
         bool accepts(messagetype_t type) const override {
-            return type == MSG_INPUT_KEYUP;
+            return type == MSG_INPUT_KEYUP
+                || type == CORE_INPUT_ENABLE_SHOOTING
+                ;
         }
 
         bool is_touching_button(vec2_t screen_pos) {
@@ -110,7 +122,10 @@ class input_controller_t final : public controller_impl_i {
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            if (type == MSG_INPUT_KEYUP) {
+            if (type == CORE_INPUT_ENABLE_SHOOTING) {
+                const bool value = (bool) VALUE(message.data.get_int());
+                enable_shooting(value);
+            } else if (type == MSG_INPUT_KEYUP) {
                 SDL_Keycode code = VALUE(message.data.get_int());
                 if (code == SDLK_w) {
                     move(MOVE_UP);
@@ -137,6 +152,7 @@ class input_controller_t final : public controller_impl_i {
         world_t *_world;
         vec2_t _screen_size;
 
+        bool _is_shooting_enabled;
         bool _is_button_touched;
         bool _is_move_touched;
         float _button_scale;
@@ -146,6 +162,11 @@ class input_controller_t final : public controller_impl_i {
         bool _acc_initialized;
         vec2_t _shift_acc;
         vec2_t _reference_acc;
+
+        void enable_shooting(bool enable) {
+            _is_shooting_enabled = enable;
+            _owner->receive_message(MSG_GRAPHICS_VISIBLITY, (int)enable);
+        }
 
         void update_shift(vec2_t shift, float k) {
             _shift_acc.x = shift.x * k + _shift_acc.x * (1 - k);

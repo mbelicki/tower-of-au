@@ -163,6 +163,17 @@ class core_controller_t final : public controller_impl_i {
 
             update_player_health_display(&_last_player_state);
             update_player_ammo_display(&_last_player_state);
+
+            if (player->flags & FOBJ_CAN_SHOOT) {
+                enable_shooting_controls();
+            }
+        }
+
+        void enable_shooting_controls() {
+            entity_t *input = _world->find_entity("input");
+            if (input != NULL) {
+                input->receive_message(CORE_INPUT_ENABLE_SHOOTING, 1);
+            }
         }
 
         void update(float dt, const input_t &) override {
@@ -353,6 +364,12 @@ class core_controller_t final : public controller_impl_i {
                             emit_speech(obj, "gained\n push");
                             _level_state->set_object_flag(player, FOBJ_CAN_PUSH);
                         }
+                    } else if (obj->flags & FOBJ_CAN_SHOOT) {
+                        if ((player->flags & FOBJ_CAN_SHOOT) == 0) {
+                            emit_speech(obj, " gained\nshooting");
+                            _level_state->set_object_flag(player, FOBJ_CAN_SHOOT);
+                            enable_shooting_controls();
+                        }
                     }
                 }
             }
@@ -399,10 +416,15 @@ class core_controller_t final : public controller_impl_i {
                 return;
             }
 
-            entity_t *hp_label = _world->find_entity("ammo_label");
-            char buffer[16];
-            snprintf(buffer, 16, "*%2d", player->ammo);
-            hp_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
+            entity_t *ammo_label = _world->find_entity("ammo_label");
+            if (player->flags & FOBJ_CAN_SHOOT) {
+                char buffer[16];
+                snprintf(buffer, 16, "*%2d", player->ammo);
+                ammo_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
+                ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 1);
+            } else {
+                ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
+            }
         }
 
         void change_region(const portal_t *portal) {

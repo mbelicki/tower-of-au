@@ -58,6 +58,7 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
             e->set_tag("ammo_label");
             const vec3_t pos = e->get_position();
             e->receive_message(MSG_PHYSICS_MOVE, vec3_add(pos, vec3(0, -48, 0)));
+            e->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
         });
         create_label(world, *font, LABEL_POS_LEFT)
                 .with_value([](entity_t *e) {

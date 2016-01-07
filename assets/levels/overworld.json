@@ -291,6 +291,13 @@
                     "graphics" : "grass",
                     "feature" : "FEAT_BUTTON",
                     "target" : { "x" : 5, "y" : 5 }
+                },
+                {
+                    "symbol" : "T",
+                    "walkable" : true,
+                    "graphics" : "floor",
+                    "object" : "terminal_shoot",
+                    "spawnRate" : 1.0
                 }
             ],
             "data": [
@@ -302,7 +309,7 @@
                 "HHR##-###    ",
                 "HHR     # x  ",
                 "HR X    #    ",
-                "R    X BB   l",
+                "R  T X BB   l",
                 "HR  LHR #  lH",
                 "HHHHHHHHHHHHH"
             ]
