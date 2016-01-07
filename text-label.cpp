@@ -19,10 +19,13 @@ static const char *get_known_text(known_text_t id) {
     }
 }
 
-extern maybe_t<font_t *> get_default_font(const resources_t &res) {
+extern font_t *get_default_font(const resources_t &res) {
     texturemgr_t *textures = res.textures;
-    const maybe_t<tex_id_t> maybe_id = textures->add_texture("font.png");
-    MAYBE_RETURN(maybe_id, font_t *, "Failed to create font:");
+    maybe_t<tex_id_t> maybe_id = textures->add_texture("font.png");
+    if (maybe_id.failed()) {
+        maybe_id.log_failure("Failed to get_default_font");
+        return nullptr;
+    }
     
     const vec2_t size = vec2(32.0f / 512.0f, 64.0f / 512.0f);
     font_t *font = new font_t(VALUE(maybe_id), size);

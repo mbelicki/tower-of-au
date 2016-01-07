@@ -26,7 +26,7 @@ static void reset_camera(world_t *world) {
 
     maybe_t<camera_id_t> camera_id = cameras->create_persp_camera
         ("main", vec3(6, 10, 10.4f), vec3(1.12f, 0, 0), 0.44f, ratio, 7.0f, 19.0f);
-    camera_id.log_failure();
+    camera_id.log_failure("Failed to create camera");
 }
 
 void level_transition_t::configure_renderer(renderer_t *render) {
@@ -47,8 +47,8 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
     _lighting = nullptr;
     reset_camera(world);
 
-    get_default_font(world->get_resources())
-            .with_value([world](font_t *font) {
+    font_t *font = get_default_font(world->get_resources());
+    if (font != NULL) {
         create_label(world, *font, LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP)
                 .with_value([](entity_t *e){
             e->set_tag("health_label");
@@ -67,7 +67,7 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
             e->receive_message(MSG_PHYSICS_SCALE, vec3(0.8f, 0.8f, 0.8f));
             e->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
         });
-    });
+    }
 
     create_button(world, vec2(410, 280), vec2(60, 60), CORE_RESTART_LEVEL, "reset-button.png");
 

@@ -86,7 +86,7 @@ class fade_circle_controller_t final : public controller_impl_i {
             } else {
                 result = mutate_mesh(std::move(vertices), count);
             }
-            result.log_failure();
+            result.log_failure("Failed to recreate text mesh");
         }
 
     private:
@@ -132,7 +132,6 @@ class fade_circle_controller_t final : public controller_impl_i {
 
 maybe_t<entity_t *> create_fade_circle
         (world_t *world, float out_radius, float duration, bool closing) {
-
     controller_comp_t *controller = world->create_controller();
     controller->initialize
         (new fade_circle_controller_t(out_radius, duration, closing));

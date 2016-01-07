@@ -6,6 +6,9 @@
 #include "warp/textures.h"
 #include "warp/input.h"
 
+#include "core.h"
+#include "text-label.h"
+
 using namespace warp;
 
 static const float BUTTON_ANIM_TIME = 1.0f;
@@ -100,16 +103,18 @@ static maybeunit_t fill_texured_quad
     return unit;
 }
 
-graphics_comp_t *create_button_graphics
-        (world_t *world, vec2_t size, const char *texture) {
+extern graphics_comp_t *create_button_graphics
+        (world_t *world, vec2_t size, const char *texture, vec4_t color) {
     const resources_t &res = world->get_resources();
 
     model_t model;
     maybeunit_t maybe_filled = fill_texured_quad(&model, res, size, texture);
     if (maybe_filled.failed()) {
-        maybe_filled.log_failure();
+        maybe_filled.log_failure("Failed to create button graphics");
         return nullptr;
     }
+
+    model.set_color(color);
 
     graphics_comp_t *graphics = world->create_graphics();
     if (graphics == nullptr) {
@@ -122,9 +127,24 @@ graphics_comp_t *create_button_graphics
     return graphics;
 }
 
-entity_t *create_button
+extern entity_t *create_ui_background(world_t *world, vec4_t color) {
+    graphics_comp_t *graphics
+        = create_button_graphics(world, vec2(1024, 800), "blank.png", color);
+    if (graphics == nullptr) {
+        warp_log_e("Failed to create background graphics.");
+        return nullptr;
+    }
+
+    const vec3_t position = vec3(0, 0, -8);
+    entity_t *entity = world->create_entity(position, graphics, nullptr, nullptr);
+    entity->set_tag("background");
+    return entity;
+}
+
+extern entity_t *create_button
         (world_t *world, vec2_t pos, vec2_t size, int msg_type, const char *tex) {
-    graphics_comp_t *graphics = create_button_graphics(world, size, tex);
+    graphics_comp_t *graphics
+            = create_button_graphics(world, size, tex, vec4(1, 1, 1, 1));
     if (graphics == nullptr) {
         warp_log_e("Failed to create button graphics.");
         return nullptr;
@@ -143,3 +163,39 @@ entity_t *create_button
     return entity;
 }
 
+extern entity_t *create_text_button
+        (world_t *world, vec2_t pos, vec2_t size, int msg_type, const char *text) {
+    graphics_comp_t *graphics
+            = create_button_graphics(world, size, "blank.png", vec4(1, 0.8f, 0.8f, 1));
+    if (graphics == nullptr) {
+        warp_log_e("Failed to create button graphics.");
+        return nullptr;
+    }
+
+    controller_comp_t *controller
+        = create_button_controller(world, pos, size, msg_type);
+    if (graphics == nullptr) {
+        warp_log_e("Failed to create button controller.");
+        return nullptr;
+    }
+
+    font_t *font = get_default_font(world->get_resources());
+    if (font == NULL) {
+        warp_log_e("Failed to create text button, couldn't obtain font.");
+        return nullptr;
+    }
+
+    const float x = pos.x - size.x * 0.5f + 15;
+    const float y = pos.y + size.y * 0.5f - 15;
+
+    entity_t *label = VALUE(create_label(world, *font, LABEL_POS_TOP | LABEL_POS_LEFT));
+    label->receive_message(MSG_PHYSICS_MOVE, vec3(x, y, 0));
+    label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)text);
+    label->set_tag("button-label");
+
+    const vec3_t position = vec3(pos.x, pos.y, -2);
+    entity_t *entity = world->create_entity(position, graphics, nullptr, controller);
+    entity->set_tag("text-button");
+
+    return entity;
+}

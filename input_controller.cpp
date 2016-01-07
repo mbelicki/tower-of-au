@@ -213,7 +213,8 @@ class input_controller_t final : public controller_impl_i {
 };
 
 maybe_t<entity_t *> create_input_controller(world_t *world) {
-    graphics_comp_t *graphics = create_button_graphics(world, ATTACK_SIZE, "button.png");
+    graphics_comp_t *graphics
+        = create_button_graphics(world, ATTACK_SIZE, "button.png", vec4(1, 1, 1, 1));
     if (graphics == nullptr) { 
         warp_log_e("Failed to create input controller graphics.");
         return nullptr;

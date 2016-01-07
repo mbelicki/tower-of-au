@@ -7,15 +7,18 @@
 #include "warp/game.h"
 #include "warp/statemanager.h"
 
+#include "editor_transitions.h"
 #include "level_transition.h"
 #include "version.h"
 
 struct cliopts_t {
     bool show_version;
+    bool launch_editor;
 };
 
 static void fill_default_options(cliopts_t *opts) {
     opts->show_version = false;
+    opts->launch_editor = false;
 }
 
 static void parse_options(int argc, char **argv, cliopts_t *opts) {
@@ -24,6 +27,8 @@ static void parse_options(int argc, char **argv, cliopts_t *opts) {
         const char *opt = argv[i];
         if (strcmp(opt, "--version") == 0) {
             opts->show_version = true;
+        } else  if (strcmp(opt, "--editor") == 0) {
+            opts->launch_editor = true;
         }
     }
 }
@@ -32,13 +37,18 @@ static void print_version() {
     printf("%s, version: %s\n", APP_NAME, VERSION);
 }
 
-static int initialize_and_run() {
+static int initialize_and_run(bool launch_editor) {
     std::shared_ptr<warp::transition_i> start_level(new level_transition_t);
+    std::shared_ptr<warp::transition_i> start_editor(new enter_editor_transition_t);
     //std::shared_ptr<warp::transition_i> end_level(new gameover_transition_t);
 
-    warp::statemanager_t states = {"level"};
+    warp::statemanager_t states = {
+        "level", "editor-region-sel", "editor-region", "editor-level"
+    };
     states.insert_transition(START_STATE, "level", start_level, false);
     states.insert_transition("level", "level", start_level, false);
+    states.insert_transition(START_STATE, "editor-region-sel", start_editor, false);
+    //states.insert_transition("editor-region-sel", "editor-region", start_editor, false);
     //states.insert_transition("level", END_STATE, end_level, false);
 
     warp::game_config_t config;
@@ -46,6 +56,7 @@ static int initialize_and_run() {
 
     config.max_entites_count = 512;
     config.window_name = APP_NAME;
+    config.first_state = launch_editor ? "editor-region-sel" : "level";
 
     warp::game_t *game = new warp::game_t;
     warp::maybeunit_t maybe_initialized = game->initialize(config, states);
@@ -70,6 +81,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    return initialize_and_run();
+    return initialize_and_run(opts.launch_editor);
 }
 

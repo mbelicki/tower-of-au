@@ -116,23 +116,22 @@ class core_controller_t final : public controller_impl_i {
             const char *region_name = warp_str_value(&_portal.region_name); 
             _region = load_region(region_name);
             if (_region == nullptr) {
-                warp_log_e("Failed to load region: '%s'", region_name);
-                abort();
+                warp_critical("Failed to load region: '%s'", region_name);
             }
 
             maybeunit_t init_result = _region->initialize(_world);
             if (init_result.failed()) {
-                warp_log_e("Failed to initialize region: %s", init_result.get_message().c_str());
-                abort();
+                const char *reason = init_result.get_message().c_str();
+                warp_critical("Failed to initialize region: %s", reason);
             }
 
             _region->change_display_positions(_level_x, _level_z);
             _level = VALUE(_region->get_level_at(_level_x, _level_z));
             
-            get_default_font(world->get_resources())
-                    .with_value([this](font_t *font) {
-                _font = font;
-            });
+            _font = get_default_font(world->get_resources());
+            if (_font == NULL) {
+                warp_critical("Failed to get default font.");
+            }
 
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
@@ -149,8 +148,7 @@ class core_controller_t final : public controller_impl_i {
             if (player == nullptr || player->type == OBJ_NONE) {
                 bool added = _level_state->spawn_object("player", pos, _random);
                 if (added == false) {
-                    warp_log_e("Failed to spawn player avatar.");
-                    abort();
+                    warp_critical("Failed to spawn player avatar.");
                 }
                 player = _level_state->find_player();
                 save_player_state(_world, player);

@@ -101,7 +101,7 @@ class persistence_controller_t final : public controller_impl_i {
             if (type == CORE_SAVE_PLAYER) {
                 maybe_t<void *> maybe_value = message.data.get_pointer();
                 if (maybe_value.failed()) {
-                    maybe_value.log_failure();
+                    maybe_value.log_failure("Expected CORE_SAVE_PLAYER to contain pointer");
                     return;
                 }
                 const object_t *player = (object_t *) VALUE(maybe_value);
@@ -111,7 +111,7 @@ class persistence_controller_t final : public controller_impl_i {
             } else if (type == CORE_SAVE_PORTAL) {
                 maybe_t<void *> maybe_value = message.data.get_pointer();
                 if (maybe_value.failed()) {
-                    maybe_value.log_failure();
+                    maybe_value.log_failure("Expected CORE_SAVE_PORTAL to contain pointer");
                     return;
                 }
                 const portal_t *portal = (portal_t *) VALUE(maybe_value);
@@ -121,7 +121,7 @@ class persistence_controller_t final : public controller_impl_i {
             } else if (type == CORE_SAVE_SEED) {
                 maybe_t<int> maybe_value = message.data.get_int();
                 if (maybe_value.failed()) {
-                    maybe_value.log_failure();
+                    maybe_value.log_failure("Expected CORE_SAVE_SEED to contain integer");
                     return;
                 }
                 const int packed_seed = VALUE(maybe_value);
@@ -293,7 +293,7 @@ static void *get_saved_data(world_t *world, const tag_t &name) {
     entity_t *data = get_persitent_data(world);
     maybe_t<void *> maybe_value = data->get_property(name).get_pointer();
     if (maybe_value.failed()) {
-        maybe_value.log_failure();
+        maybe_value.log_failure("Expected to get pointer from persistence entity");
         return nullptr;
     }
     return VALUE(maybe_value);
@@ -311,7 +311,7 @@ extern uint32_t get_saved_seed(world_t *world) {
     entity_t *data = get_persitent_data(world);
     maybe_t<int> maybe_value = data->get_property("seed").get_int();
     if (maybe_value.failed()) {
-        maybe_value.log_failure();
+        maybe_value.log_failure("Expected to get int");
         return DEFAULT_SEED;
     }
     const int packed_seed = VALUE(maybe_value);
