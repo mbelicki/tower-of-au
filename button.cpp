@@ -166,7 +166,7 @@ extern entity_t *create_button
 extern entity_t *create_text_button
         (world_t *world, vec2_t pos, vec2_t size, int msg_type, const char *text) {
     graphics_comp_t *graphics
-            = create_button_graphics(world, size, "blank.png", vec4(1, 0.8f, 0.8f, 1));
+            = create_button_graphics(world, size, "blank.png", vec4(0.8f, 0.8f, 0.8f, 1));
     if (graphics == nullptr) {
         warp_log_e("Failed to create button graphics.");
         return nullptr;
