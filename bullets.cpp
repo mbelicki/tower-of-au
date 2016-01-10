@@ -55,7 +55,7 @@ class bullet_controller_t final : public controller_impl_i {
 };
 
 maybeunit_t bullet_factory_t::initialize() {
-    meshmanager_t *meshes   = _world->get_resources().meshes;
+    mesh_manager_t *meshes  = _world->get_resources().meshes;
 
     maybe_t<mesh_id_t> mesh_id = meshes->add_mesh("arrow.obj");
     MAYBE_RETURN(mesh_id, unit_t, "Failed to create mesh:");

@@ -23,6 +23,7 @@
 		610910A51C3C85330088DD09 /* reset-button.png in Resources */ = {isa = PBXBuildFile; fileRef = 610910A41C3C85330088DD09 /* reset-button.png */; };
 		610910AA1C3C85580088DD09 /* objects.json in Resources */ = {isa = PBXBuildFile; fileRef = 610910A91C3C85580088DD09 /* objects.json */; };
 		610910AC1C3C8D620088DD09 /* red.png in Resources */ = {isa = PBXBuildFile; fileRef = 610910AB1C3C8D620088DD09 /* red.png */; };
+		610910C21C407C800088DD09 /* editor_transitions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 610910BF1C407C800088DD09 /* editor_transitions.cpp */; };
 		613A258C1BE68047008A4D22 /* atlas.png in Resources */ = {isa = PBXBuildFile; fileRef = 613A258B1BE68047008A4D22 /* atlas.png */; };
 		613A258F1BE68089008A4D22 /* grass.obj in Resources */ = {isa = PBXBuildFile; fileRef = 613A258E1BE68089008A4D22 /* grass.obj */; };
 		6154D8951BBC66FF00B4D95B /* character.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6154D8891BBC66FF00B4D95B /* character.cpp */; };
@@ -105,6 +106,9 @@
 		610910A41C3C85330088DD09 /* reset-button.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "reset-button.png"; sourceTree = "<group>"; };
 		610910A91C3C85580088DD09 /* objects.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; name = objects.json; path = data/objects.json; sourceTree = "<group>"; };
 		610910AB1C3C8D620088DD09 /* red.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = red.png; sourceTree = "<group>"; };
+		610910BF1C407C800088DD09 /* editor_transitions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = editor_transitions.cpp; sourceTree = "<group>"; };
+		610910C01C407C800088DD09 /* editor_transitions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = editor_transitions.h; sourceTree = "<group>"; };
+		610910C11C407C800088DD09 /* version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = version.h; sourceTree = "<group>"; };
 		613A258B1BE68047008A4D22 /* atlas.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = atlas.png; sourceTree = "<group>"; };
 		613A258E1BE68089008A4D22 /* grass.obj */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = grass.obj; sourceTree = "<group>"; };
 		6154D86A1BBC662000B4D95B /* tower-of-au.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "tower-of-au.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -233,6 +237,9 @@
 		6154D8881BBC66C800B4D95B /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				610910BF1C407C800088DD09 /* editor_transitions.cpp */,
+				610910C01C407C800088DD09 /* editor_transitions.h */,
+				610910C11C407C800088DD09 /* version.h */,
 				6109107C1C3C849B0088DD09 /* button.cpp */,
 				6109107D1C3C849B0088DD09 /* button.h */,
 				6109107E1C3C849B0088DD09 /* level_state.cpp */,
@@ -506,6 +513,7 @@
 				610910891C3C849B0088DD09 /* objects_ai.cpp in Sources */,
 				61F98E001BCD96EB00EEF945 /* features.cpp in Sources */,
 				6109108A1C3C849B0088DD09 /* transition_effect.cpp in Sources */,
+				610910C21C407C800088DD09 /* editor_transitions.cpp in Sources */,
 				616FFC311BDADC5E00AA3C60 /* persitence.cpp in Sources */,
 				6154D89A1BBC66FF00B4D95B /* main.cpp in Sources */,
 				610910861C3C849B0088DD09 /* button.cpp in Sources */,

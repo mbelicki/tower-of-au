@@ -20,7 +20,7 @@ static const char *get_known_text(known_text_t id) {
 }
 
 extern font_t *get_default_font(const resources_t &res) {
-    texturemgr_t *textures = res.textures;
+    texture_manager_t *textures = res.textures;
     maybe_t<tex_id_t> maybe_id = textures->add_texture("font.png");
     if (maybe_id.failed()) {
         maybe_id.log_failure("Failed to get_default_font");
@@ -113,7 +113,7 @@ class label_controller_t final : public controller_impl_i {
 
         maybeunit_t add_new_mesh
                 (std::unique_ptr<vertex_t[]> vertices, size_t count) {
-            meshmanager_t *meshes = _world->get_resources().meshes;
+            mesh_manager_t *meshes = _world->get_resources().meshes;
 
             maybe_t<mesh_id_t> maybe_id
                 = meshes->add_mesh_from_buffer(vertices.get(), count);
@@ -144,7 +144,7 @@ class label_controller_t final : public controller_impl_i {
 
         maybeunit_t mutate_mesh
                 (std::unique_ptr<vertex_t[]> vertices, size_t count) {
-            meshmanager_t *meshes = _world->get_resources().meshes;
+            mesh_manager_t *meshes = _world->get_resources().meshes;
 
             maybeunit_t mutation_result
                 = meshes->mutate_mesh(_mesh_id, vertices.get(), count);
@@ -200,7 +200,8 @@ extern maybe_t<entity_t *> create_label
 
     graphics_comp_t *graphics = world->create_graphics();
     const tag_t pass = (flags & LABEL_PASS_MAIN) != 0 ? "main" : "ui";
-    graphics->set_pass_tag(pass);
+    graphics->remove_pass_tags();
+    graphics->add_pass_tag(pass);
 
     controller_comp_t *controller = world->create_controller();
     
@@ -341,7 +342,7 @@ maybe_t<entity_t *> create_speech_bubble
     const float size = get_size(flags);
 
     graphics_comp_t *graphics = world->create_graphics();
-    meshmanager_t *meshes = world->get_resources().meshes;
+    mesh_manager_t *meshes = world->get_resources().meshes;
     meshes->add_mesh("speech.obj").with_value([graphics](mesh_id_t id) {
         float trans[16]; mat4_fill_translation(trans, vec3(0, 0, -0.05f));
         model_t model;

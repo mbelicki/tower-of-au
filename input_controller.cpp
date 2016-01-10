@@ -193,10 +193,11 @@ class input_controller_t final : public controller_impl_i {
 
             const vec3_t pos = vec3(6, 10, 10.4f);
             const vec3_t rot = vec3(1.12f + mod.y * 0.001f, 0, mod.x * 0.001f);
+            const quaternion_t orientation =  quat_from_euler(rot.z, -rot.y, -rot.x);
 
-            cameras_mgr_t *cameras = _world->get_resources().cameras;
+            camera_manager_t *cameras = _world->get_resources().cameras;
             const maybe_t<camera_id_t> id = cameras->get_id_for_tag("main");
-            cameras->change_transforms(VALUE(id), pos, rot);
+            cameras->change_transforms(VALUE(id), pos, orientation);
         }
         
         void move(move_dir_t direction) {

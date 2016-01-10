@@ -17,7 +17,7 @@
 using namespace warp;
 
 static void reset_camera(world_t *world) {
-    cameras_mgr_t *cameras = world->get_resources().cameras;
+    camera_manager_t *cameras = world->get_resources().cameras;
 
     const maybe_t<const camera_t *> maybe_main_camera
         = cameras->get_camera_for_tag("main");
@@ -25,7 +25,7 @@ static void reset_camera(world_t *world) {
     const float ratio = main_camera->get_aspect_ratio();
 
     maybe_t<camera_id_t> camera_id = cameras->create_persp_camera
-        ("main", vec3(6, 10, 10.4f), vec3(1.12f, 0, 0), 0.44f, ratio, 7.0f, 19.0f);
+        ("main", vec3(6, 10, 10.4f), quat_from_euler(0, 0, -1.12f), 0.44f, ratio, 7.0f, 19.0f);
     camera_id.log_failure("Failed to create camera");
 }
 
@@ -35,6 +35,8 @@ void level_transition_t::configure_renderer(renderer_t *render) {
         settings.sun_color = _lighting->sun_color;
         settings.sun_direction = _lighting->sun_direction;
         settings.ambient_color = _lighting->ambient_color;
+        settings.shadow_map_center = vec3(6, 0, 5);
+        settings.shadow_map_viewport_size = 15.0f;
         render->set_light_settings(&settings);
     }
 }
@@ -73,6 +75,11 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
         world->broadcast_message(CORE_RESTART_LEVEL, 0);
     };
     create_button(world, vec2(410, 280), vec2(60, 60), reset_handler, "reset-button.png");
+
+    //entity_t *preview
+    //    = create_button(world, vec2(320, -220), vec2(256, 256), [](){}, "warp:shadow_map");
+    //preview->receive_message(MSG_PHYSICS_ROTATE, quat_from_euler(PI, 0, 0));
+
 
     const portal_t *portal = get_saved_portal(world);
     entity_t *core = create_core(world, portal);

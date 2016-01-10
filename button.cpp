@@ -90,15 +90,15 @@ static maybeunit_t fill_texured_quad
         ( model_t * const model, const resources_t &resources
         , const vec2_t size, const char * const texture_name
         ) {
-    meshmanager_t * const meshes = resources.meshes;
-    texturemgr_t * const textures = resources.textures;
+    mesh_manager_t * const meshes = resources.meshes;
+    texture_manager_t * const textures = resources.textures;
     
     maybe_t<mesh_id_t> maybe_quad_id
         = meshes->generate_xy_quad_mesh(vec2(0, 0), size);
     MAYBE_RETURN(maybe_quad_id, unit_t, "Failed to get mesh:");
     mesh_id_t mesh_id = VALUE(maybe_quad_id);
 
-    maybe_t<size_t> maybe_tex_id = textures->add_texture(texture_name);
+    maybe_t<tex_id_t> maybe_tex_id = textures->add_texture(texture_name);
     MAYBE_RETURN(maybe_tex_id, unit_t, "Failed to get texture:");
     const tex_id_t tex_id = VALUE(maybe_tex_id);
 
@@ -126,7 +126,8 @@ extern graphics_comp_t *create_button_graphics
     }
 
     graphics->add_model(model);
-    graphics->set_pass_tag("ui");
+    graphics->remove_pass_tags();
+    graphics->add_pass_tag("ui");
     return graphics;
 }
 

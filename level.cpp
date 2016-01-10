@@ -84,7 +84,7 @@ bool level_t::scan_if_all
 
 static maybeunit_t append_tile
         ( meshbuilder_t *builder
-        , meshmanager_t *meshes
+        , mesh_manager_t *meshes
         , const tile_t &tile
         , size_t x, size_t y
         , const region_t *owner
@@ -116,8 +116,8 @@ static maybeunit_t append_tile
 maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
     if (_initialized) return nothing<unit_t>("Already initialized.");
     
-    texturemgr_t *textures = world->get_resources().textures;
-    meshmanager_t *meshes = world->get_resources().meshes;
+    texture_manager_t *textures = world->get_resources().textures;
+    mesh_manager_t *meshes = world->get_resources().meshes;
     meshbuilder_t builder;
 
     for (int j = _height - 1; j >= 0; j--) {
@@ -132,7 +132,7 @@ maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
     maybe_t<mesh_id_t> mesh_id = meshes->add_mesh_from_builder(builder);
     MAYBE_RETURN(mesh_id, unit_t, "Failed to create level mesh:");
 
-    maybe_t<mesh_id_t> tex_id = textures->add_texture("atlas.png");
+    maybe_t<tex_id_t> tex_id = textures->add_texture("atlas.png");
     MAYBE_RETURN(tex_id, unit_t, "Failed to load level texture:");
 
     maybe_t<graphics_comp_t *> graphics = world->create_graphics();

@@ -64,9 +64,10 @@ static int initialize_and_run(bool launch_editor) {
     config.first_state = launch_editor ? "editor-region-sel" : "level";
 
     warp::game_t *game = new warp::game_t;
-    warp::maybeunit_t maybe_initialized = game->initialize(config, states);
-    if (maybe_initialized.failed()) {
-        warp_log_e("Failed to initialize: %s", maybe_initialized.get_message().c_str());
+    warp_result_t init_result = game->initialize(config, states);
+    if (WARP_FAILED(init_result)) {
+        warp_result_log("Faile to initialize game", &init_result);
+        warp_result_destory(&init_result);
         return 1;
     }
 

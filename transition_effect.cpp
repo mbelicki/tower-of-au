@@ -101,7 +101,7 @@ class fade_circle_controller_t final : public controller_impl_i {
 
         maybeunit_t add_new_mesh
                 (std::unique_ptr<vertex_t[]> vertices, size_t count) {
-            meshmanager_t *meshes = _world->get_resources().meshes;
+            mesh_manager_t *meshes = _world->get_resources().meshes;
 
             maybe_t<mesh_id_t> maybe_id
                 = meshes->add_mesh_from_buffer(vertices.get(), count);
@@ -120,7 +120,7 @@ class fade_circle_controller_t final : public controller_impl_i {
 
         maybeunit_t mutate_mesh
                 (std::unique_ptr<vertex_t[]> vertices, size_t count) {
-            meshmanager_t *meshes = _world->get_resources().meshes;
+            mesh_manager_t *meshes = _world->get_resources().meshes;
 
             maybeunit_t mutation_result
                 = meshes->mutate_mesh(_mesh_id, vertices.get(), count);
@@ -137,7 +137,8 @@ maybe_t<entity_t *> create_fade_circle
         (new fade_circle_controller_t(out_radius, duration, closing));
 
     graphics_comp_t *graphics = world->create_graphics();
-    graphics->set_pass_tag("ui");
+    graphics->remove_pass_tags();
+    graphics->add_pass_tag("ui");
 
     entity_t *entity
         = world->create_entity(vec3(0, 0, 0), graphics, nullptr, controller);

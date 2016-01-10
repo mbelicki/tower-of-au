@@ -387,9 +387,6 @@ static void parse_lighting(JSON_Object *object, region_lighting_t *lighting) {
     parse_color(json_object_get_object(object, "sunColor"), &lighting->sun_color);
     parse_vec3(json_object_get_object(object, "sunDirection"), &lighting->sun_direction);
     parse_color(json_object_get_object(object, "ambientColor"), &lighting->ambient_color);
-
-    warp_log_d( "sun color: %f, %f, %f"
-              , lighting->sun_color.x, lighting->sun_color.y, lighting->sun_color.z);
 }
 
 static region_t *parse_json(const JSON_Object *root) {

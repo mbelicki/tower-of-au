@@ -100,7 +100,8 @@ static void create_level_list(world_t *world, const region_t *region) {
 
             const vec3_t pos = vec3(x - 120 * 0.5f, y + 100 * 0.5f, 7);
             entity_t *entity = level->get_entity();
-            entity->receive_message(MSG_GRAPHICS_CHANGE_PASS, tag_t("ui"));
+            entity->receive_message(MSG_GRAPHICS_REMOVE_PASSES, 0);
+            entity->receive_message(MSG_GRAPHICS_ADD_PASS, tag_t("ui"));
             entity->receive_message(MSG_PHYSICS_MOVE, pos);
             entity->receive_message(MSG_PHYSICS_ROTATE, orientation);
             entity->receive_message(MSG_PHYSICS_SCALE, vec3(10, 10, -1));

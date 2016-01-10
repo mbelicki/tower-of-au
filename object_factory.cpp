@@ -197,8 +197,8 @@ cleanup:
 
 
 void object_factory_t::load_resources(const resources_t *res) {
-    meshmanager_t *meshes = res->meshes;
-    texturemgr_t *textures = res->textures;
+    mesh_manager_t *meshes = res->meshes;
+    texture_manager_t *textures = res->textures;
 
     typedef std::map<tag_t, object_def_t *>::iterator map_it_t;
     for (map_it_t it = _objects.begin(); it != _objects.end(); it++) {
