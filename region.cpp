@@ -46,6 +46,9 @@ region_t::region_t(level_t **levels, size_t width, size_t height)
 }
 
 region_t::~region_t() {
+    const size_t tiles_count = _width * _height;
+    for (size_t i = 0; i < tiles_count; i++)
+        delete _levels[i];
     delete [] _levels;
     warp_array_destroy(&_graphics);
     warp_array_destroy(&_portals);
@@ -413,7 +416,7 @@ static region_t *parse_json(const JSON_Object *root) {
     }
 
     region_t *region = new region_t(parsed_levels, width, height);
-    delete parsed_levels;
+    delete [] parsed_levels;
     
     JSON_Array *portals = json_object_get_array(root, "portals");
     add_portals(region, portals);

@@ -190,6 +190,7 @@ bool object_factory_t::load_definitions(const char *filename) {
 cleanup:
     warp_str_destroy(&path);
     warp_str_destroy(&out_path);
+    warp_array_destroy(&bytes);
     json_value_free(root_value);
 
     return result;

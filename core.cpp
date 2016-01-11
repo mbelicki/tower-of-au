@@ -90,6 +90,8 @@ class core_controller_t final : public controller_impl_i {
 
         ~core_controller_t() {
             delete _level_state;
+            delete _region;
+            delete _font;
 
             warp_str_destroy(&_portal.region_name);
             warp_array_destroy(&_pain_texts);
@@ -115,7 +117,7 @@ class core_controller_t final : public controller_impl_i {
 
             const char *region_name = warp_str_value(&_portal.region_name); 
             _region = load_region(region_name);
-            if (_region == nullptr) {
+            if (_region == NULL) {
                 warp_critical("Failed to load region: '%s'", region_name);
             }
 

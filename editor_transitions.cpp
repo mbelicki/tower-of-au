@@ -126,4 +126,5 @@ void edit_region_transition_t::initialize_state(const tag_t &, world_t *world) {
     create_level_list(world, region);
     
     create_ui_background(world, vec4(1, 1, 1, 1));
+    delete font;
 }

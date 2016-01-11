@@ -248,6 +248,7 @@ class persistence_controller_t final : public controller_impl_i {
 
             json_free_serialized_string(serialized);
             json_value_free(root_value);
+            warp_str_destroy(&save_path);
         }
 
         void read_data() {
@@ -267,6 +268,7 @@ class persistence_controller_t final : public controller_impl_i {
             _seed = json_object_get_number(root, "seed");
 
             json_value_free(root_value);
+            warp_str_destroy(&save_path);
         }
 };
 

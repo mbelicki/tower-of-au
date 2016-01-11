@@ -577,10 +577,10 @@ void level_state_t::move_object
         if (old_feat->type == FEAT_BUTTON) {
             change_button_state(old_feat, FSTATE_INACTIVE);
         } else if (old_feat->type == FEAT_BREAKABLE_FLOOR) {
-            delete old_feat;
             old_feat->entity->receive_message(CORE_FEAT_STATE_CHANGE, FSTATE_ACTIVE);
             _features[old_x + _width * old_z]
                 = create_feature(_world, FEAT_SPIKES, 0, old_x, old_z);
+            delete old_feat;
         }
     }
 
@@ -612,11 +612,11 @@ void level_state_t::move_object
         } else if (type == FEAT_SPIKES) {
             if (new_feat->state == FSTATE_ACTIVE) {
                 hurt_object(target, target->health);
+                target->entity->receive_message(CORE_DO_FALL, pos);
                 if (target->type == OBJ_BOULDER) {
                     destroy_object(target);
                     new_feat->state = FSTATE_INACTIVE;
                 }
-                target->entity->receive_message(CORE_DO_FALL, pos);
             }
         }
     }

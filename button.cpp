@@ -205,5 +205,6 @@ extern entity_t *create_text_button
     entity_t *entity = world->create_entity(position, graphics, nullptr, controller);
     entity->set_tag("text-button");
 
+    delete font;
     return entity;
 }

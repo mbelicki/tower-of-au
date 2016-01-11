@@ -69,6 +69,7 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
             e->receive_message(MSG_PHYSICS_SCALE, vec3(0.8f, 0.8f, 0.8f));
             e->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
         });
+        delete font;
     }
 
     std::function<void(void)> reset_handler = [=]() {
