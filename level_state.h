@@ -46,6 +46,7 @@ struct object_t {
     object_flags_t flags;
 
     int health;
+    int max_health;
     int ammo;
 };
 

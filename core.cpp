@@ -398,19 +398,20 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void update_player_health_display(const object_t *player) {
-            static const int PLAYER_MAX_HP = 3; /* TODO: fix this later */
             if (player == nullptr) {
                 warp_log_e("Cannot update health, player is null.");
                 return;
             }
+            const int max_hp = player->max_health;
 
             entity_t *hp_label = _world->find_entity("health_label");
-            char buffer[PLAYER_MAX_HP + 1];
-            for (size_t i = 0; i < PLAYER_MAX_HP; i++) {
+            char *buffer = (char *)calloc(max_hp + 1, sizeof (char));
+            for (size_t i = 0; i < (size_t)max_hp; i++) {
                 buffer[i] = (int)i < player->health ? '#' : '$';
             }
-            buffer[PLAYER_MAX_HP] = '\0';
+            buffer[max_hp] = '\0';
             hp_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
+            free(buffer);
         }
 
         void update_player_ammo_display(const object_t *player) {

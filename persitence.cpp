@@ -197,6 +197,7 @@ class persistence_controller_t final : public controller_impl_i {
             JSON_Object *player = json_value_get_object(player_value);
             
             json_object_set_number(player, "health", _player.health); 
+            json_object_set_number(player, "max_health", _player.max_health); 
             json_object_set_number(player, "ammo", _player.ammo); 
             json_object_set_number(player, "flags", _player.flags); 
             json_object_set_number(player, "direction", _player.direction); 
@@ -208,6 +209,9 @@ class persistence_controller_t final : public controller_impl_i {
         void read_player(JSON_Object *player) {
             if (json_object_get_value(player, "health") != nullptr) {
                 _player.health = json_object_get_number(player, "health");
+            }
+            if (json_object_get_value(player, "max_health") != nullptr) {
+                _player.max_health = json_object_get_number(player, "max_health");
             }
             if (json_object_get_value(player, "ammo") != nullptr) {
                 _player.ammo = json_object_get_number(player, "ammo");

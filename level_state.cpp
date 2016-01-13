@@ -441,6 +441,11 @@ void level_state_t::handle_picking_up
 
     character->health += pick_up->health;
     character->ammo += pick_up->ammo;
+    character->max_health += pick_up->max_health;
+
+    if (character->health > character->max_health) {
+        character->health = character->max_health;
+    }
 
     const vec3_t pick_up_pos = pick_up->position;
     pick_up->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));

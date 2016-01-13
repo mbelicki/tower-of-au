@@ -62,7 +62,6 @@ static int initialize_and_run(bool launch_editor) {
     config.max_entites_count = 512;
     config.window_name = APP_NAME;
     config.first_state = launch_editor ? "editor-region-sel" : "level";
-    config.render_config.filter_textures = false;
 
     warp::game_t *game = new warp::game_t;
     warp_result_t init_result = game->initialize(config, states);

@@ -94,10 +94,20 @@
             "name" : "hp-pickup",
             "type" : "pick-up",
             "health" : 1,
-            "ammo" : 0,
+            "max_health" : 0,
             "graphics" : {
                 "mesh" : "hp-pickup.obj",
                 "texture" : "red.png"
+            }
+        },
+        {
+            "name" : "max-hp-pickup",
+            "type" : "pick-up",
+            "health" : 1024,
+            "max_health" : 1,
+            "graphics" : {
+                "mesh" : "hp-pickup.obj",
+                "texture" : "missing.png"
             }
         }
     ]

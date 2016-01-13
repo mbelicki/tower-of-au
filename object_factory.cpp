@@ -27,6 +27,7 @@ struct object_def_t {
     dir_t         direction;
     move_type_t   movement_type;
     int           health;
+    int           max_health;
     int           ammo;
     bool          can_shoot;
     bool          can_rotate;
@@ -86,18 +87,12 @@ static move_type_t parse_movement(JSON_Object *obj) {
     return OBJMOVE_STILL;
 }
 
-static int parse_health(JSON_Object *obj) {
-    if (has_json_member(obj, "health") == false) {
-        return 1;
+static int parse_int_property
+        (JSON_Object *obj, const char *name, int default_value) {
+    if (has_json_member(obj, name) == false) {
+        return default_value;
     }
-    return (int)json_object_get_number(obj, "health");
-}
-
-static int parse_ammo(JSON_Object *obj) {
-    if (has_json_member(obj, "ammo") == false) {
-        return 0;
-    }
-    return (int)json_object_get_number(obj, "ammo");
+    return (int)json_object_get_number(obj, name);
 }
 
 static bool parse_bool_flag(JSON_Object *obj, const char *name) {
@@ -126,8 +121,9 @@ static void parse_definition
     object_def_t *def = new object_def_t;
     def->type          = parse_type(object);
     def->movement_type = parse_movement(object);
-    def->health        = parse_health(object);
-    def->ammo          = parse_ammo(object);
+    def->health        = parse_int_property(object, "health", 1);
+    def->max_health    = parse_int_property(object, "max_health", def->health);
+    def->ammo          = parse_int_property(object, "ammo", 0);
     def->can_shoot     = parse_bool_flag(object, "canShoot");
     def->can_rotate    = parse_bool_flag(object, "canRotate");
     def->can_push      = parse_bool_flag(object, "canPush");
@@ -310,6 +306,7 @@ static object_t *evaluate_definition
     obj->type = def->type;
     obj->position = pos;
     obj->health = def->health;
+    obj->max_health = def->max_health;
     obj->ammo = def->ammo;
 
     obj->direction = evaluate_direction(dir, rand);
