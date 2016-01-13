@@ -218,6 +218,7 @@ class core_controller_t final : public controller_impl_i {
                 || type == CORE_MOVE_DONE
                 || type == CORE_BULLET_HIT
                 || type == CORE_RESTART_LEVEL
+                || type == CORE_SAVE_RESET_DEFAULTS
                 || type == MSG_INPUT_KEYUP
                 ;
         }
@@ -236,7 +237,9 @@ class core_controller_t final : public controller_impl_i {
 
             const object_t *player = _level_state->find_player();
             if (type == CORE_RESTART_LEVEL) {
-                change_region(&_portal);
+                change_region(&_portal, true);
+            } else if (type == CORE_SAVE_RESET_DEFAULTS) {
+                change_region(&_portal, false);
             } else if (type == CORE_BULLET_HIT) {
                 warp_log_d("real time event");
                 rt_event_t event = {RT_EVENT_BULETT_HIT, message.data};
@@ -349,7 +352,7 @@ class core_controller_t final : public controller_impl_i {
                             maybe_t<const portal_t *> portal
                                 = _region->get_portal(tile->portal_id);
                             if (portal.has_value()) {
-                                change_region(VALUE(portal));
+                                change_region(VALUE(portal), true);
                             }
                         }
                     });
@@ -357,7 +360,7 @@ class core_controller_t final : public controller_impl_i {
                     emit_speech(obj, get_pain_text());
                 } else if (type == EVENT_OBJECT_KILLED) {
                     if ((obj->flags & FOBJ_PLAYER_AVATAR) != 0) {
-                        change_region(&_portal);
+                        change_region(&_portal, true);
                     }
                 } else if (type == EVENT_PLAYER_ACTIVATED_TERMINAL) {
                     const object_t *player = _level_state->find_player();
@@ -431,16 +434,18 @@ class core_controller_t final : public controller_impl_i {
             }
         }
 
-        void change_region(const portal_t *portal) {
+        void change_region(const portal_t *portal, bool save_data) {
             if (portal == nullptr) return;
 
             const float change_time = 2.0f;
             create_fade_circle(_world, 700, change_time, true);
-            save_portal(_world, portal);
-            save_player_state(_world, &_last_player_state);
             _world->request_state_change("level", change_time);
             _state = CSTATE_REGION_TRANSITION;
-
+            
+            if (save_data) {
+                save_portal(_world, portal);
+                save_player_state(_world, &_last_player_state);
+            }
             _world->broadcast_message(CORE_SAVE_TO_FILE, 0);
         }
         

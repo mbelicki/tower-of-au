@@ -60,10 +60,7 @@ class persistence_controller_t final : public controller_impl_i {
             return dynval_t::make_null();
         }
 
-        void initialize(entity_t *owner, world_t *world) override {
-            _owner = owner;
-            _world = world;
-
+        void set_defaults() {
             /* default portal */
             _portal.region_name = warp_str_create("overworld.json");
             _portal.level_x = 1;
@@ -78,10 +75,18 @@ class persistence_controller_t final : public controller_impl_i {
             _player.direction = DIR_NONE;
             _player.flags = FOBJ_NONE;
             _player.health = 0;
+            _player.max_health = 0;
             _player.ammo = 0;
 
             /* default seed */
             _seed = DEFAULT_SEED;
+        }
+
+        void initialize(entity_t *owner, world_t *world) override {
+            _owner = owner;
+            _world = world;
+
+            set_defaults();
 
             read_data();
         }
@@ -92,6 +97,7 @@ class persistence_controller_t final : public controller_impl_i {
             return type == CORE_SAVE_PORTAL 
                 || type == CORE_SAVE_PLAYER
                 || type == CORE_SAVE_SEED
+                || type == CORE_SAVE_RESET_DEFAULTS
                 || type == CORE_SAVE_TO_FILE
                 ;
         }
@@ -126,6 +132,8 @@ class persistence_controller_t final : public controller_impl_i {
                 }
                 const int packed_seed = VALUE(maybe_value);
                 _seed = *(uint32_t *)&packed_seed;
+            } else if (type == CORE_SAVE_RESET_DEFAULTS) {
+                set_defaults();
             } else if (type == CORE_SAVE_TO_FILE) {
                 save_data();
             }

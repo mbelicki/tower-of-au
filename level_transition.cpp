@@ -72,10 +72,15 @@ void level_transition_t::initialize_state(const tag_t &, world_t *world) {
         delete font;
     }
 
-    std::function<void(void)> reset_handler = [=]() {
+    std::function<void(void)> restart_handler = [=]() {
         world->broadcast_message(CORE_RESTART_LEVEL, 0);
     };
-    create_button(world, vec2(410, 280), vec2(60, 60), reset_handler, "reset-button.png");
+    create_button(world, vec2(410, 280), vec2(60, 60), restart_handler, "reset-button.png");
+
+    std::function<void(void)> reset_handler = [=]() {
+        world->broadcast_message(CORE_SAVE_RESET_DEFAULTS, 0);
+    };
+    create_button(world, vec2(410, 200), vec2(60, 60), reset_handler, "reset-button.png");
 
     //entity_t *preview
     //    = create_button(world, vec2(320, -220), vec2(256, 256), [](){}, "warp:shadow_map");
