@@ -2,8 +2,8 @@
 
 #include <functional>
 
-#include "warp/vec2.h"
-#include "warp/vec4.h"
+#include "warp/math/vec2.h"
+#include "warp/math/vec4.h"
 
 namespace warp {
     class world_t;
@@ -13,21 +13,21 @@ namespace warp {
 }
 
 warp::controller_comp_t *create_button_controller
-    ( warp::world_t *world, warp::vec2_t pos, warp::vec2_t size
+    ( warp::world_t *world, warp_vec2_t pos, warp_vec2_t size
     , std::function<void(void)> handler
     );
 
 warp::graphics_comp_t *create_button_graphics
-    (warp::world_t *world, warp::vec2_t size, const char *texture, warp::vec4_t color);
+    (warp::world_t *world, warp_vec2_t size, const char *texture, warp_vec4_t color);
 
-warp::entity_t *create_ui_background(warp::world_t *world, warp::vec4_t color);
+warp::entity_t *create_ui_background(warp::world_t *world, warp_vec4_t color);
 
 warp::entity_t *create_button
-    ( warp::world_t *world, warp::vec2_t pos, warp::vec2_t size
+    ( warp::world_t *world, warp_vec2_t pos, warp_vec2_t size
     , std::function<void(void)> handler, const char *texture
     );
 
 warp::entity_t *create_text_button
-    ( warp::world_t *world, warp::vec2_t pos, warp::vec2_t size
+    ( warp::world_t *world, warp_vec2_t pos, warp_vec2_t size
     , std::function<void(void)> handler, const char *text
     );

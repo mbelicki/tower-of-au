@@ -1,8 +1,7 @@
 #pragma once
 
-#include "warp/tag.h"
-#include "warp/vec3.h"
-#include "warp/maybe.h"
+#include "warp/utils/tag.h"
+#include "warp/math/vec3.h"
 #include "warp/direction.h"
 
 #include "warp/utils/random.h"
@@ -27,13 +26,13 @@ struct tile_t {
     bool is_stairs;
 
     float spawn_probablity;
-    warp::tag_t object_id;
+    warp_tag_t object_id;
     warp::dir_t object_dir;
 
     feature_type_t feature;
     size_t feat_target_id;
     size_t portal_id;
-    warp::tag_t graphics_id;
+    warp_tag_t graphics_id;
 };
 
 class region_t;
@@ -43,9 +42,8 @@ class level_t {
         level_t(const tile_t *tiles, size_t width, size_t height);
         ~level_t();
 
-        warp::maybeunit_t initialize
-            (warp::world_t *world, const region_t *owner);
-        void set_display_position(const warp::vec3_t pos);
+        void initialize(warp::world_t *world, const region_t *owner);
+        void set_display_position(const warp_vec3_t pos);
         void set_visiblity(bool visible);
 
         inline bool is_initialized() const { return _initialized; }
@@ -53,9 +51,9 @@ class level_t {
         inline size_t get_height() const { return _height; }
         inline warp::entity_t *get_entity() const { return _entity; }
 
-        warp::maybe_t<const tile_t *> get_tile_at(int x, int y) const;
+        const tile_t *get_tile_at(int x, int y) const;
 
-        bool is_point_walkable(const warp::vec3_t point) const;
+        bool is_point_walkable(const warp_vec3_t point) const;
 
         bool scan_if_all
             ( std::function<bool(const tile_t *)> predicate

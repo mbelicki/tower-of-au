@@ -1,8 +1,7 @@
 #pragma once
 
-#include "warp/maybe.h"
-#include "warp/vec3.h"
-
+#include "warp/utils/result.h"
+#include "warp/math/vec3.h"
 #include "warp/textures.h"
 #include "warp/meshmanager.h"
 
@@ -26,10 +25,10 @@ class bullet_factory_t {
             , _world(world)
         {}
 
-        warp::maybeunit_t initialize();
+        void initialize();
 
-        warp::maybe_t<warp::entity_t *> create_bullet
-            ( warp::vec3_t initial_position, warp::vec3_t velocity
+        warp::entity_t *create_bullet
+            ( warp_vec3_t initial_position, warp_vec3_t velocity
             , bullet_type_t type, const level_t *level
             );
 

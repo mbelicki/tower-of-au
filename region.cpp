@@ -1,3 +1,4 @@
+#define WARP_DROP_PREFIX
 #include "region.h"
 
 #include <cstring> /* memmove */
@@ -19,7 +20,6 @@ static void destroy_portal(void *raw_portal) {
 
 static void destroy_tile_graphics(void *raw_graphics) {
     tile_graphics_t *graphics = (tile_graphics_t *)raw_graphics;
-    graphics->name.~tag_t();
     warp_str_destroy(&graphics->mesh);
     warp_str_destroy(&graphics->texture);
 }
@@ -54,20 +54,21 @@ region_t::~region_t() {
     warp_array_destroy(&_portals);
 }
 
-maybeunit_t region_t::initialize(world_t *world) {
-    if (world == nullptr) return nothing<unit_t>("World is null.");
+void region_t::initialize(world_t *world) {
+    if (world == NULL) { 
+        warp_log_e("Cannot initialize region, world is null.");
+        return;
+    }
 
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
             level_t *level = _levels[i + _width * j];
             if (level->is_initialized() == false) {
-                maybeunit_t result = level->initialize(world, this);
-                MAYBE_RETURN(result, unit_t, "Failed to initialize one of levels:");
+                level->initialize(world, this);
             }
             level->set_display_position(vec3(13 * i, 0, 11 * j));
         }
     }
-    return unit;
 }
 
 bool region_t::add_portal
@@ -86,7 +87,7 @@ bool region_t::add_portal
 }
 
 bool region_t::add_tile_graphics
-        (const tag_t &name, const char *mesh, const char *tex) {
+        (const warp_tag_t &name, const char *mesh, const char *tex) {
     const tile_graphics_t g = { name, warp_str_create(mesh), warp_str_create(tex) };
     return warp_array_append(&_graphics, &g, 1);
 }
@@ -101,11 +102,11 @@ const portal_t *region_t::get_portal(size_t id) {
     return (const portal_t *) warp_array_get(&_portals, id);
 }
 
-const tile_graphics_t *region_t::get_tile_graphics(const tag_t &tag) const {
+const tile_graphics_t *region_t::get_tile_graphics(const warp_tag_t &tag) const {
     const size_t count = warp_array_get_size(&_graphics);
     for (size_t i = 0; i < count; i++) {
         const tile_graphics_t *tg = (const tile_graphics_t *)warp_array_get(&_graphics, i);
-        if (tg->name == tag) return tg;
+        if (warp_tag_equals(&tg->name, &tag)) return tg;
     }
     return NULL;
 }
@@ -228,7 +229,7 @@ static tile_t parse_tile(JSON_Object *tile) {
         result.is_stairs = json_object_get_boolean(tile, "stairs");
     }
     if (json_object_get_value(tile, "object") != nullptr) {
-        result.object_id = json_object_get_string(tile, "object");
+        result.object_id = WARP_TAG(json_object_get_string(tile, "object"));
     }
     if (json_object_get_value(tile, "objectDirection") != nullptr) {
         const char *dir = json_object_get_string(tile, "objectDirection");
@@ -250,15 +251,15 @@ static tile_t parse_tile(JSON_Object *tile) {
         result.portal_id = json_object_dotget_number(tile, "portalId");
     }
     if (json_object_get_value(tile, "graphics") != nullptr) {
-        result.graphics_id = json_object_dotget_string(tile, "graphics");
+        result.graphics_id = WARP_TAG(json_object_dotget_string(tile, "graphics"));
     }
     
     return result;
 }
 
-static maybe_t<char> get_tile_symbol(JSON_Object *tile) {
+static char get_tile_symbol(JSON_Object *tile) {
     const char *symbol = json_object_dotget_string(tile, "symbol");
-    if (symbol == nullptr) return nothing<char>("No symbol.");
+    if (symbol == NULL) return '\0';
     return symbol[0];
 }
 
@@ -268,9 +269,10 @@ static void fill_tiles_map(std::map<char, tile_t> *map, JSON_Array *tiles) {
     const size_t count = json_array_get_count(tiles);
     for (size_t i = 0; i < count; i++) {
         JSON_Object *tile = json_array_get_object(tiles, i);
-        get_tile_symbol(tile).with_value([map, tile](char symbol){
+        const char symbol = get_tile_symbol(tile);
+        if (symbol != '\0'){
             map->insert(std::make_pair(symbol, parse_tile(tile)));
-        });
+        }
     }
 }
 
@@ -328,7 +330,7 @@ static void add_graphics(region_t *region, JSON_Array *graphics) {
         const char *mesh = json_object_get_string(g, "mesh");
         const char *texture = json_object_get_string(g, "texture");
 
-        region->add_tile_graphics(name, mesh, texture);
+        region->add_tile_graphics(WARP_TAG(name), mesh, texture);
     }
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "warp/maybe.h"
+#include <stdint.h>
 
 namespace warp {
     class entity_t;

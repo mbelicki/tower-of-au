@@ -1,3 +1,4 @@
+#define WARP_DROP_PREFIX
 #include "persitence.h"
 
 #include "warp/world.h"
@@ -40,20 +41,20 @@ cleanup:
 class persistence_controller_t final : public controller_impl_i {
     public:
         persistence_controller_t()
-                : _owner(nullptr)
-                , _world(nullptr) {
+                : _owner(NULL)
+                , _world(NULL) {
         }
 
         ~persistence_controller_t() {
             warp_str_destroy(&_portal.region_name);
         }
 
-        dynval_t get_property(const tag_t &name) const override {
-            if (name == "portal") {
+        dynval_t get_property(const warp_tag_t &name) const override {
+            if (warp_tag_equals_buffer(&name, "portal")) {
                 return (void *)&_portal;
-            } else if (name == "player") {
+            } else if (warp_tag_equals_buffer(&name, "player")) {
                 return (void *)&_player;
-            } else if (name == "seed") {
+            } else if (warp_tag_equals_buffer(&name, "seed")) {
                 return *(int *)&_seed;
             }
 
@@ -105,32 +106,27 @@ class persistence_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override { 
             const messagetype_t type = message.type;
             if (type == CORE_SAVE_PLAYER) {
-                maybe_t<void *> maybe_value = message.data.get_pointer();
-                if (maybe_value.failed()) {
-                    maybe_value.log_failure("Expected CORE_SAVE_PLAYER to contain pointer");
+                void *value = message.data.get_pointer();
+                if (value == NULL) {
+                    warp_log_e("Expected CORE_SAVE_PLAYER to contain pointer");
                     return;
                 }
-                const object_t *player = (object_t *) VALUE(maybe_value);
+                const object_t *player = (object_t *) value;
                 _player = *player;
                 _player.entity = nullptr;
                 warp_log_d("player saved.");
             } else if (type == CORE_SAVE_PORTAL) {
-                maybe_t<void *> maybe_value = message.data.get_pointer();
-                if (maybe_value.failed()) {
-                    maybe_value.log_failure("Expected CORE_SAVE_PORTAL to contain pointer");
+                void * value = message.data.get_pointer();
+                if (value == NULL) {
+                    warp_log_e("Expected CORE_SAVE_PORTAL to contain pointer");
                     return;
                 }
-                const portal_t *portal = (portal_t *) VALUE(maybe_value);
+                const portal_t *portal = (portal_t *) value;
                 warp_str_destroy(&_portal.region_name);
                 _portal = *portal;
                 _portal.region_name = warp_str_copy(&portal->region_name);
             } else if (type == CORE_SAVE_SEED) {
-                maybe_t<int> maybe_value = message.data.get_int();
-                if (maybe_value.failed()) {
-                    maybe_value.log_failure("Expected CORE_SAVE_SEED to contain integer");
-                    return;
-                }
-                const int packed_seed = VALUE(maybe_value);
+                const int packed_seed = message.data.get_int();
                 _seed = *(uint32_t *)&packed_seed;
             } else if (type == CORE_SAVE_RESET_DEFAULTS) {
                 set_defaults();
@@ -285,7 +281,7 @@ class persistence_controller_t final : public controller_impl_i {
 };
 
 extern entity_t *get_persitent_data(world_t *world) {
-    entity_t *data = world->find_entity("persistent_data");
+    entity_t *data = world->find_entity(WARP_TAG("persistent_data"));
     if (data == nullptr) {
         data = create_persitent_data(world);
     }
@@ -298,37 +294,31 @@ extern entity_t *create_persitent_data(world_t *world) {
 
     entity_t *entity
         = world->create_entity(vec3(0, 0, 0), nullptr, nullptr, controller);
-    entity->set_tag("persistent_data");
+    entity->set_tag(WARP_TAG("persistent_data"));
 
     return entity;
 }
 
-static void *get_saved_data(world_t *world, const tag_t &name) {
+static void *get_saved_data(world_t *world, const warp_tag_t &name) {
     entity_t *data = get_persitent_data(world);
-    maybe_t<void *> maybe_value = data->get_property(name).get_pointer();
-    if (maybe_value.failed()) {
-        maybe_value.log_failure("Expected to get pointer from persistence entity");
-        return nullptr;
+    void *value = data->get_property(name).get_pointer();
+    if (value == NULL) {
+        warp_log_e("Expected to get pointer from persistence entity");
     }
-    return VALUE(maybe_value);
+    return value;
 }
 
 extern const object_t *get_saved_player_state(world_t *world) {
-    return (const object_t *)get_saved_data(world, "player");
+    return (const object_t *)get_saved_data(world, WARP_TAG("player"));
 }
 
 extern const portal_t *get_saved_portal(world_t *world) {
-    return (const portal_t *)get_saved_data(world, "portal");
+    return (const portal_t *)get_saved_data(world, WARP_TAG("portal"));
 }
 
 extern uint32_t get_saved_seed(world_t *world) {
     entity_t *data = get_persitent_data(world);
-    maybe_t<int> maybe_value = data->get_property("seed").get_int();
-    if (maybe_value.failed()) {
-        maybe_value.log_failure("Expected to get int");
-        return DEFAULT_SEED;
-    }
-    const int packed_seed = VALUE(maybe_value);
+    const int packed_seed = data->get_property(WARP_TAG("seed")).get_int();
     return *(uint32_t *)&packed_seed;
 }
 

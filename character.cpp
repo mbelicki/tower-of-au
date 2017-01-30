@@ -1,5 +1,7 @@
+#define WARP_DROP_PREFIX
 #include "character.h"
 
+#include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
@@ -74,12 +76,13 @@ class movement_controller_t final : public controller_impl_i {
             , _timer(0)
             , _state(MOVE_IDLE)
             , _confirm(confirm_move)
-            , _target_pos(0, 0, 0)
-            , _old_pos(0, 0, 0)
-        { }
+        {
+            _target_pos = vec3(0, 0, 0);
+            _old_pos = vec3(0, 0, 0);
+        }
 
-        dynval_t get_property(const tag_t &name) const override {
-            if (name == "avat.is_idle") {
+        dynval_t get_property(const warp_tag_t &name) const override {
+            if (warp_tag_equals_buffer(&name, "avat.is_idle")) {
                 return (int)(_state == MOVE_IDLE);
             }
             return dynval_t::make_null();
@@ -127,17 +130,17 @@ class movement_controller_t final : public controller_impl_i {
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            const maybe_t<vec3_t> maybe_pos = message.data.get_vec3();
+            const vec3_t pos = message.data.get_vec3();
             if (type == CORE_DO_MOVE) {
-                change_state(MOVE_MOVING, VALUE(maybe_pos));
+                change_state(MOVE_MOVING, pos);
             } else if (type == CORE_DO_MOVE_IMMEDIATE) {
-                move_immediate(VALUE(maybe_pos));
+                move_immediate(pos);
             } else if (type == CORE_DO_BOUNCE) {
-                change_state(MOVE_BOUNCING, VALUE(maybe_pos));
+                change_state(MOVE_BOUNCING, pos);
             } else if (type == CORE_DO_ATTACK) {
-                change_state(MOVE_ATTACKING, VALUE(maybe_pos));
+                change_state(MOVE_ATTACKING, pos);
             } else if (type == CORE_DO_FALL) {
-                change_state(MOVE_FALLING, VALUE(maybe_pos));
+                change_state(MOVE_FALLING, pos);
             }
         }
 
@@ -204,7 +207,7 @@ class rotation_controller_t final : public controller_impl_i {
             , _new_dir(DIR_Z_MINUS)
         { }
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -236,7 +239,7 @@ class rotation_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_DO_ROTATE) {
-                const dir_t dir = (dir_t) VALUE(message.data.get_int());
+                const dir_t dir = (dir_t) message.data.get_int();
                 change_state(ROATE_ROTATING, dir);
             }
         }
@@ -275,7 +278,7 @@ class rotation_controller_t final : public controller_impl_i {
         }
 
         void set_angle(float angle) {
-            const quaternion_t quat = quat_from_euler(0, angle + PI, 0);
+            const quat_t quat = quat_from_euler(0, angle + PI, 0);
             _owner->receive_message(MSG_PHYSICS_ROTATE, quat);
         }
 };
@@ -289,7 +292,7 @@ class health_controller_t final : public controller_impl_i {
             , _state(HEAL_IDLE)
         { }
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -357,8 +360,7 @@ class health_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<controller_comp_t *> create_character_controller
-        (world_t *world, bool confirm_move) {
+extern controller_comp_t *create_character_controller(world_t *world, bool confirm_move) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new movement_controller_t(confirm_move));
     controller->add_controller(new rotation_controller_t);

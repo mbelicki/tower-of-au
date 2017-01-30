@@ -1,5 +1,7 @@
+#define WARP_DROP_PREFIX
 #include "features.h"
 
+#include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
@@ -16,7 +18,7 @@ static const float DOOR_MOVE_TIME = 0.1f;
 
 class door_controller_t final : public controller_impl_i {
     public:
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -50,9 +52,8 @@ class door_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_FEAT_STATE_CHANGE) {
-                message.data.get_int().with_value([this](int value) {
-                    change_state(value > 0);
-                });
+                const int value = message.data.get_int();
+                change_state(value > 0);
             }
         }
 
@@ -83,7 +84,7 @@ class door_controller_t final : public controller_impl_i {
         }
 };
 
-extern maybe_t<controller_comp_t *> create_door_controller(world_t *world) {
+extern controller_comp_t *create_door_controller(world_t *world) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new door_controller_t);
     return controller;

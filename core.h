@@ -1,6 +1,5 @@
 #pragma once
 
-#include "warp/maybe.h"
 #include "warp/messagequeue.h"
 
 namespace warp {

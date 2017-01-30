@@ -1,5 +1,7 @@
+#define WARP_DROP_PREFIX
 #include "editor_transitions.h"
 
+#include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/collections/array.h"
 #include "warp/utils/str.h"
@@ -38,7 +40,7 @@ static void create_region_list
         const float y = 220.0f - 80.0f * i;
 
         std::function<void(void)> handler = [=]() {
-            world->request_state_change("editor-region", 0.01f);
+            world->request_state_change(WARP_TAG("editor-region"), 0.01f);
             state->set_region_name(&region);
         };
         create_text_button(world, vec2(-210, y), vec2(500, 60), handler, name);
@@ -51,14 +53,15 @@ static void find_all_regions(warp_array_t *regions) {
     warp_str_destroy(&directory);
 }
 
-void enter_editor_transition_t::initialize_state(const tag_t &, world_t *world) {
-    font_t *font = get_default_font(world->get_resources());
+void enter_editor_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
+    warp_font_t *font = get_default_font();
     if (font != NULL) {
-        create_label(world, *font, LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP)
-                .with_value([](entity_t *e) {
-            e->set_tag("title");
-            e->receive_message(CORE_SHOW_POINTER_TEXT, (void *)"select a region:");
-        });
+        const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;
+        entity_t *label = create_label(world, font, flags);
+        if (label != NULL) {
+            label->set_tag(WARP_TAG("title"));
+            label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)"select a region:");
+        }
     }
 
     warp_array_t regions;
@@ -96,12 +99,12 @@ static void create_level_list(world_t *world, const region_t *region) {
                 level->initialize(world, region);
             }
 
-            const quaternion_t orientation = quat_from_euler(0, 0, PI / -2);
+            const quat_t orientation = quat_from_euler(0, 0, PI / -2);
 
             const vec3_t pos = vec3(x - 120 * 0.5f, y + 100 * 0.5f, 7);
             entity_t *entity = level->get_entity();
             entity->receive_message(MSG_GRAPHICS_REMOVE_PASSES, 0);
-            entity->receive_message(MSG_GRAPHICS_ADD_PASS, tag_t("ui"));
+            entity->receive_message(MSG_GRAPHICS_ADD_PASS, WARP_TAG("ui"));
             entity->receive_message(MSG_PHYSICS_MOVE, pos);
             entity->receive_message(MSG_PHYSICS_ROTATE, orientation);
             entity->receive_message(MSG_PHYSICS_SCALE, vec3(10, 10, -1));
@@ -109,22 +112,22 @@ static void create_level_list(world_t *world, const region_t *region) {
     }
 }
 
-void edit_region_transition_t::initialize_state(const tag_t &, world_t *world) {
+void edit_region_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
     warp_str_t region_name = _state->get_region_name();
     const char *name = warp_str_value(&region_name);
     region_t *region = load_region(name);   
 
-    font_t *font = get_default_font(world->get_resources());
+    warp_font_t *font = get_default_font();
     if (font != NULL) {
-        create_label(world, *font, LABEL_POS_LEFT | LABEL_POS_TOP)
-                .with_value([name](entity_t *e) {
-            e->set_tag("title");
-            e->receive_message(CORE_SHOW_POINTER_TEXT, (void *)name);
-        });
+        const label_flags_t flags = LABEL_POS_LEFT | LABEL_POS_TOP;
+        entity_t *label = create_label(world, font, flags);
+        if (label != NULL) {
+            label->set_tag(WARP_TAG("title"));
+            label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)name);
+        }
     }
     
     create_level_list(world, region);
     
     create_ui_background(world, vec4(1, 1, 1, 1));
-    delete font;
 }

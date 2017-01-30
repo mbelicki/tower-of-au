@@ -1,5 +1,7 @@
+#define WARP_DROP_PREFIX
 #include "level.h"
 
+#include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/meshbuilder.h"
@@ -29,7 +31,7 @@ level_t::~level_t() {
     delete [] _tiles;
 }
 
-void level_t::set_display_position(const warp::vec3_t pos) {
+void level_t::set_display_position(const vec3_t pos) {
     if (_initialized == false) return;
     _entity->receive_message(MSG_PHYSICS_MOVE, pos);
 }
@@ -39,25 +41,22 @@ void level_t::set_visiblity(bool visible) {
     _entity->receive_message(MSG_GRAPHICS_VISIBLITY, (int)visible);
 }
 
-maybe_t<const tile_t *> level_t::get_tile_at(int x, int y) const {
+const tile_t *level_t::get_tile_at(int x, int y) const {
     if (x < 0 || x >= (int)_width) {
-        return nothing<const tile_t *>("Illegal x value.");
+        warp_log_e("Cannot get tile, illegal x value.");
+        return NULL;
     }
     if (y < 0 || y >= (int)_height) {
-        return nothing<const tile_t *>("Illegal y value.");
+        warp_log_e("Cannot get tile, illegal y value.");
+        return NULL;
     }
     
     return _tiles + (x + _width * y);
 }
 
 bool level_t::is_point_walkable(const vec3_t point) const {
-    const size_t x = round(point.x);
-    const size_t z = round(point.z);
-    maybe_t<const tile_t *> maybe_tile = get_tile_at(x, z);
-    if (maybe_tile.failed()) return false;
-
-    const tile_t *tile = VALUE(maybe_tile);
-    return tile->is_walkable;
+    const tile_t *tile = get_tile_at(round(point.x), round(point.z));
+    return tile == NULL ? false : tile->is_walkable;
 }
 
 bool level_t::scan_if_all
@@ -73,16 +72,17 @@ bool level_t::scan_if_all
 
     bool accumulator = true;
     for (size_t i = 0; i < distance; i++) {
-        get_tile_at(x, z).with_value([&](const tile_t *t) {
+        const tile_t *t = get_tile_at(x, z);
+        if (t != NULL) {
             accumulator = predicate(t) && accumulator;
-        });
+        }
         x += dx;
         z += dz;
     }
     return accumulator;
 }
 
-static maybeunit_t append_tile
+static void append_tile
         ( meshbuilder_t *builder
         , mesh_manager_t *meshes
         , const tile_t &tile
@@ -97,24 +97,21 @@ static maybeunit_t append_tile
         transforms.change_rotation(quat_from_euler(0, PI, 0));
     }
 
-    const tile_graphics_t *graphics
-        = owner->get_tile_graphics(tile.graphics_id);
-    if (graphics == nullptr) {
-        return nothing<unit_t>
-            ("Failed to get tile graphics with id: %s.", tile.graphics_id.get_text());
+    const tile_graphics_t *graphics = owner->get_tile_graphics(tile.graphics_id);
+    if (graphics == NULL) {
+        warp_log_e("Failed to get tile graphics with id: %s.", tile.graphics_id.text);
+        return;
     }
     const char *mesh_name = warp_str_value(&graphics->mesh);
-    const maybe_t<mesh_id_t> maybe_id = meshes->add_mesh(mesh_name);
-    MAYBE_RETURN(maybe_id, unit_t, "Failed to get tile mesh:");
-
-    const mesh_id_t id = VALUE(maybe_id);
+    const mesh_id_t id = meshes->add_mesh(mesh_name);
     builder->append_mesh(*meshes, id, transforms);
-
-    return unit;
 }
 
-maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
-    if (_initialized) return nothing<unit_t>("Already initialized.");
+void level_t::initialize(world_t *world, const region_t *owner) {
+    if (_initialized) {
+        warp_log_e("Level is already initialized.");
+        return;
+    }
     
     texture_manager_t *textures = world->get_resources().textures;
     mesh_manager_t *meshes = world->get_resources().meshes;
@@ -123,31 +120,23 @@ maybeunit_t level_t::initialize(world_t *world, const region_t *owner) {
     for (int j = _height - 1; j >= 0; j--) {
         for (int i = _width - 1; i >= 0; i--) {
             const size_t index = i + _width * j;
-            maybeunit_t result
-                = append_tile(&builder, meshes, _tiles[index], i, j, owner);
-            MAYBE_RETURN(result, unit_t, "Failed to append a tile mesh:");
+            append_tile(&builder, meshes, _tiles[index], i, j, owner);
         }
     }
 
-    maybe_t<mesh_id_t> mesh_id = meshes->add_mesh_from_builder(builder);
-    MAYBE_RETURN(mesh_id, unit_t, "Failed to create level mesh:");
-
-    maybe_t<tex_id_t> tex_id = textures->add_texture("atlas.png");
-    MAYBE_RETURN(tex_id, unit_t, "Failed to load level texture:");
-
-    maybe_t<graphics_comp_t *> graphics = world->create_graphics();
-    MAYBE_RETURN(graphics, unit_t, "Failed to create level graphics:");
+    const mesh_id_t mesh_id = meshes->add_mesh_from_builder(builder);
+    const tex_id_t tex_id = textures->add_texture("atlas.png");
+    graphics_comp_t *graphics = world->create_graphics();
 
     model_t model;
-    model.initialize(VALUE(mesh_id), VALUE(tex_id));
+    model.initialize(mesh_id, tex_id);
     
-    (VALUE(graphics))->add_model(model);
+    graphics->add_model(model);
 
-    _entity = world->create_entity(vec3(0, 0, 0), VALUE(graphics), nullptr, nullptr);
-    _entity->set_tag("level");
+    _entity = world->create_entity(vec3(0, 0, 0), graphics, NULL, NULL);
+    _entity->set_tag(WARP_TAG("level"));
     
     _initialized = true;
-    return unit;
 }
 
 static void fill_empty_room(tile_t *tiles, size_t width, size_t height) {

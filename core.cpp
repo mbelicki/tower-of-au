@@ -1,3 +1,4 @@
+#define WARP_DROP_PREFIX
 #include "core.h"
 
 #include <stdlib.h>
@@ -16,6 +17,9 @@
 #include "warp/utils/random.h"
 #include "warp/utils/str.h"
 #include "warp/utils/log.h"
+#include "warp/math/utils.h"
+
+#include "warp/graphics/font.h"
 
 #include "region.h"
 #include "level.h"
@@ -60,8 +64,8 @@ static bool is_idle(const object_t *object) {
         warp_log_e("Cannot check if object is idle, object is null.");
         return false;
     }
-    const dynval_t is_idle = object->entity->get_property("avat.is_idle");
-    return VALUE(is_idle.get_int()) == 1;
+    const dynval_t is_idle = object->entity->get_property(WARP_TAG("avat.is_idle"));
+    return is_idle.get_int() == 1;
 }
 
 class core_controller_t final : public controller_impl_i {
@@ -91,15 +95,17 @@ class core_controller_t final : public controller_impl_i {
         ~core_controller_t() {
             delete _level_state;
             delete _region;
-            delete _font;
+
+            warp_font_destroy(_font);
+            free(_font);
 
             warp_str_destroy(&_portal.region_name);
             warp_array_destroy(&_pain_texts);
             warp_random_destroy(_random);
         }
 
-        dynval_t get_property(const tag_t &name) const override {
-            if (name == "lighting") {
+        dynval_t get_property(const warp_tag_t &name) const override {
+            if (warp_tag_equals_buffer(&name, "lighting")) {
                 return (void *)_region->get_region_lighting();
             }
             return dynval_t::make_null();
@@ -121,11 +127,7 @@ class core_controller_t final : public controller_impl_i {
                 warp_critical("Failed to load region: '%s'", region_name);
             }
 
-            maybeunit_t init_result = _region->initialize(_world);
-            if (init_result.failed()) {
-                const char *reason = init_result.get_message().c_str();
-                warp_critical("Failed to initialize region: %s", reason);
-            }
+            _region->initialize(_world);
 
             _region->change_display_positions(_level_x, _level_z);
             _level = _region->get_level_at(_level_x, _level_z);
@@ -133,7 +135,7 @@ class core_controller_t final : public controller_impl_i {
                 warp_critical("Failed to get level font.");
             }
             
-            _font = get_default_font(world->get_resources());
+            _font = get_default_font();
             if (_font == NULL) {
                 warp_critical("Failed to get default font.");
             }
@@ -151,7 +153,7 @@ class core_controller_t final : public controller_impl_i {
             const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
             
             if (player == nullptr || player->type == OBJ_NONE) {
-                bool added = _level_state->spawn_object("player", pos, _random);
+                bool added = _level_state->spawn_object(WARP_TAG("player"), pos, _random);
                 if (added == false) {
                     warp_critical("Failed to spawn player avatar.");
                 }
@@ -161,7 +163,7 @@ class core_controller_t final : public controller_impl_i {
             } else {
                 _last_player_state = *player;
                 _last_player_state.position = pos;
-                _level_state->add_object(_last_player_state, "player");
+                _level_state->add_object(_last_player_state, WARP_TAG("player"));
             }
 
             update_player_health_display(&_last_player_state);
@@ -173,7 +175,7 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void enable_shooting_controls() {
-            entity_t *input = _world->find_entity("input");
+            entity_t *input = _world->find_entity(WARP_TAG("input"));
             if (input != NULL) {
                 input->receive_message(CORE_INPUT_ENABLE_SHOOTING, 1);
             }
@@ -207,7 +209,7 @@ class core_controller_t final : public controller_impl_i {
                 if (_state == CSTATE_IDLE) {
                     _region->change_display_positions(_level_x, _level_z);
                     _level_state->spawn(_level, _random);
-                    _level_state->add_object(_last_player_state, "player");
+                    _level_state->add_object(_last_player_state, WARP_TAG("player"));
                 }
             }
         }
@@ -219,14 +221,14 @@ class core_controller_t final : public controller_impl_i {
                 || type == CORE_BULLET_HIT
                 || type == CORE_RESTART_LEVEL
                 || type == CORE_SAVE_RESET_DEFAULTS
-                || type == MSG_INPUT_KEYUP
+                || type == MSG_INPUT_KEY_UP
                 ;
         }
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            if (type == MSG_INPUT_KEYUP) {
-                SDL_Keycode code = VALUE(message.data.get_int());
+            if (type == MSG_INPUT_KEY_UP) {
+                SDL_Keycode code = message.data.get_int();
                 if (code == SDLK_g) {
                     enable_diagnostics(_diagnostics == false);
                 }
@@ -281,7 +283,7 @@ class core_controller_t final : public controller_impl_i {
 
         level_state_t *_level_state;
 
-        font_t *_font;
+        warp_font_t *_font;
 
         core_state_t _state;
         float _transition_timer;
@@ -295,7 +297,7 @@ class core_controller_t final : public controller_impl_i {
 
         void enable_diagnostics(bool enable) {
             _diagnostics = enable;
-            _diag_label = _world->find_entity("diag_label");
+            _diag_label = _world->find_entity(WARP_TAG("diag_label"));
             _diag_label->receive_message(MSG_GRAPHICS_VISIBLITY, (int)enable);
             if (_diag_buffer == nullptr) {
                 _diag_buffer = new char [1024];
@@ -346,16 +348,13 @@ class core_controller_t final : public controller_impl_i {
                         start_level_change(player, _level_x, _level_z + 1);
                     }
                 } else if (type == EVENT_PLAYER_ENTER_PORTAL) {
-                    _level->get_tile_at(x, z)
-                            .with_value([this](const tile_t *tile) {
-                        if (tile->is_stairs) { 
-                            maybe_t<const portal_t *> portal
-                                = _region->get_portal(tile->portal_id);
-                            if (portal.has_value()) {
-                                change_region(VALUE(portal), true);
-                            }
+                    const tile_t *tile = _level->get_tile_at(x, z);
+                    if (tile != NULL && tile->is_stairs) { 
+                        const portal_t *portal = _region->get_portal(tile->portal_id);
+                        if (portal != NULL) {
+                            change_region(portal, true);
                         }
-                    });
+                    }
                 } else if (type == EVENT_OBJECT_HURT) {
                     emit_speech(obj, get_pain_text());
                 } else if (type == EVENT_OBJECT_KILLED) {
@@ -388,49 +387,53 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void emit_speech(const object_t *obj, const char* text) {
-            if (obj == nullptr) {
+            if (obj == NULL) {
                 warp_log_e("Cannot emit speech bubule, null object.");
                 return;
             }
-            if (text == nullptr) {
+            if (text == NULL) {
                 warp_log_e("Cannot emit speech bubule, null text.");
                 return;
             }
             const vec3_t pos = vec3_add(obj->position, vec3(0, 1.3f, -0.1f));
-            create_speech_bubble(_world, *_font, pos, text);
+            create_speech_bubble(_world, _font, pos, text);
         }
 
         void update_player_health_display(const object_t *player) {
-            if (player == nullptr) {
+            if (player == NULL) {
                 warp_log_e("Cannot update health, player is null.");
                 return;
             }
             const int max_hp = player->max_health;
 
-            entity_t *hp_label = _world->find_entity("health_label");
-            char *buffer = (char *)calloc(max_hp + 1, sizeof (char));
-            for (size_t i = 0; i < (size_t)max_hp; i++) {
-                buffer[i] = (int)i < player->health ? '#' : '$';
+            entity_t *hp_label = _world->find_entity(WARP_TAG("health_label"));
+            if (hp_label != NULL) {
+                char *buffer = (char *)calloc(max_hp + 1, sizeof (char));
+                for (size_t i = 0; i < (size_t)max_hp; i++) {
+                    buffer[i] = (int)i < player->health ? '#' : '$';
+                }
+                buffer[max_hp] = '\0';
+                hp_label->receive_message(CORE_SHOW_TAG_TEXT, WARP_TAG(buffer));
+                free(buffer);
             }
-            buffer[max_hp] = '\0';
-            hp_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
-            free(buffer);
         }
 
         void update_player_ammo_display(const object_t *player) {
-            if (player == nullptr) {
+            if (player == NULL) {
                 warp_log_e("Cannot update health, player is null.");
                 return;
             }
 
-            entity_t *ammo_label = _world->find_entity("ammo_label");
-            if (player->flags & FOBJ_CAN_SHOOT) {
-                char buffer[16];
-                snprintf(buffer, 16, "*%2d", player->ammo);
-                ammo_label->receive_message(CORE_SHOW_TAG_TEXT, tag_t(buffer));
-                ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 1);
-            } else {
-                ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
+            entity_t *ammo_label = _world->find_entity(WARP_TAG("ammo_label"));
+            if (ammo_label != NULL) {
+                if (player->flags & FOBJ_CAN_SHOOT) {
+                    char buffer[16];
+                    snprintf(buffer, 16, "*%2d", player->ammo);
+                    ammo_label->receive_message(CORE_SHOW_TAG_TEXT, WARP_TAG(buffer));
+                    ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 1);
+                } else {
+                    ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
+                }
             }
         }
 
@@ -439,7 +442,7 @@ class core_controller_t final : public controller_impl_i {
 
             const float change_time = 2.0f;
             create_fade_circle(_world, 700, change_time, true);
-            _world->request_state_change("level", change_time);
+            _world->request_state_change(WARP_TAG("level"), change_time);
             _state = CSTATE_REGION_TRANSITION;
             
             if (save_data) {
@@ -520,16 +523,16 @@ class core_controller_t final : public controller_impl_i {
 };
 
 extern entity_t *create_core(world_t *world, const portal_t *start) {
-    if (start == nullptr) {
+    if (start == NULL) {
         warp_log_e("Cannot create core with null portal.");
-        return nullptr;
+        return NULL;
     }
 
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new core_controller_t(start));
 
-    entity_t *entity = world->create_entity(vec3(0, 0, 0), nullptr, nullptr, controller);
-    entity->set_tag("core");
+    entity_t *entity = world->create_entity(vec3(0, 0, 0), NULL, NULL, controller);
+    entity->set_tag(WARP_TAG("core"));
 
     return entity;
 }

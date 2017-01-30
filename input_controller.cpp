@@ -1,7 +1,9 @@
+#define WARP_DROP_PREFIX
 #include "input_controller.h"
 
 #include "warp/keycodes.h"
 
+#include "warp/math/utils.h"
 #include "warp/camera.h"
 #include "warp/cameras.h"
 #include "warp/input.h"
@@ -35,7 +37,7 @@ static move_dir_t gesture_kind_to_move(gesture_kind_t kind) {
 
 class input_controller_t final : public controller_impl_i {
     public:
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -106,7 +108,7 @@ class input_controller_t final : public controller_impl_i {
         }
 
         bool accepts(messagetype_t type) const override {
-            return type == MSG_INPUT_KEYUP
+            return type == MSG_INPUT_KEY_UP
                 || type == CORE_INPUT_ENABLE_SHOOTING
                 ;
         }
@@ -115,7 +117,7 @@ class input_controller_t final : public controller_impl_i {
             vec2_t pos = vec2_sub( screen_pos , vec2_scale(_screen_size, 0.5f));
             pos.y = -pos.y;
 
-            const vec2_t diff = vec2_sub(pos, ATTACK_POSITION.get_xy());
+            const vec2_t diff = vec2_sub(pos, vec3_get_xy(ATTACK_POSITION));
             return fabs(diff.x) < ATTACK_SIZE.x * 0.5f 
                 && fabs(diff.y) < ATTACK_SIZE.y * 0.5f;
         }
@@ -123,10 +125,10 @@ class input_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_INPUT_ENABLE_SHOOTING) {
-                const bool value = (bool) VALUE(message.data.get_int());
+                const bool value = (bool) message.data.get_int();
                 enable_shooting(value);
-            } else if (type == MSG_INPUT_KEYUP) {
-                SDL_Keycode code = VALUE(message.data.get_int());
+            } else if (type == MSG_INPUT_KEY_UP) {
+                SDL_Keycode code = message.data.get_int();
                 if (code == SDLK_w) {
                     move(MOVE_UP);
                 } else if (code == SDLK_s) {
@@ -172,7 +174,7 @@ class input_controller_t final : public controller_impl_i {
             _shift_acc.x = shift.x * k + _shift_acc.x * (1 - k);
             _shift_acc.y = shift.y * k + _shift_acc.y * (1 - k);
             
-            k = saturate<float>(k * 2.0f, 0, 1);
+            k = saturatef(k * 2.0f, 0, 1);
             _reference_acc.x = _shift_acc.x * k + _reference_acc.x * (1 - k);
             _reference_acc.y = _shift_acc.y * k + _reference_acc.y * (1 - k);
         }
@@ -188,16 +190,16 @@ class input_controller_t final : public controller_impl_i {
             const float max_mod_x = 48;
             const float max_mod_y = 48;
             vec2_t mod = vec2_sub(_shift_acc, _reference_acc);
-            mod.x = saturate(mod.x, -max_mod_x, max_mod_x);
-            mod.y = saturate(mod.y, -max_mod_y, max_mod_y);
+            mod.x = saturatef(mod.x, -max_mod_x, max_mod_x);
+            mod.y = saturatef(mod.y, -max_mod_y, max_mod_y);
 
             const vec3_t pos = vec3(6, 10, 10.4f);
             const vec3_t rot = vec3(1.12f + mod.y * 0.001f, 0, mod.x * 0.001f);
-            const quaternion_t orientation =  quat_from_euler(rot.z, -rot.y, -rot.x);
+            const quat_t orientation =  quat_from_euler(rot.z, -rot.y, -rot.x);
 
             camera_manager_t *cameras = _world->get_resources().cameras;
-            const maybe_t<camera_id_t> id = cameras->get_id_for_tag("main");
-            cameras->change_transforms(VALUE(id), pos, orientation);
+            const camera_id_t id = cameras->get_id_for_tag(WARP_TAG("main"));
+            cameras->change_transforms(id, pos, orientation);
         }
         
         void move(move_dir_t direction) {
@@ -213,18 +215,18 @@ class input_controller_t final : public controller_impl_i {
         }
 };
 
-maybe_t<entity_t *> create_input_controller(world_t *world) {
+entity_t *create_input_controller(world_t *world) {
     graphics_comp_t *graphics
         = create_button_graphics(world, ATTACK_SIZE, "button.png", vec4(1, 1, 1, 1));
-    if (graphics == nullptr) { 
+    if (graphics == NULL) { 
         warp_log_e("Failed to create input controller graphics.");
-        return nullptr;
+        return NULL;
     }
 
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new input_controller_t);
 
-    entity_t *entity = world->create_entity(ATTACK_POSITION, graphics, nullptr, controller);
-    entity->set_tag("input");
+    entity_t *entity = world->create_entity(ATTACK_POSITION, graphics, NULL, controller);
+    entity->set_tag(WARP_TAG("input"));
     return entity;
 }

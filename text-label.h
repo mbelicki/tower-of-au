@@ -1,8 +1,9 @@
 #pragma once
 
+#include <string>
+
 #include "warp/helpers.h"
-#include "warp/maybe.h"
-#include "warp/font.h"
+#include "warp/graphics/font.h"
 
 namespace warp {
     class controller_impl_i;
@@ -26,12 +27,12 @@ enum label_flags_t {
 
 WARP_ENABLE_FLAGS(label_flags_t);
 
-warp::font_t *get_default_font(const warp::resources_t &res);
+warp_font_t *get_default_font();
 
-warp::maybe_t<warp::entity_t *> create_label
-        (warp::world_t *world, const warp::font_t &font, label_flags_t flags);
+warp::entity_t * create_label
+        (warp::world_t *world, const warp_font_t *font, label_flags_t flags);
 
-warp::maybe_t<warp::entity_t *> create_speech_bubble
-        ( warp::world_t *world, const warp::font_t &font
-        , warp::vec3_t pos, const std::string &text
+warp::entity_t *create_speech_bubble
+        ( warp::world_t *world, const warp_font_t *font
+        , warp_vec3_t pos, const char *text
         );

@@ -1,6 +1,8 @@
+#define WARP_DROP_PREFIX
 #include "text-label.h"
 
-#include "warp/mat4.h"
+#include "warp/math/utils.h"
+#include "warp/math/mat4.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/mesh.h"
@@ -19,31 +21,22 @@ static const char *get_known_text(known_text_t id) {
     }
 }
 
-extern font_t *get_default_font(const resources_t &res) {
-    texture_manager_t *textures = res.textures;
-    maybe_t<tex_id_t> maybe_id = textures->add_texture("font.png");
-    if (maybe_id.failed()) {
-        maybe_id.log_failure("Failed to get_default_font");
-        return nullptr;
-    }
-    
-    const vec2_t size = vec2(32.0f / 512.0f, 64.0f / 512.0f);
-    font_t *font = new font_t(VALUE(maybe_id), size);
-
+extern warp_font_t *get_default_font() {
+    warp_font_t *font = (warp_font_t *) malloc(sizeof *font);
+    warp_font_create_from_grid(32, 64, 512, 512, "font.png", font);
     return font;
 }
 
 class label_controller_t final : public controller_impl_i {
     public:
         label_controller_t
-            (const font_t &font, float height, font_origin_pos_t anchor)
+            (const warp_font_t *font, warp_font_alignment_t align)
               : _font(font)
-              , _anchor(anchor)
-              , _height(height)
+              , _align(align)
               , _mesh_id(0)
         {}
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -63,41 +56,33 @@ class label_controller_t final : public controller_impl_i {
 
         void handle_message(const message_t &message) override {
             messagetype_t type = message.type;
-            maybeunit_t result = unit;
             if (type == CORE_SHOW_KNOWN_TEXT) {
-                const known_text_t id
-                    = (known_text_t) VALUE(message.data.get_int());
-                result = recreate_text_mesh(get_known_text(id));
+                const known_text_t id = (known_text_t) message.data.get_int();
+                recreate_text_mesh(get_known_text(id));
             } else if (type == CORE_SHOW_TAG_TEXT) {
-                const tag_t tag = VALUE(message.data.get_tag());
-                result = recreate_text_mesh(tag.get_text());
+                const warp_tag_t tag = message.data.get_tag();
+                recreate_text_mesh(tag.text);
             } else if (type == CORE_SHOW_POINTER_TEXT) {
-                const char *text = (const char *)VALUE(message.data.get_pointer());
-                result = recreate_text_mesh(text);
-            }
-
-            if (result.failed()) {
-                warp_log_e("Teselation failed: %s", result.get_message().c_str());
+                const char *text = (const char *) message.data.get_pointer();
+                recreate_text_mesh(text);
             }
         }
 
-        maybeunit_t recreate_text_mesh(const std::string &text) {
-            const size_t count = _font.calculate_buffer_size(text);
-            std::unique_ptr<vertex_t[]> vertices(new (std::nothrow) vertex_t [count]);
+        void recreate_text_mesh(const char *str) {
+            warp_str_t text = WARP_STR(str);
+            const size_t count = warp_font_tesslated_buffer_size(_font, &text);
+            vertex_t *vertices = (vertex_t *)malloc(count * sizeof *vertices);
 
-            maybe_t<size_t> tesselation_result
-                = _font.tesselate( vertices.get(), count, text
-                                 , _height, vec3(0, 0, 0), _anchor
-                                 );
-            MAYBE_RETURN(tesselation_result, unit_t, "Failed to tesselate:")
+            warp_font_tesselate(_font, vertices, count, &text, _align);
+            warp_str_destroy(&text);
             
             if (_mesh_id == 0) {
-                add_new_mesh(std::move(vertices), count);
+                add_new_mesh(vertices, count);
             } else {
-                mutate_mesh(std::move(vertices), count);
+                mutate_mesh(vertices, count);
             }
 
-            return unit;
+            free(vertices);
         }
 
 
@@ -105,25 +90,24 @@ class label_controller_t final : public controller_impl_i {
         world_t  *_world;
         entity_t *_owner;
 
-        font_t _font;
+        const warp_font_t *_font;
         
-        font_origin_pos_t _anchor;
-        float _height;
+        warp_font_alignment_t _align;
         mesh_id_t _mesh_id;
+        model_t *_model;
 
-        maybeunit_t add_new_mesh
-                (std::unique_ptr<vertex_t[]> vertices, size_t count) {
+        void add_new_mesh(vertex_t *vertices, size_t count) {
             mesh_manager_t *meshes = _world->get_resources().meshes;
+            texture_manager_t *textures = _world->get_resources().textures;
 
-            maybe_t<mesh_id_t> maybe_id
-                = meshes->add_mesh_from_buffer(vertices.get(), count);
-            MAYBE_RETURN(maybe_id, unit_t, "Adding mesh failed:")
-
-            _mesh_id = VALUE(maybe_id);
+            _mesh_id = meshes->add_mesh_from_buffer(vertices, count);
             meshes->load_single(_mesh_id); /* force VBO creation */
 
-            model_t *model = new model_t; /* TODO: oh hello, memory leaks */
-            model->initialize(_mesh_id, _font.get_texture_id());
+            const tex_id_t tex_id
+                = textures->add_texture(warp_str_value(&_font->texture_name));
+
+            _model = new model_t;
+            _model->initialize(_mesh_id, tex_id);
             
             float rot_z[16]; mat4_fill_rotation_z(rot_z, PI * 0.5f);
             float rot_y[16]; mat4_fill_rotation_y(rot_y, PI * 0.5f);
@@ -131,34 +115,26 @@ class label_controller_t final : public controller_impl_i {
             mat4_fill_rotation_y(rot_y, PI * -0.5f);
             float final_trans[16]; mat4_mul(final_trans, transforms, rot_y);           
 
-            model->change_local_transforms(final_trans);
+            _model->change_local_transforms(final_trans);
 
             //_owner->receive_message(MSG_GRAPHICS_REMOVE_MODELS, 0);
-            _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, model);
+            _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, _model);
 
             const vec3_t pos = _owner->get_position();
             _owner->receive_message(MSG_PHYSICS_MOVE, pos);
-
-            return unit;
         }
 
-        maybeunit_t mutate_mesh
-                (std::unique_ptr<vertex_t[]> vertices, size_t count) {
+        void mutate_mesh(vertex_t *vertices, size_t count) {
             mesh_manager_t *meshes = _world->get_resources().meshes;
-
-            maybeunit_t mutation_result
-                = meshes->mutate_mesh(_mesh_id, vertices.get(), count);
-            MAYBE_RETURN(mutation_result, unit_t, "Failed to mutate mesh:");
-
-            return unit;
+            meshes->mutate_mesh(_mesh_id, vertices, count);
         }
 
 };
 
 static vec3_t get_position
-        (label_flags_t flags, font_origin_pos_t *origin, float font_size) {
+        (label_flags_t flags, warp_font_alignment_t *origin, float font_size) {
     vec3_t position = vec3(0, 0, 0);
-    *origin = FONT_CENTER;
+    *origin = WARP_FONT_ALIGN_CENTER;
 
     if ((flags & LABEL_PASS_MAIN) != 0) {
         return position;
@@ -166,47 +142,37 @@ static vec3_t get_position
 
     if ((flags & LABEL_POS_TOP) != 0) {
         position.y += 350;
-        *origin = FONT_TOP_LEFT;
+        *origin = (warp_font_alignment_t) (WARP_FONT_ALIGN_TOP | WARP_FONT_ALIGN_LEFT);
     }
     if ((flags & LABEL_POS_BOTTOM) != 0) {
         position.y -= 350 - font_size;
-        *origin = FONT_CENTER;
+        *origin = WARP_FONT_ALIGN_CENTER;
     }
     if ((flags & LABEL_POS_LEFT) != 0) {
         position.x -= 460;
-        *origin = FONT_TOP_LEFT;
+        *origin = (warp_font_alignment_t) (WARP_FONT_ALIGN_TOP | WARP_FONT_ALIGN_LEFT);
     }
     if ((flags & LABEL_POS_RIGHT) != 0) {
         position.x += 360;
-        *origin = FONT_TOP_LEFT;
+        *origin = (warp_font_alignment_t) (WARP_FONT_ALIGN_TOP | WARP_FONT_ALIGN_LEFT);
     }
 
     return position;
 }
 
-static float get_size(label_flags_t flags) {
-    float size = (flags & LABEL_LARGE) != 0 ? 64 : 32;
-    if ((flags & LABEL_PASS_MAIN) != 0) {
-        size /= 64 * 1.4f;
-    }
-    return size;
-}
-
-extern maybe_t<entity_t *> create_label
-        (world_t *world, const font_t &font, label_flags_t flags) {
-    font_origin_pos_t origin = FONT_CENTER;
-    const float size = get_size(flags);
-    const vec3_t position = get_position(flags, &origin, size);
+extern entity_t *create_label
+        (world_t *world, const warp_font_t *font, label_flags_t flags) {
+    warp_font_alignment_t align = WARP_FONT_ALIGN_CENTER;
+    const vec3_t position = get_position(flags, &align, font->line_height);
 
     graphics_comp_t *graphics = world->create_graphics();
-    const tag_t pass = (flags & LABEL_PASS_MAIN) != 0 ? "main" : "ui";
+    const warp_tag_t pass = WARP_TAG((flags & LABEL_PASS_MAIN) != 0 ? "main" : "ui");
     graphics->remove_pass_tags();
     graphics->add_pass_tag(pass);
 
     controller_comp_t *controller = world->create_controller();
     
-    label_controller_t *label_ctrl
-        = new label_controller_t(font, size, origin);
+    label_controller_t *label_ctrl = new label_controller_t(font, align);
     controller->initialize(label_ctrl);
 
     return world->create_entity(position, graphics, nullptr, controller);
@@ -229,7 +195,7 @@ class shrink_controller_t final : public controller_impl_i {
             , _state(SHRINK_GROWING)
         { }
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -307,7 +273,7 @@ class ballon_controller_t final : public controller_impl_i {
             , _acceleration(acceleration)
         { }
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -333,28 +299,24 @@ class ballon_controller_t final : public controller_impl_i {
         float _acceleration;
 };
 
-maybe_t<entity_t *> create_speech_bubble
-        ( world_t *world, const font_t &font
-        , vec3_t position, const std::string &text
+entity_t *create_speech_bubble
+        ( world_t *world, const warp_font_t *font
+        , vec3_t position, const char *text
         ) {
-    const label_flags_t flags = LABEL_PASS_MAIN;
-    font_origin_pos_t origin = FONT_CENTER;
-    const float size = get_size(flags);
+    warp_font_alignment_t align = WARP_FONT_ALIGN_CENTER;
 
     graphics_comp_t *graphics = world->create_graphics();
     mesh_manager_t *meshes = world->get_resources().meshes;
-    meshes->add_mesh("speech.obj").with_value([graphics](mesh_id_t id) {
-        float trans[16]; mat4_fill_translation(trans, vec3(0, 0, -0.05f));
-        model_t model;
-        model.initialize(id, 0);
-        model.change_local_transforms(trans);
-        graphics->add_model(model);
-    });
+    const mesh_id_t id = meshes->add_mesh("speech.obj");
+    float trans[16]; mat4_fill_translation(trans, vec3(0, 0, -0.05f));
+    model_t model;
+    model.initialize(id, 0);
+    model.change_local_transforms(trans);
+    graphics->add_model(model);
 
     controller_comp_t *controller = world->create_controller();
     
-    label_controller_t *label_ctrl
-        = new label_controller_t(font, size, origin);
+    label_controller_t *label_ctrl = new label_controller_t(font, align);
     controller->initialize(label_ctrl);
     controller->add_controller(new shrink_controller_t);
     controller->add_controller(new ballon_controller_t(0.5f, -0.1f));

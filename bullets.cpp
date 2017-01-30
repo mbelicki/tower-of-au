@@ -1,6 +1,7 @@
+#define WARP_DROP_PREFIX
 #include "bullets.h"
 
-#include "warp/mat4.h"
+#include "warp/math/mat4.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/textures.h"
@@ -18,7 +19,7 @@ class bullet_controller_t final : public controller_impl_i {
             : _level(level)
         { }
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -41,7 +42,7 @@ class bullet_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             messagetype_t type = message.type;
             if (type == MSG_PHYSICS_COLLISION_DETECTED) {
-                entity_t *other = VALUE(message.data.get_entity());
+                entity_t *other = message.data.get_entity();
                 _world->broadcast_message(CORE_BULLET_HIT, other->get_position());
                 _world->destroy_later(_owner);
             }
@@ -54,21 +55,13 @@ class bullet_controller_t final : public controller_impl_i {
         const level_t *_level;
 };
 
-maybeunit_t bullet_factory_t::initialize() {
+void bullet_factory_t::initialize() {
     mesh_manager_t *meshes  = _world->get_resources().meshes;
 
-    maybe_t<mesh_id_t> mesh_id = meshes->add_mesh("arrow.obj");
-    MAYBE_RETURN(mesh_id, unit_t, "Failed to create mesh:");
-
-    maybe_t<mesh_id_t> arrow_mesh_id = meshes->add_mesh("arrow.obj");
-    MAYBE_RETURN(arrow_mesh_id, unit_t, "Failed to create arror mesh:");
-
-    _mesh_id = VALUE(mesh_id);
-    _arrow_mesh_id = VALUE(arrow_mesh_id);
+    _mesh_id = meshes->add_mesh("arrow.obj");
+    _arrow_mesh_id = meshes->add_mesh("arrow.obj");
 
     _initialized = true;
-    
-    return unit;
 }
 
 static const char *get_texture_name(bullet_type_t type) {
@@ -86,25 +79,24 @@ static const char *get_texture_name(bullet_type_t type) {
     //}
 }
 
-maybe_t<entity_t *> bullet_factory_t::create_bullet
+entity_t *bullet_factory_t::create_bullet
         ( vec3_t position, vec3_t velocity, bullet_type_t type
         , const level_t *level
         ) {
     if (_initialized == false) {
-        return nothing<entity_t *>("Not initialized.");
+        warp_log_e("Bullet factory not initialized.");
+        return NULL;
     }
 
     const char *tex_name = get_texture_name(type);
-    maybe_t<tex_id_t> tex_id
-        = _world->get_resources().textures->add_texture(tex_name);
-    MAYBE_RETURN(tex_id, entity_t *, "Failed to load bullet texture:");
+    const tex_id_t tex_id = _world->get_resources().textures->add_texture(tex_name);
 
     model_t model;
     if (type == BULLET_ARROW) {
-        model.initialize(_arrow_mesh_id, VALUE(tex_id));
+        model.initialize(_arrow_mesh_id, tex_id);
         position.y += 0.3f;
     } else {
-        model.initialize(_mesh_id, VALUE(tex_id));
+        model.initialize(_mesh_id, tex_id);
         float transforms[16];
         mat4_fill_translation(transforms, vec3(0, 0.3f, 0));
         model.change_local_transforms(transforms);
@@ -114,8 +106,8 @@ maybe_t<entity_t *> bullet_factory_t::create_bullet
     graphics->add_model(model);
 
     physics_comp_t *physics = _world->create_physics();
-    physics->_bounds = rectangle_t(vec2(0, 0), vec2(0.2f, 0.2f));
-    physics->_velocity = vec2(velocity.x, velocity.z);
+    physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(0.2f, 0.2f, 0.2f));
+    physics->_velocity = vec3(velocity.x, 0, velocity.z);
 
     controller_comp_t *controller = _world->create_controller();
     controller->initialize(new bullet_controller_t(level));
@@ -125,14 +117,15 @@ maybe_t<entity_t *> bullet_factory_t::create_bullet
         _world->destroy_graphics(graphics);
         _world->destroy_physics(physics);
         _world->destroy_controller(controller);
-        return nothing<entity_t *>("Failed to create entity.");
+        warp_log_e("Failed to create bullet.");
+        return NULL;
     }
 
-    entity->set_tag("bullet");
+    entity->set_tag(WARP_TAG("bullet"));
 
     if (type == BULLET_ARROW) {
         const vec3_t v = vec3_normalize(velocity);
-        quaternion_t quat = quat_from_direction(v, vec3(0, 1, 0), vec3(v.z, 0, -v.x));
+        quat_t quat = quat_from_direction(v, vec3(0, 1, 0), vec3(v.z, 0, -v.x));
         entity->receive_message(MSG_PHYSICS_ROTATE, quat);
     }
     

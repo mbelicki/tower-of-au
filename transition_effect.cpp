@@ -1,6 +1,8 @@
+#define WARP_DROP_PREFIX
 #include "transition_effect.h"
 
-#include "warp/mat4.h"
+#include "warp/math/mat4.h"
+#include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/mesh.h"
@@ -47,7 +49,7 @@ class fade_circle_controller_t final : public controller_impl_i {
               , _mesh_id(0)
         {}
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -76,17 +78,16 @@ class fade_circle_controller_t final : public controller_impl_i {
 
         void recreate_mesh(float k) {
             const size_t count = CIRCLE_SIDES * 6;
-            std::unique_ptr<vertex_t[]> vertices(new vertex_t [count]);
+            vertex_t *vertices = (vertex_t *) malloc(count * sizeof *vertices);
 
-            tessellate(vertices.get(), _out_radius, k * _out_radius);
+            tessellate(vertices, _out_radius, k * _out_radius);
             
-            maybeunit_t result = unit;
             if (_mesh_id == 0) {
-                result = add_new_mesh(std::move(vertices), count);
+                add_new_mesh(vertices, count);
             } else {
-                result = mutate_mesh(std::move(vertices), count);
+                mutate_mesh(vertices, count);
             }
-            result.log_failure("Failed to recreate text mesh");
+            free(vertices);
         }
 
     private:
@@ -99,15 +100,10 @@ class fade_circle_controller_t final : public controller_impl_i {
         bool _fade_in;
         mesh_id_t _mesh_id;
 
-        maybeunit_t add_new_mesh
-                (std::unique_ptr<vertex_t[]> vertices, size_t count) {
+        void add_new_mesh(vertex_t *vertices, size_t count) {
             mesh_manager_t *meshes = _world->get_resources().meshes;
 
-            maybe_t<mesh_id_t> maybe_id
-                = meshes->add_mesh_from_buffer(vertices.get(), count);
-            MAYBE_RETURN(maybe_id, unit_t, "Adding mesh failed:")
-
-            _mesh_id = VALUE(maybe_id);
+            _mesh_id  = meshes->add_mesh_from_buffer(vertices, count);
             meshes->load_single(_mesh_id); /* force VBO creation */
 
             model_t *model = new model_t; /* TODO: oh hello, memory leaks */
@@ -115,22 +111,15 @@ class fade_circle_controller_t final : public controller_impl_i {
             model->set_color(vec4(0, 0, 0, 1));
             
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, model);
-            return unit;
         }
 
-        maybeunit_t mutate_mesh
-                (std::unique_ptr<vertex_t[]> vertices, size_t count) {
+        void mutate_mesh(vertex_t *vertices, size_t count) {
             mesh_manager_t *meshes = _world->get_resources().meshes;
-
-            maybeunit_t mutation_result
-                = meshes->mutate_mesh(_mesh_id, vertices.get(), count);
-            MAYBE_RETURN(mutation_result, unit_t, "Failed to mutate mesh:");
-
-            return unit;
+            meshes->mutate_mesh(_mesh_id, vertices, count);
         }
 };
 
-maybe_t<entity_t *> create_fade_circle
+entity_t *create_fade_circle
         (world_t *world, float out_radius, float duration, bool closing) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize
@@ -138,11 +127,10 @@ maybe_t<entity_t *> create_fade_circle
 
     graphics_comp_t *graphics = world->create_graphics();
     graphics->remove_pass_tags();
-    graphics->add_pass_tag("ui");
+    graphics->add_pass_tag(WARP_TAG("ui"));
 
-    entity_t *entity
-        = world->create_entity(vec3(0, 0, 0), graphics, nullptr, controller);
-    entity->set_tag("fade_circle");
+    entity_t *entity = world->create_entity(vec3(0, 0, 0), graphics, NULL, controller);
+    entity->set_tag(WARP_TAG("fade_circle"));
 
     return entity;
 }

@@ -1,5 +1,7 @@
+#define WARP_DROP_PREFIX
 #include "button.h"
 
+#include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
@@ -23,7 +25,7 @@ class button_controller_t final : public controller_impl_i {
             , _timer(0)
         {}
 
-        dynval_t get_property(const tag_t &) const override {
+        dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
         }
 
@@ -59,7 +61,7 @@ class button_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == MSG_INPUT_GESTURE_DETECTED) {
-                const gesture_t g = VALUE(message.data.get_gesture());
+                const gesture_t g = message.data.get_gesture();
                 if (g.kind == GESTURE_TAP 
                         && is_touching_button(g.final_position)) {
                     _handler();
@@ -86,24 +88,14 @@ extern controller_comp_t *create_button_controller
     return controller;
 }
 
-static maybeunit_t fill_texured_quad
-        ( model_t * const model, const resources_t &resources
-        , const vec2_t size, const char * const texture_name
-        ) {
-    mesh_manager_t * const meshes = resources.meshes;
-    texture_manager_t * const textures = resources.textures;
-    
-    maybe_t<mesh_id_t> maybe_quad_id
-        = meshes->generate_xy_quad_mesh(vec2(0, 0), size);
-    MAYBE_RETURN(maybe_quad_id, unit_t, "Failed to get mesh:");
-    mesh_id_t mesh_id = VALUE(maybe_quad_id);
-
-    maybe_t<tex_id_t> maybe_tex_id = textures->add_texture(texture_name);
-    MAYBE_RETURN(maybe_tex_id, unit_t, "Failed to get texture:");
-    const tex_id_t tex_id = VALUE(maybe_tex_id);
+static void fill_texured_quad
+        (model_t *model, const resources_t &res, const vec2_t size, const char *texture_name) {
+    /* TODO: using texture_name as as generated mesh name, can fail in
+     * unexpected ways */
+    mesh_id_t mesh_id = res.meshes->generate_xy_quad_mesh(texture_name, vec2(0, 0), size);
+    tex_id_t tex_id = res.textures->add_texture(texture_name);
 
     model->initialize(mesh_id, tex_id);
-    return unit;
 }
 
 extern graphics_comp_t *create_button_graphics
@@ -111,37 +103,32 @@ extern graphics_comp_t *create_button_graphics
     const resources_t &res = world->get_resources();
 
     model_t model;
-    maybeunit_t maybe_filled = fill_texured_quad(&model, res, size, texture);
-    if (maybe_filled.failed()) {
-        maybe_filled.log_failure("Failed to create button graphics");
-        return nullptr;
-    }
-
+    fill_texured_quad(&model, res, size, texture);
     model.set_color(color);
 
     graphics_comp_t *graphics = world->create_graphics();
-    if (graphics == nullptr) {
+    if (graphics == NULL) {
         warp_log_e("Failed to create graphics");
-        return nullptr;
+        return NULL;
     }
 
     graphics->add_model(model);
     graphics->remove_pass_tags();
-    graphics->add_pass_tag("ui");
+    graphics->add_pass_tag(WARP_TAG("ui"));
     return graphics;
 }
 
 extern entity_t *create_ui_background(world_t *world, vec4_t color) {
     graphics_comp_t *graphics
         = create_button_graphics(world, vec2(1024, 800), "blank.png", color);
-    if (graphics == nullptr) {
+    if (graphics == NULL) {
         warp_log_e("Failed to create background graphics.");
-        return nullptr;
+        return NULL;
     }
 
     const vec3_t position = vec3(0, 0, -8);
     entity_t *entity = world->create_entity(position, graphics, nullptr, nullptr);
-    entity->set_tag("background");
+    entity->set_tag(WARP_TAG("background"));
     return entity;
 }
 
@@ -165,7 +152,7 @@ extern entity_t *create_button
 
     const vec3_t position = vec3(pos.x, pos.y, 8);
     entity_t *entity = world->create_entity(position, graphics, nullptr, controller);
-    entity->set_tag("button");
+    entity->set_tag(WARP_TAG("button"));
     return entity;
 }
 
@@ -187,24 +174,23 @@ extern entity_t *create_text_button
         return nullptr;
     }
 
-    font_t *font = get_default_font(world->get_resources());
+    warp_font_t *font = get_default_font();
     if (font == NULL) {
         warp_log_e("Failed to create text button, couldn't obtain font.");
-        return nullptr;
+        return NULL;
     }
 
     const float x = pos.x - size.x * 0.5f + 15;
     const float y = pos.y + size.y * 0.5f - 15;
 
-    entity_t *label = VALUE(create_label(world, *font, LABEL_POS_TOP | LABEL_POS_LEFT));
+    entity_t *label = create_label(world, font, LABEL_POS_TOP | LABEL_POS_LEFT);
     label->receive_message(MSG_PHYSICS_MOVE, vec3(x, y, 0));
     label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)text);
-    label->set_tag("button-label");
+    label->set_tag(WARP_TAG("button-label"));
 
     const vec3_t position = vec3(pos.x, pos.y, -2);
     entity_t *entity = world->create_entity(position, graphics, nullptr, controller);
-    entity->set_tag("text-button");
+    entity->set_tag(WARP_TAG("text-button"));
 
-    delete font;
     return entity;
 }

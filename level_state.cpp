@@ -1,3 +1,4 @@
+#define WARP_DROP_PREFIX
 #include "level_state.h"
 
 #include "warp/utils/log.h"
@@ -16,43 +17,42 @@ static physics_comp_t *create_object_physics(world_t *world, vec2_t size) {
     physics_comp_t *physics = world->create_physics();
     if (physics != nullptr) {
         physics->_flags = PHYSFLAGS_FIXED;
-        physics->_velocity = vec2(0, 0);
-        physics->_bounds = rectangle_t(vec2(0, 0), size);
+        physics->_velocity = vec3(0, 0, 0);
+        physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(size.x, 1, size.y));
     }
     return physics;
 }
 
 static entity_t *create_button_entity
         (vec3_t position, world_t *world) {
-    maybe_t<graphics_comp_t *> graphics
+    graphics_comp_t *graphics
         = create_single_model_graphics(world, "button.obj", "missing.png");
-
-    return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
+    return world->create_entity(position, graphics, NULL, NULL);
 }
 
 static entity_t *create_spikes_entity
         (vec3_t position, world_t *world) {
-    maybe_t<graphics_comp_t *> graphics
+    graphics_comp_t *graphics
         = create_single_model_graphics(world, "spikes.obj", "atlas.png");
-    return world->create_entity(position, VALUE(graphics), nullptr, nullptr);
+    return world->create_entity(position, graphics, NULL, NULL);
 }
 
 static entity_t *create_breakable_entity
         (vec3_t position, world_t *world) {
-    maybe_t<graphics_comp_t *> graphics
+    graphics_comp_t *graphics
         = create_single_model_graphics(world, "cracked_floor.obj", "atlas.png");
-    maybe_t<controller_comp_t *> controller = create_door_controller(world);
-    return world->create_entity(position, VALUE(graphics), nullptr, VALUE(controller));
+    controller_comp_t *controller = create_door_controller(world);
+    return world->create_entity(position, graphics, NULL, controller);
 }
 
 static entity_t *create_door_entity
         (vec3_t position, world_t *world) {
-    maybe_t<graphics_comp_t *> graphics
+    graphics_comp_t *graphics
         = create_single_model_graphics(world, "door.obj", "missing.png");
-    maybe_t<controller_comp_t *> controller = create_door_controller(world);
+    controller_comp_t *controller = create_door_controller(world);
     physics_comp_t *physics = create_object_physics(world, vec2(1.0f, 0.4f));
 
-    return world->create_entity(position, VALUE(graphics), physics, VALUE(controller));
+    return world->create_entity(position, graphics, physics, controller);
 }
 
 static feature_t *create_feature
@@ -76,7 +76,7 @@ static feature_t *create_feature
     feat->type = type;
     feat->target_id = target;
     feat->entity = entity;
-    feat->entity->set_tag("feature");
+    feat->entity->set_tag(WARP_TAG("feature"));
     feat->state = type == FEAT_SPIKES ? FSTATE_ACTIVE : FSTATE_INACTIVE;
 
     return feat;
@@ -114,7 +114,7 @@ level_state_t::~level_state_t() {
 }
 
 bool level_state_t::add_object
-        (const object_t &obj, const tag_t &def_name) {
+        (const object_t &obj, const warp_tag_t &def_name) {
     const size_t x = round(obj.position.x);
     const size_t z = round(obj.position.z);
     if (object_at(x, z) != nullptr) return false;
@@ -132,7 +132,7 @@ bool level_state_t::add_object
 }
 
 bool level_state_t::spawn_object
-        (tag_t name, vec3_t pos, warp_random_t *rand) {
+        (warp_tag_t name, vec3_t pos, warp_random_t *rand) {
     const size_t x = round(pos.x);
     const size_t z = round(pos.z);
     if (object_at(x, z) != nullptr) return false;
@@ -159,7 +159,7 @@ void level_state_t::set_object_flag(const object_t *obj, object_flags_t flag) {
     object->flags |= flag;
 }
 
-const object_t *level_state_t::object_at_position(warp::vec3_t pos) const {
+const object_t *level_state_t::object_at_position(vec3_t pos) const {
     const size_t x = round(pos.x);
     const size_t z = round(pos.z);
     return object_at(x, z);
@@ -206,10 +206,9 @@ bool level_state_t::can_move_to(vec3_t new_pos) const {
     const int x = round(new_pos.x);
     const int z = round(new_pos.z);
 
-    maybe_t<const tile_t *> maybe_tile = _level->get_tile_at(x, z);
-    if (maybe_tile.failed()) return true;
+    const tile_t *tile = _level->get_tile_at(x, z);
+    if (tile == NULL) return true;
 
-    const tile_t *tile = VALUE(maybe_tile);
     if (tile->is_walkable == false) return false;
 
     const object_t *object = object_at(x, z);
@@ -268,15 +267,14 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
 
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
-            const maybe_t<const tile_t *> maybe_tile
-                = level->get_tile_at(i, j);
-            if (maybe_tile.failed()) continue;
+            const tile_t * tile = level->get_tile_at(i, j);
+            if (tile == NULL) continue;
 
             const size_t id = i + _width * j;
-            const tile_t *tile = VALUE(maybe_tile);
             const feature_type_t feat_type = tile->feature;
 
-            if (tile->object_id != "" && tile->spawn_probablity > 0) {
+            if (warp_tag_equals_buffer(&tile->object_id, "") == false 
+                    && tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
@@ -316,7 +314,7 @@ void level_state_t::process_real_time_event(const rt_event_t &event) {
 
     _events.clear();
     if (event.type == RT_EVENT_BULETT_HIT) {
-        const vec3_t target_pos = VALUE(event.value.get_vec3());
+        const vec3_t target_pos = event.value.get_vec3();
         object_t *object = (object_t *)object_at_position(target_pos);
         handle_attack(object, nullptr);
     }
@@ -330,17 +328,17 @@ void level_state_t::clear() {
     _initialized = false;
 
     std::vector<entity_t *> buffer;
-    _world->find_all_entities("object", &buffer);
+    _world->find_all_entities(WARP_TAG("object"), &buffer);
     for (entity_t *npc : buffer) {
         _world->destroy_later(npc);
     }
     buffer.clear();
-    _world->find_all_entities("feature", &buffer);
+    _world->find_all_entities(WARP_TAG("feature"), &buffer);
     for (entity_t *feature : buffer) {
         _world->destroy_later(feature);
     }
     buffer.clear();
-    _world->find_all_entities("bullet", &buffer);
+    _world->find_all_entities(WARP_TAG("bullet"), &buffer);
     for (entity_t *bullet : buffer) {
         _world->destroy_later(bullet);
     }
@@ -389,18 +387,18 @@ void level_state_t::update_object
     
     const messagetype_t type = command.type;
     if (type == CORE_TRY_MOVE) {
-        move_dir_t dir = (move_dir_t)VALUE(command.data.get_int());
+        move_dir_t dir = (move_dir_t) command.data.get_int();
         const vec3_t pos = calculate_new_pos(object, dir);
         handle_move(object, pos);
     } else if (type == CORE_TRY_SHOOT) {
-        const move_dir_t direction = (move_dir_t) VALUE(command.data.get_int());
+        const move_dir_t direction = (move_dir_t) command.data.get_int();
         handle_shooting(object, get_move_direction(direction));
     } else {
         warp_log_e("Unsupported message type: %d.", (int)type);
     }
 }
 
-void level_state_t::handle_move(object_t *target, warp::vec3_t pos) {
+void level_state_t::handle_move(object_t *target, vec3_t pos) {
     if (target == nullptr) { 
         warp_log_e("Cannot handle move, null target.");
         return;
@@ -557,8 +555,7 @@ void level_state_t::change_button_state(feature_t *feat, feat_state_t state) {
     }
 }
 
-void level_state_t::move_object
-        (object_t *target, warp::vec3_t pos, bool immediate) {
+void level_state_t::move_object(object_t *target, vec3_t pos, bool immediate) {
     if (target == nullptr) {
         warp_log_e("Cannot handle move, null target.");
         return;
@@ -600,12 +597,11 @@ void level_state_t::move_object
             event_t event = {*target, EVENT_PLAYER_LEAVE};
             _events.push_back(event);
         } else {
-            _level->get_tile_at(x, z).with_value([this, target](const tile_t *tile) {
-                if (tile->is_stairs) { 
-                    event_t event = {*target, EVENT_PLAYER_ENTER_PORTAL};
-                    _events.push_back(event);
-                }
-            });
+            const tile_t *tile = _level->get_tile_at(x, z);
+            if (tile != NULL && tile->is_stairs) { 
+                event_t event = {*target, EVENT_PLAYER_ENTER_PORTAL};
+                _events.push_back(event);
+            }
         }
     }
 

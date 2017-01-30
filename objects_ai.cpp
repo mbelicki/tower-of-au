@@ -1,7 +1,9 @@
+#define WARP_DROP_PREFIX
 #include "objects_ai.h"
 
 #include "warp/direction.h"
-#include "warp/mathutils.h"
+#include "warp/utils/log.h"
+#include "warp/math/utils.h"
 
 #include "core.h"
 
@@ -26,7 +28,7 @@ static bool can_attack(const object_t *attacker, const object_t *target) {
     } else {
         const vec3_t in_front
             = vec3_add(attacker->position, dir_to_vec3(attacker->direction));
-        return vec3_eps_compare(in_front, target->position, 0.1f);
+        return vec3_eps_equals(in_front, target->position, 0.1f);
     }
 }
 

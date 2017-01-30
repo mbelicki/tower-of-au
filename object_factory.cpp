@@ -1,3 +1,4 @@
+#define WARP_DROP_PREFIX
 #include "object_factory.h"
 
 #include "warp/utils/io.h"
@@ -39,20 +40,18 @@ struct object_def_t {
 };
 
 static bool has_json_member(JSON_Object *obj, const char *member_name) {
-    return json_object_get_value(obj, member_name) != nullptr;
+    return json_object_get_value(obj, member_name) != NULL;
+}
+
+static void destroy_element(void *raw) {
+    object_def_t *def = (object_def_t *) raw;
+    warp_str_destroy(&def->mesh_name);
+    warp_str_destroy(&def->texture_name);
+    free(def);
 }
 
 object_factory_t::object_factory_t() {
-}
-
-object_factory_t::~object_factory_t() {
-    typedef std::map<tag_t, object_def_t *>::iterator map_it_t;
-    for (map_it_t it = _objects.begin(); it != _objects.end(); it++) {
-        object_def_t *def = it->second;
-        warp_str_destroy(&def->mesh_name);
-        warp_str_destroy(&def->texture_name);
-        delete def;
-    }
+    _objects = warp_map_create_typed(object_def_t, destroy_element);
 }
 
 static object_type_t parse_type(JSON_Object *obj) {
@@ -106,32 +105,33 @@ static void parse_graphics(object_def_t *def, JSON_Object *object) {
     const char *mesh_name = json_object_dotget_string(object, "graphics.mesh");
     const char *tex_name  = json_object_dotget_string(object, "graphics.texture");
     
-    def->mesh_name = warp_str_create(mesh_name == nullptr ? "npc.obj" : mesh_name);
-    def->texture_name = warp_str_create(tex_name == nullptr ? "missing.png" : tex_name);
+    def->mesh_name = warp_str_create(mesh_name == NULL ? "npc.obj" : mesh_name);
+    def->texture_name = warp_str_create(tex_name == NULL ? "missing.png" : tex_name);
 }
 
-static void parse_definition
-        (JSON_Object *object, std::map<tag_t, object_def_t *> *objects) {
-    if (json_object_get_value(object, "name") == nullptr) {
+static void parse_definition(JSON_Object *object, warp_map_t *objects) {
+    if (json_object_get_value(object, "name") == NULL) {
         warp_log_e("Failed to parse object definition, missing name.");
         return;
     }
 
-    const tag_t name = json_object_get_string(object, "name");
-    object_def_t *def = new object_def_t;
-    def->type          = parse_type(object);
-    def->movement_type = parse_movement(object);
-    def->health        = parse_int_property(object, "health", 1);
-    def->max_health    = parse_int_property(object, "max_health", def->health);
-    def->ammo          = parse_int_property(object, "ammo", 0);
-    def->can_shoot     = parse_bool_flag(object, "canShoot");
-    def->can_rotate    = parse_bool_flag(object, "canRotate");
-    def->can_push      = parse_bool_flag(object, "canPush");
-    def->is_player     = parse_bool_flag(object, "playerAvatar");
+    const warp_tag_t name = WARP_TAG(json_object_get_string(object, "name"));
+    object_def_t def;
+    def.type          = parse_type(object);
+    def.movement_type = parse_movement(object);
+    def.health        = parse_int_property(object, "health", 1);
+    def.max_health    = parse_int_property(object, "max_health", def.health);
+    def.ammo          = parse_int_property(object, "ammo", 0);
+    def.can_shoot     = parse_bool_flag(object, "canShoot");
+    def.can_rotate    = parse_bool_flag(object, "canRotate");
+    def.can_push      = parse_bool_flag(object, "canPush");
+    def.is_player     = parse_bool_flag(object, "playerAvatar");
     
-    parse_graphics(def, object);
+    parse_graphics(&def, object);
 
-    objects->insert(std::make_pair(name, def));
+    warp_log_d("obj: %s, mesh: %s", name.text, warp_str_value(&def.mesh_name));
+
+    warp_map_tag_insert(objects, name, &def);
 }
 
 bool object_factory_t::load_definitions(const char *filename) {
@@ -197,16 +197,19 @@ void object_factory_t::load_resources(const resources_t *res) {
     mesh_manager_t *meshes = res->meshes;
     texture_manager_t *textures = res->textures;
 
-    typedef std::map<tag_t, object_def_t *>::iterator map_it_t;
-    for (map_it_t it = _objects.begin(); it != _objects.end(); it++) {
-        const object_def_t *def = it->second;
-        meshes->add_mesh(warp_str_value(&def->mesh_name));
-        textures->add_texture(warp_str_value(&def->texture_name));
+    warp_map_it_t *it = warp_map_iterate(&_objects);
+    for (; it != NULL; it = warp_map_it_next(it, &_objects)) {
+        const object_def_t *def = (object_def_t *) warp_map_it_get(it);
+        const char *mesh = warp_str_value(&def->mesh_name); 
+        const char *tex  = warp_str_value(&def->texture_name); 
+        warp_log_d("obj: ??, mesh: %s, tex: %s", mesh, tex);
+        meshes->add_mesh(mesh);
+        textures->add_texture(tex);
     }
 }
 
 static dir_t random_direction(warp_random_t *rand) {
-    const dir_t directions[4] { 
+    const dir_t directions[4] {
         DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
     };
     return directions[warp_random_from_range(rand, 0, 3)];
@@ -255,18 +258,13 @@ static graphics_comp_t *create_graphics
         (world_t *world, const object_def_t *def) {
     const char *mesh_name = warp_str_value(&def->mesh_name);
     const char *tex_name = warp_str_value(&def->texture_name);
-
-    maybe_t<graphics_comp_t *> graphics
-        = create_single_model_graphics(world, mesh_name, tex_name);
-    return VALUE(graphics);
+    return create_single_model_graphics(world, mesh_name, tex_name);
 }
 
 static controller_comp_t *create_controller
         (world_t *world, const object_t *obj) {
     const bool confirm_moves = (obj->flags & FOBJ_PLAYER_AVATAR) != 0;
-    maybe_t<controller_comp_t *> controller
-        = create_character_controller(world, confirm_moves);
-    return VALUE(controller);
+    return create_character_controller(world, confirm_moves);
 }
 
 static physics_comp_t *create_physics(world_t *world, const object_t *obj) {
@@ -279,8 +277,8 @@ static physics_comp_t *create_physics(world_t *world, const object_t *obj) {
     physics_comp_t *physics = world->create_physics();
     if (physics != nullptr) {
         physics->_flags = PHYSFLAGS_FIXED;
-        physics->_velocity = vec2(0, 0);
-        physics->_bounds = rectangle_t(vec2(0, 0), size);
+        physics->_velocity = vec3(0, 0, 0);
+        physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(size.x, 1, size.y));
     }
 
     return physics;
@@ -294,7 +292,7 @@ static entity_t *create_entity
 
     entity_t *entity
         = world->create_entity(obj->position, graphics, physics, controller);
-    entity->set_tag(def->is_player ? "player" : "object");
+    entity->set_tag(WARP_TAG(def->is_player ? "player" : "object"));
     return entity;
 }
 
@@ -318,30 +316,26 @@ static object_t *evaluate_definition
 }
 
 entity_t *object_factory_t::create_object_entity
-            (const object_t *obj, const tag_t &def_name, world_t *world) {
+            (const object_t *obj, const warp_tag_t &def_name, world_t *world) {
     const object_def_t *def = get_definition(def_name);
-    if (def == nullptr) {
-        warp_log_e("Couldn't find definition for object: %s.", def_name.get_text());
-        return nullptr;
+    if (def == NULL) {
+        warp_log_e("Couldn't find definition for object: %s.", def_name.text);
+        return NULL;
     }
     return create_entity(world, def, obj);
 }
 
 object_t *object_factory_t::spawn
-        (tag_t name, vec3_t pos, dir_t dir, warp_random_t *rand, world_t *world) {
+        (warp_tag_t name, vec3_t pos, dir_t dir, warp_random_t *rand, world_t *world) {
     const object_def_t *def = get_definition(name);
-    if (def == nullptr) {
-        warp_log_e("Couldn't find definition for object: %s.", name.get_text());
-        return nullptr;
+    if (def == NULL) {
+        warp_log_e("Couldn't find definition for object: %s.", name.text);
+        return NULL;
     }
     return evaluate_definition(def, pos, dir, rand, world);
 }
 
-const object_def_t *object_factory_t::get_definition(tag_t name) {
-    const std::map<warp::tag_t, object_def_t *>::iterator it = _objects.find(name);
-    if (it == _objects.end()) {
-        return nullptr;
-    }
-    return it->second;
+const object_def_t *object_factory_t::get_definition(warp_tag_t name) {
+    return (object_def_t *)warp_map_tag_get(&_objects, name);
 }
 
