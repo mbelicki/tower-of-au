@@ -29,25 +29,32 @@ static void reset_camera(world_t *world) {
         );
 }
 
-void level_transition_t::configure_renderer(renderer_t *render) {
-    if (_lighting == NULL) return;
-        
-    light_settings_t settings = *(render->get_light_settings());
-    settings.sun_color = _lighting->sun_color;
-    settings.sun_direction = _lighting->sun_direction;
-    settings.ambient_color = _lighting->ambient_color;
+void level_transition_t::configure_renderer(renderer_t *renderer) { 
+    _renderer = renderer;
+}
+
+static void setup_light(renderer_t *renderer, region_lighting_t *light) {
+    light_settings_t settings = *(renderer->get_light_settings());
+    settings.sun_color = light->sun_color;
+    settings.sun_direction = light->sun_direction;
+    settings.ambient_color = light->ambient_color;
     settings.shadow_map_center = vec3(6, 0, 5);
     settings.shadow_map_viewport_size = 15.0f;
-    render->set_light_settings(&settings);
+    renderer->set_light_settings(&settings);
 }
 
 bool level_transition_t::is_entity_kept(const entity_t *entity) const {
     return warp_tag_equals_buffer(&entity->get_tag(), "persistent_data");
 }
 
+static void preload_resoureces(const resources_t *res) {
+    texture_manager_t *textures = res->textures;
+    textures->add_texture("font.png");
+}
+
 void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
-    _lighting = NULL;
     reset_camera(world);
+    preload_resoureces(&world->get_resources());
 
     warp_font_t *font = get_default_font();
     if (font != NULL) {
@@ -90,7 +97,11 @@ void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
 
     const portal_t *portal = get_saved_portal(world);
     entity_t *core = create_core(world, portal);
-    _lighting = (region_lighting_t *) core->get_property(WARP_TAG("lighting")).get_pointer();
+    region_lighting_t *light
+        = (region_lighting_t *) core->get_property(WARP_TAG("lighting")).get_pointer();
+    if (_renderer != NULL) {
+        setup_light(_renderer, light);
+    }
 
     create_input_controller(world);
     create_fade_circle(world, 700, 1.2f, false);

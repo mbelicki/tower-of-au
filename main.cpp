@@ -49,11 +49,11 @@ static int initialize_and_run(bool launch_editor) {
         { WARP_TAG("level"), WARP_TAG("editor-region-sel")
         , WARP_TAG("editor-region"), WARP_TAG("editor-level")
         };
-    warp::statemanager_t states(state_tags, 4);
-    states.insert_transition(WARP_TAG(START_STATE),         WARP_TAG("level"), start_level, false);
-    states.insert_transition(WARP_TAG("level"),             WARP_TAG("level"), start_level, false);
-    states.insert_transition(WARP_TAG(START_STATE),         WARP_TAG("editor-region-sel"), start_editor, false);
-    states.insert_transition(WARP_TAG("editor-region-sel"), WARP_TAG("editor-region"), edit_region, false);
+    warp::statemanager_t *states = new warp::statemanager_t(state_tags, 4);
+    states->insert_transition(WARP_TAG(START_STATE),         WARP_TAG("level"), start_level, false);
+    states->insert_transition(WARP_TAG("level"),             WARP_TAG("level"), start_level, false);
+    states->insert_transition(WARP_TAG(START_STATE),         WARP_TAG("editor-region-sel"), start_editor, false);
+    states->insert_transition(WARP_TAG("editor-region-sel"), WARP_TAG("editor-region"), edit_region, false);
     //states.insert_transition("level", END_STATE, end_level, false);
 
     warp::game_config_t config;
@@ -62,9 +62,13 @@ static int initialize_and_run(bool launch_editor) {
     config.max_entites_count = 512;
     config.window_name = APP_NAME;
     config.first_state = WARP_TAG(launch_editor ? "editor-region-sel" : "level");
+    config.vsync_enabled = true;
+    config.render_config.filter_textures = true;
+    config.render_config.multisample_shadows = true;
+    config.render_config.discard_invisible = true;
 
     warp::game_t *game = new warp::game_t;
-    warp_result_t init_result = game->initialize(config, &states);
+    warp_result_t init_result = game->initialize(config, states);
     if (WARP_FAILED(init_result)) {
         warp_result_log("Faile to initialize game", &init_result);
         warp_result_destory(&init_result);
