@@ -30,9 +30,10 @@ extern warp_font_t *get_default_font() {
 class label_controller_t final : public controller_impl_i {
     public:
         label_controller_t
-            (const warp_font_t *font, warp_font_alignment_t align)
+            (const warp_font_t *font, float scale, warp_font_alignment_t align)
               : _font(font)
               , _align(align)
+              , _scale(scale)
               , _mesh_id(0)
         {}
 
@@ -93,6 +94,7 @@ class label_controller_t final : public controller_impl_i {
         const warp_font_t *_font;
         
         warp_font_alignment_t _align;
+        float _scale;
         mesh_id_t _mesh_id;
         model_t *_model;
 
@@ -114,12 +116,12 @@ class label_controller_t final : public controller_impl_i {
             float transforms[16]; mat4_mul(transforms, rot_y, rot_z);
             mat4_fill_rotation_y(rot_y, PI * -0.5f);
             float final_trans[16]; mat4_mul(final_trans, transforms, rot_y);           
+            float scale[16]; mat4_fill_scale(scale, vec3(_scale, _scale, _scale));
+            mat4_mul(final_trans, final_trans, scale);
 
             _model->change_local_transforms(final_trans);
 
-            //_owner->receive_message(MSG_GRAPHICS_REMOVE_MODELS, 0);
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, _model);
-
             const vec3_t pos = _owner->get_position();
             _owner->receive_message(MSG_PHYSICS_MOVE, pos);
         }
@@ -128,7 +130,6 @@ class label_controller_t final : public controller_impl_i {
             mesh_manager_t *meshes = _world->get_resources().meshes;
             meshes->mutate_mesh(_mesh_id, vertices, count);
         }
-
 };
 
 static vec3_t get_position
@@ -172,7 +173,7 @@ extern entity_t *create_label
 
     controller_comp_t *controller = world->create_controller();
     
-    label_controller_t *label_ctrl = new label_controller_t(font, align);
+    label_controller_t *label_ctrl = new label_controller_t(font, 1, align);
     controller->initialize(label_ctrl);
 
     return world->create_entity(position, graphics, nullptr, controller);
@@ -316,7 +317,7 @@ entity_t *create_speech_bubble
 
     controller_comp_t *controller = world->create_controller();
     
-    label_controller_t *label_ctrl = new label_controller_t(font, align);
+    label_controller_t *label_ctrl = new label_controller_t(font, 0.008f, align);
     controller->initialize(label_ctrl);
     controller->add_controller(new shrink_controller_t);
     controller->add_controller(new ballon_controller_t(0.5f, -0.1f));
