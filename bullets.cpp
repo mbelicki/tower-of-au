@@ -42,7 +42,10 @@ class bullet_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             messagetype_t type = message.type;
             if (type == MSG_PHYSICS_COLLISION_DETECTED) {
-                entity_t *other = message.data.get_entity();
+                const int coll_id = message.data.get_int();
+                const collision_t *coll = _world->get_physics_collision(coll_id);
+                /* TODO: passing the position does not seem to be the best idea */
+                entity_t *other = coll->other;
                 _world->broadcast_message(CORE_BULLET_HIT, other->get_position());
                 _world->destroy_later(_owner);
             }
@@ -108,6 +111,7 @@ entity_t *bullet_factory_t::create_bullet
     physics_comp_t *physics = _world->create_physics();
     physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(0.2f, 0.2f, 0.2f));
     physics->_velocity = vec3(velocity.x, 0, velocity.z);
+    physics->_gravity_scale = 0;
 
     controller_comp_t *controller = _world->create_controller();
     controller->initialize(new bullet_controller_t(level));

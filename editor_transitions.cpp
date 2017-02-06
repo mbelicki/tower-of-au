@@ -54,6 +54,7 @@ static void find_all_regions(warp_array_t *regions) {
 }
 
 void enter_editor_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
+    world->get_resources().textures->add_texture("font.png");
     warp_font_t *font = get_default_font();
     if (font != NULL) {
         const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;
