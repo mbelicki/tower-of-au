@@ -430,7 +430,6 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "spawnRate" : 1.0,
                     "target" : { "x" : 6, "y" : 4}
                 },
                 {
@@ -438,7 +437,6 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "spawnRate" : 1.0,
                     "target" : { "x" : 2, "y" : 7}
                 },
                 {
@@ -446,7 +444,6 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "spawnRate" : 1.0,
                     "target" : { "x" : 2, "y" : 2}
                 },
                 {
@@ -454,7 +451,6 @@
                     "walkable" : true,
                     "graphics" : "floor",
                     "feature" : "FEAT_BUTTON",
-                    "spawnRate" : 1.0,
                     "target" : { "x" : 2, "y" : 1}
                 }
             ],

@@ -129,8 +129,6 @@ static void parse_definition(JSON_Object *object, warp_map_t *objects) {
     
     parse_graphics(&def, object);
 
-    warp_log_d("obj: %s, mesh: %s", name.text, warp_str_value(&def.mesh_name));
-
     warp_map_tag_insert(objects, name, &def);
 }
 
@@ -202,7 +200,6 @@ void object_factory_t::load_resources(const resources_t *res) {
         const object_def_t *def = (object_def_t *) warp_map_it_get(it);
         const char *mesh = warp_str_value(&def->mesh_name); 
         const char *tex  = warp_str_value(&def->texture_name); 
-        warp_log_d("obj: ??, mesh: %s, tex: %s", mesh, tex);
         meshes->add_mesh(mesh);
         textures->add_texture(tex);
     }

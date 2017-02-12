@@ -2,6 +2,7 @@
 #include "button.h"
 
 #include "warp/math/utils.h"
+#include "warp/math/mat4.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
@@ -90,12 +91,14 @@ extern controller_comp_t *create_button_controller
 
 static void fill_texured_quad
         (model_t *model, const resources_t &res, const vec2_t size, const char *texture_name) {
-    /* TODO: using texture_name as as generated mesh name, can fail in
-     * unexpected ways */
-    mesh_id_t mesh_id = res.meshes->generate_xy_quad_mesh(texture_name, vec2(0, 0), size);
+    mesh_id_t mesh_id = res.meshes->get_id_for_name("gen:unit-quad");
     tex_id_t tex_id = res.textures->add_texture(texture_name);
 
     model->initialize(mesh_id, tex_id);
+
+    float transforms[16];
+    mat4_fill_scale(transforms, vec3(size.x, size.y, 1));
+    model->change_local_transforms(transforms);
 }
 
 extern graphics_comp_t *create_button_graphics
