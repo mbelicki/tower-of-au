@@ -6,8 +6,6 @@
 #include "warp/entity.h"
 #include "warp/entity-helpers.h"
 #include "warp/utils/str.h"
-#include "warp/textures.h"
-#include "warp/meshmanager.h"
 
 #include "libs/parson/parson.h"
 
@@ -191,17 +189,14 @@ cleanup:
 }
 
 
-void object_factory_t::load_resources(const resources_t *res) {
-    mesh_manager_t *meshes = res->meshes;
-    texture_manager_t *textures = res->textures;
-
+void object_factory_t::load_resources(resources_t *res) {
     warp_map_it_t *it = warp_map_iterate(&_objects);
     for (; it != NULL; it = warp_map_it_next(it, &_objects)) {
         const object_def_t *def = (object_def_t *) warp_map_it_get(it);
         const char *mesh = warp_str_value(&def->mesh_name); 
         const char *tex  = warp_str_value(&def->texture_name); 
-        meshes->add_mesh(mesh);
-        textures->add_texture(tex);
+        resources_load(res, mesh);
+        resources_load(res, tex);
     }
 }
 
@@ -275,7 +270,7 @@ static physics_comp_t *create_physics(world_t *world, const object_t *obj) {
     if (physics != nullptr) {
         physics->_flags = PHYSFLAGS_FIXED;
         physics->_velocity = vec3(0, 0, 0);
-        physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(size.x, 1, size.y));
+        aabb_init(&physics->_bounds, vec3(0, 0, 0), vec3(size.x, 1, size.y));
     }
 
     return physics;

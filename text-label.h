@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-
 #include "warp/helpers.h"
 #include "warp/graphics/font.h"
 
@@ -9,7 +7,6 @@ namespace warp {
     class controller_impl_i;
     class entity_t;
     class world_t;
-    struct resources_t;
 }
 
 enum label_flags_t {

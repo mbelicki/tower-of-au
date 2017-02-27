@@ -18,7 +18,7 @@ static physics_comp_t *create_object_physics(world_t *world, vec2_t size) {
     if (physics != NULL) {
         physics->_flags = PHYSFLAGS_FIXED;
         physics->_velocity = vec3(0, 0, 0);
-        physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(size.x, 1, size.y));
+        aabb_init(&physics->_bounds, vec3(0, 0, 0), vec3(size.x, 1, size.y));
     }
     return physics;
 }
@@ -262,7 +262,7 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
     if (_object_factory == NULL) {
         _object_factory = new object_factory_t();
         _object_factory->load_definitions("objects.json");
-        _object_factory->load_resources(&_world->get_resources());
+        _object_factory->load_resources(_world->get_resources());
     }
 
     for (size_t i = 0; i < _width; i++) {
@@ -327,20 +327,13 @@ void level_state_t::clear() {
     }
     _initialized = false;
 
-    std::vector<entity_t *> buffer;
+    warp_array_t buffer = warp_array_create_typed(entity_t *, 16, NULL);
     _world->find_all_entities(WARP_TAG("object"), &buffer);
-    for (entity_t *npc : buffer) {
-        _world->destroy_later(npc);
-    }
-    buffer.clear();
     _world->find_all_entities(WARP_TAG("feature"), &buffer);
-    for (entity_t *feature : buffer) {
-        _world->destroy_later(feature);
-    }
-    buffer.clear();
     _world->find_all_entities(WARP_TAG("bullet"), &buffer);
-    for (entity_t *bullet : buffer) {
-        _world->destroy_later(bullet);
+    for (size_t i = 0; i < warp_array_get_size(&buffer); i++) {
+        entity_t *e = warp_array_get_value(entity_t *, &buffer, i);
+        _world->destroy_later(e);
     }
 
     const size_t count = _width * _height;
@@ -514,7 +507,7 @@ void level_state_t::handle_attack(object_t *target, object_t *attacker) {
     }
 }
 
-void level_state_t::handle_shooting(object_t *shooter, warp::dir_t dir) {
+void level_state_t::handle_shooting(object_t *shooter, warp_dir_t dir) {
     if (shooter == NULL) { 
         warp_log_e("Cannot handle shooting, null shooter.");
         return;

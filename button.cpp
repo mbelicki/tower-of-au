@@ -1,13 +1,13 @@
 #define WARP_DROP_PREFIX
 #include "button.h"
 
-#include "warp/math/utils.h"
-#include "warp/math/mat4.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
-#include "warp/textures.h"
 #include "warp/input.h"
+#include "warp/math/utils.h"
+#include "warp/math/mat4.h"
+#include "warp/resources/resources.h"
 
 #include "core.h"
 #include "text-label.h"
@@ -90,24 +90,24 @@ extern controller_comp_t *create_button_controller
 }
 
 static void fill_texured_quad
-        (model_t *model, const resources_t &res, const vec2_t size, const char *texture_name) {
-    mesh_id_t mesh_id = res.meshes->get_id_for_name("gen:unit-quad");
-    tex_id_t tex_id = res.textures->add_texture(texture_name);
+        (model_t *model, resources_t *res, const vec2_t size, const char *texture_name) {
+    const res_id_t mesh_id = resources_lookup(res, "gen:unit-quad");
+    const res_id_t tex_id = resources_load(res, texture_name);
 
-    model->initialize(mesh_id, tex_id);
+    model_init(model, mesh_id, tex_id);
 
     float transforms[16];
     mat4_fill_scale(transforms, vec3(size.x, size.y, 1));
-    model->change_local_transforms(transforms);
+    model_change_local_transforms(model, transforms);
 }
 
 extern graphics_comp_t *create_button_graphics
         (world_t *world, vec2_t size, const char *texture, vec4_t color) {
-    const resources_t &res = world->get_resources();
+    resources_t *res = world->get_resources();
 
     model_t model;
     fill_texured_quad(&model, res, size, texture);
-    model.set_color(color);
+    model.color = color;
 
     graphics_comp_t *graphics = world->create_graphics();
     if (graphics == NULL) {

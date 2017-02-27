@@ -1,12 +1,6 @@
 #define WARP_DROP_PREFIX
 #include "editor_transitions.h"
 
-#include "warp/math/utils.h"
-#include "warp/world.h"
-#include "warp/collections/array.h"
-#include "warp/utils/str.h"
-#include "warp/utils/io.h"
-
 #include "core.h"
 
 #include "button.h"
@@ -15,6 +9,12 @@
 
 #include "region.h"
 #include "level.h"
+
+#include "warp/math/utils.h"
+#include "warp/world.h"
+#include "warp/collections/array.h"
+#include "warp/utils/str.h"
+#include "warp/utils/io.h"
 
 using namespace warp;
 
@@ -54,7 +54,7 @@ static void find_all_regions(warp_array_t *regions) {
 }
 
 void enter_editor_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
-    world->get_resources().textures->add_texture("font.png");
+    resources_load(world->get_resources(), "font.png");
     warp_font_t *font = get_default_font();
     if (font != NULL) {
         const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;

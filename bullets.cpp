@@ -1,12 +1,9 @@
 #define WARP_DROP_PREFIX
 #include "bullets.h"
 
-#include "warp/math/mat4.h"
 #include "warp/world.h"
 #include "warp/entity.h"
-#include "warp/textures.h"
-#include "warp/meshmanager.h"
-#include "warp/geometry.h"
+#include "warp/math/mat4.h"
 
 #include "core.h"
 #include "level.h"
@@ -59,27 +56,15 @@ class bullet_controller_t final : public controller_impl_i {
 };
 
 void bullet_factory_t::initialize() {
-    mesh_manager_t *meshes  = _world->get_resources().meshes;
-
-    _mesh_id = meshes->add_mesh("arrow.obj");
-    _arrow_mesh_id = meshes->add_mesh("arrow.obj");
-
+    warp_resources_t *res  = _world->get_resources();
+    _mesh_id = warp_resources_load(res, "arrow.obj");
+    _tex_id  = warp_resources_lookup(res, "missing.png");
     _initialized = true;
 }
 
 static const char *get_texture_name(bullet_type_t type) {
     (void) type;
     return "missing.png";
-    //switch (type) {
-    //    case BULLET_MAGIC:
-    //        return "magic.png";
-    //    case BULLET_FIREBALL:
-    //        return "fireball.png";
-    //    case BULLET_ARROW:
-    //        return "arrow.png";
-    //    default:
-    //        return "missing.png";
-    //}
 }
 
 entity_t *bullet_factory_t::create_bullet
@@ -91,25 +76,15 @@ entity_t *bullet_factory_t::create_bullet
         return NULL;
     }
 
-    const char *tex_name = get_texture_name(type);
-    const tex_id_t tex_id = _world->get_resources().textures->add_texture(tex_name);
-
     model_t model;
-    if (type == BULLET_ARROW) {
-        model.initialize(_arrow_mesh_id, tex_id);
-        position.y += 0.3f;
-    } else {
-        model.initialize(_mesh_id, tex_id);
-        float transforms[16];
-        mat4_fill_translation(transforms, vec3(0, 0.3f, 0));
-        model.change_local_transforms(transforms);
-    }
+    model_init(&model, _mesh_id, _tex_id);
+    position.y += 0.3f;
 
     graphics_comp_t *graphics = _world->create_graphics();
     graphics->add_model(model);
 
     physics_comp_t *physics = _world->create_physics();
-    physics->_bounds = aa_box_t(vec3(0, 0, 0), vec3(0.2f, 0.2f, 0.2f));
+    aabb_init(&physics->_bounds, vec3(0, 0, 0), vec3(0.2f, 0.2f, 0.2f));
     physics->_velocity = vec3(velocity.x, 0, velocity.z);
     physics->_gravity_scale = 0;
 
@@ -117,7 +92,7 @@ entity_t *bullet_factory_t::create_bullet
     controller->initialize(new bullet_controller_t(level));
 
     entity_t *entity = _world->create_entity(position, graphics, physics, controller);
-    if (entity == nullptr) {
+    if (entity == NULL) {
         _world->destroy_graphics(graphics);
         _world->destroy_physics(physics);
         _world->destroy_controller(controller);

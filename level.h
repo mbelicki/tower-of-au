@@ -1,8 +1,8 @@
 #pragma once
 
-#include "warp/utils/tag.h"
 #include "warp/math/vec3.h"
-#include "warp/direction.h"
+#include "warp/utils/tag.h"
+#include "warp/utils/directions.h"
 
 #include "warp/utils/random.h"
 
@@ -27,7 +27,7 @@ struct tile_t {
 
     float spawn_probablity;
     warp_tag_t object_id;
-    warp::dir_t object_dir;
+    warp_dir_t object_dir;
 
     feature_type_t feature;
     size_t feat_target_id;
@@ -57,7 +57,7 @@ class level_t {
 
         bool scan_if_all
             ( std::function<bool(const tile_t *)> predicate
-            , size_t x, size_t y, warp::dir_t direction, size_t distance
+            , size_t x, size_t y, warp_dir_t direction, size_t distance
             ) const;
 
     private:

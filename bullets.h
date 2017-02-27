@@ -1,9 +1,8 @@
 #pragma once
 
-#include "warp/utils/result.h"
 #include "warp/math/vec3.h"
-#include "warp/textures.h"
-#include "warp/meshmanager.h"
+#include "warp/utils/result.h"
+#include "warp/resources/resources.h"
 
 class level_t;
 
@@ -35,8 +34,8 @@ class bullet_factory_t {
     private:
         bool _initialized;
 
-        warp::mesh_id_t _mesh_id;       
-        warp::mesh_id_t _arrow_mesh_id;       
+        warp_res_id_t _mesh_id; 
+        warp_res_id_t _tex_id; 
 
         warp::world_t *_world;
 };

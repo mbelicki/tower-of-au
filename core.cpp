@@ -10,7 +10,7 @@
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
-#include "warp/direction.h"
+#include "warp/utils/directions.h"
 #include "warp/entity-helpers.h"
 
 #include "warp/collections/array.h"

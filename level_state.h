@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "warp/math/vec3.h"
-#include "warp/direction.h"
+#include "warp/utils/directions.h"
 #include "warp/utils/random.h"
 
 #include "level.h"
@@ -41,7 +41,7 @@ struct object_t {
     warp::entity_t *entity;
 
     warp_vec3_t position;
-    warp::dir_t direction;
+    warp_dir_t direction;
 
     object_flags_t flags;
 
@@ -133,7 +133,7 @@ class level_state_t {
         void handle_picking_up(object_t *pick_up, object_t *character);
         void handle_interaction(object_t *terminal, object_t *character);
         void handle_attack(object_t *target, object_t *attacker);
-        void handle_shooting(object_t *shooter, warp::dir_t dir);
+        void handle_shooting(object_t *shooter, warp_dir_t dir);
 
         void change_button_state(feature_t *feat, feat_state_t state);
 

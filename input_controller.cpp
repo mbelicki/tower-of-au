@@ -3,14 +3,13 @@
 
 #include "warp/keycodes.h"
 
-#include "warp/math/utils.h"
+#include "warp/input.h"
 #include "warp/camera.h"
 #include "warp/cameras.h"
-#include "warp/input.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
-#include "warp/textures.h"
+#include "warp/math/utils.h"
 
 #include "core.h"
 #include "button.h"

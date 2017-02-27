@@ -7,7 +7,7 @@
 #include "warp/components.h"
 #include "warp/camera.h"
 #include "warp/cameras.h"
-#include "warp/direction.h"
+#include "warp/utils/directions.h"
 #include "warp/entity-helpers.h"
 
 #include "core.h"

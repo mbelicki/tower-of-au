@@ -4,9 +4,9 @@
 #include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
-#include "warp/meshbuilder.h"
-#include "warp/meshmanager.h"
-#include "warp/textures.h"
+#include "warp/graphics/model.h"
+#include "warp/graphics/mesh-builder.h"
+#include "warp/graphics/mesh-manager.h"
 #include "warp/components.h"
 
 #include "region.h"
@@ -62,7 +62,7 @@ bool level_t::is_point_walkable(const vec3_t point) const {
 bool level_t::scan_if_all
         ( std::function<bool(const tile_t *)> predicate
         , size_t initial_x, size_t initial_z
-        , warp::dir_t direction, size_t distance
+        , warp_dir_t direction, size_t distance
         ) const {
     const vec3_t dir = dir_to_vec3(direction);
     const int dx = round(dir.x);
@@ -83,18 +83,16 @@ bool level_t::scan_if_all
 }
 
 static void append_tile
-        ( meshbuilder_t *builder
-        , mesh_manager_t *meshes
+        ( mesh_builder_t *builder
+        , resources_t *res
         , const tile_t &tile
         , size_t x, size_t y
         , const region_t *owner
         ) {
     transforms_t transforms;
-    transforms.change_position(vec3(x, 0, y));
-    if (tile.is_stairs) {
-        transforms.change_rotation(quat_from_euler(0, PI, 0));
-    } else if (tile.is_walkable) {
-        transforms.change_rotation(quat_from_euler(0, PI, 0));
+    transforms_change_position(&transforms, vec3(x, 0, y));
+    if (tile.is_stairs || tile.is_walkable) {
+        transforms_change_rotation(&transforms, quat_from_euler(0, PI, 0));
     }
 
     const tile_graphics_t *graphics = owner->get_tile_graphics(tile.graphics_id);
@@ -103,8 +101,10 @@ static void append_tile
         return;
     }
     const char *mesh_name = warp_str_value(&graphics->mesh);
-    const mesh_id_t id = meshes->add_mesh(mesh_name);
-    builder->append_mesh(*meshes, id, transforms);
+    //const mesh_id_t id = meshes->add_mesh(mesh_name);
+    const res_id_t id = warp_resources_load(res, mesh_name);
+    //builder->append_mesh(*meshes, id, transforms);
+    mesh_builder_append(builder, id, &transforms);
 }
 
 void level_t::initialize(world_t *world, const region_t *owner) {
@@ -113,23 +113,26 @@ void level_t::initialize(world_t *world, const region_t *owner) {
         return;
     }
     
-    texture_manager_t *textures = world->get_resources().textures;
-    mesh_manager_t *meshes = world->get_resources().meshes;
-    meshbuilder_t builder;
+    resources_t *res = world->get_resources();
+    mesh_builder_t builder;
+    warp_mesh_builder_init(&builder, res);
 
     for (int j = _height - 1; j >= 0; j--) {
         for (int i = _width - 1; i >= 0; i--) {
             const size_t index = i + _width * j;
-            append_tile(&builder, meshes, _tiles[index], i, j, owner);
+            append_tile(&builder, res, _tiles[index], i, j, owner);
         }
     }
 
-    const mesh_id_t mesh_id = meshes->add_mesh_from_builder(builder);
-    const tex_id_t tex_id = textures->add_texture("atlas.png");
+    warp_str_t name = warp_str_format("%s-%s", owner->name, this->name);
+    const res_id_t mesh_id = mesh_builder_create_resource(&builder, warp_str_value(&name));
+    const res_id_t tex_id  = resources_load(res, "atlas.png");
     graphics_comp_t *graphics = world->create_graphics();
 
+    warp_str_destroy(&name);
+
     model_t model;
-    model.initialize(mesh_id, tex_id);
+    model_init(&model, mesh_id, tex_id);
     
     graphics->add_model(model);
 
@@ -137,6 +140,7 @@ void level_t::initialize(world_t *world, const region_t *owner) {
     _entity->set_tag(WARP_TAG("level"));
     
     _initialized = true;
+    warp_mesh_builder_destroy(&builder);
 }
 
 static void fill_empty_room(tile_t *tiles, size_t width, size_t height) {
