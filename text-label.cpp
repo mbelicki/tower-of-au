@@ -5,8 +5,9 @@
 #include "warp/math/mat4.h"
 #include "warp/world.h"
 #include "warp/entity.h"
-#include "warp/mesh.h"
-#include "warp/textures.h"
+#include "warp/graphics/mesh.h"
+#include "warp/graphics/mesh-manager.h"
+#include "warp/graphics/texture-manager.h"
 
 #include "core.h"
 
@@ -26,6 +27,8 @@ extern warp_font_t *get_default_font() {
     warp_font_create_from_grid(32, 64, 512, 512, "font.png", font);
     return font;
 }
+
+static int label_mesh_id = 0;
 
 class label_controller_t final : public controller_impl_i {
     public:
@@ -95,21 +98,21 @@ class label_controller_t final : public controller_impl_i {
         
         warp_font_alignment_t _align;
         float _scale;
-        mesh_id_t _mesh_id;
+        res_id_t _mesh_id;
         model_t *_model;
 
         void add_new_mesh(vertex_t *vertices, size_t count) {
-            mesh_manager_t *meshes = _world->get_resources().meshes;
-            texture_manager_t *textures = _world->get_resources().textures;
+            resources_t *res = _world->get_resources();
 
-            _mesh_id = meshes->add_mesh_from_buffer(vertices, count);
-            meshes->load_single(_mesh_id); /* force VBO creation */
+            warp_str_t name = warp_str_format("label-%d", label_mesh_id++);
+            warp_mesh_resource_from_buffer(res, warp_str_value(&name), vertices, count);
+            warp_str_destroy(&name);
 
-            const tex_id_t tex_id
-                = textures->add_texture(warp_str_value(&_font->texture_name));
+            const res_id_t tex_id
+                = resources_lookup(res, warp_str_value(&_font->texture_name));
 
             _model = new model_t;
-            _model->initialize(_mesh_id, tex_id);
+            model_init(_model, _mesh_id, tex_id);
             
             float rot_z[16]; mat4_fill_rotation_z(rot_z, PI * 0.5f);
             float rot_y[16]; mat4_fill_rotation_y(rot_y, PI * 0.5f);
@@ -119,7 +122,7 @@ class label_controller_t final : public controller_impl_i {
             float scale[16]; mat4_fill_scale(scale, vec3(_scale, _scale, _scale));
             mat4_mul(final_trans, final_trans, scale);
 
-            _model->change_local_transforms(final_trans);
+            model_change_local_transforms(_model, final_trans);
 
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, _model);
             const vec3_t pos = _owner->get_position();
@@ -127,8 +130,8 @@ class label_controller_t final : public controller_impl_i {
         }
 
         void mutate_mesh(vertex_t *vertices, size_t count) {
-            mesh_manager_t *meshes = _world->get_resources().meshes;
-            meshes->mutate_mesh(_mesh_id, vertices, count);
+            resources_t *res = _world->get_resources();
+            warp_mesh_resource_mutate(res, _mesh_id, vertices, count);
         }
 };
 
@@ -307,12 +310,12 @@ entity_t *create_speech_bubble
     warp_font_alignment_t align = WARP_FONT_ALIGN_CENTER;
 
     graphics_comp_t *graphics = world->create_graphics();
-    mesh_manager_t *meshes = world->get_resources().meshes;
-    const mesh_id_t id = meshes->add_mesh("speech.obj");
+    resources_t *res = world->get_resources();
+    const res_id_t id = resources_load(res, "speech.obj");
     float trans[16]; mat4_fill_translation(trans, vec3(0, 0, -0.05f));
     model_t model;
-    model.initialize(id, 0);
-    model.change_local_transforms(trans);
+    model_init(&model, id, 0);
+    model_change_local_transforms(&model, trans);
     graphics->add_model(model);
 
     controller_comp_t *controller = world->create_controller();

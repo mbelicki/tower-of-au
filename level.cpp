@@ -101,11 +101,11 @@ static void append_tile
         return;
     }
     const char *mesh_name = warp_str_value(&graphics->mesh);
-    //const mesh_id_t id = meshes->add_mesh(mesh_name);
     const res_id_t id = warp_resources_load(res, mesh_name);
-    //builder->append_mesh(*meshes, id, transforms);
     mesh_builder_append(builder, id, &transforms);
 }
+
+static int level_mesh_numer = 0;
 
 void level_t::initialize(world_t *world, const region_t *owner) {
     if (_initialized) {
@@ -124,7 +124,7 @@ void level_t::initialize(world_t *world, const region_t *owner) {
         }
     }
 
-    warp_str_t name = warp_str_format("%s-%s", owner->name, this->name);
+    warp_str_t name = warp_str_format("level-%d", level_mesh_numer++);
     const res_id_t mesh_id = mesh_builder_create_resource(&builder, warp_str_value(&name));
     const res_id_t tex_id  = resources_load(res, "atlas.png");
     graphics_comp_t *graphics = world->create_graphics();

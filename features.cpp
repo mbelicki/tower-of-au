@@ -5,8 +5,6 @@
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
-#include "warp/camera.h"
-#include "warp/cameras.h"
 #include "warp/utils/directions.h"
 #include "warp/entity-helpers.h"
 

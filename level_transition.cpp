@@ -2,8 +2,6 @@
 #include "level_transition.h"
 
 #include "warp/world.h"
-#include "warp/cameras.h"
-#include "warp/camera.h"
 #include "warp/renderer.h"
 
 #include "level.h"
@@ -18,15 +16,18 @@
 using namespace warp;
 
 static void reset_camera(world_t *world) {
-    camera_manager_t *cameras = world->get_resources().cameras;
+    resources_t *res = world->get_resources();
+    const res_id_t id = resources_lookup(res, "cam:main");
+    const camera_t *cam = resources_get_camera(res, id);
+    const float ratio = cam->aspect;
 
-    const camera_t *main_camera = cameras->get_camera_for_tag(WARP_TAG("main"));
-    const float ratio = main_camera->get_aspect_ratio();
+    camera_t modified = *cam;
+    camera_init(&modified, WARP_PROJ_PERSP
+               , vec3(6, 10, 10.4f), quat_from_euler(0, 0, -1.12f)
+               , 0.44f, ratio, 7.0f, 19.0f
+               );
 
-    cameras->create_persp_camera
-        ( WARP_TAG("main"), vec3(6, 10, 10.4f), quat_from_euler(0, 0, -1.12f)
-        , 0.44f, ratio, 7.0f, 19.0f
-        );
+    camera_resource_change(res, id, &modified);
 }
 
 void level_transition_t::configure_renderer(renderer_t *renderer) { 
@@ -47,14 +48,13 @@ bool level_transition_t::is_entity_kept(const entity_t *entity) const {
     return warp_tag_equals_buffer(&entity->get_tag(), "persistent_data");
 }
 
-static void preload_resoureces(const resources_t *res) {
-    texture_manager_t *textures = res->textures;
-    textures->add_texture("font.png");
+static void preload_resoureces(resources_t *res) {
+    resources_load(res, "font.png");
 }
 
 void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
     reset_camera(world);
-    preload_resoureces(&world->get_resources());
+    preload_resoureces(world->get_resources());
 
     warp_font_t *font = get_default_font();
     if (font != NULL) {

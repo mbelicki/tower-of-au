@@ -4,8 +4,6 @@
 #include "warp/keycodes.h"
 
 #include "warp/input.h"
-#include "warp/camera.h"
-#include "warp/cameras.h"
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/components.h"
@@ -195,10 +193,10 @@ class input_controller_t final : public controller_impl_i {
             const vec3_t pos = vec3(6, 10, 10.4f);
             const vec3_t rot = vec3(1.12f + mod.y * 0.001f, 0, mod.x * 0.001f);
             const quat_t orientation =  quat_from_euler(rot.z, -rot.y, -rot.x);
-
-            camera_manager_t *cameras = _world->get_resources().cameras;
-            const camera_id_t id = cameras->get_id_for_tag(WARP_TAG("main"));
-            cameras->change_transforms(id, pos, orientation);
+            
+            resources_t *res = _world->get_resources();
+            const res_id_t id = resources_lookup(res, "cam:main");
+            warp_camera_resource_change_transfroms(res, id, pos, orientation);
         }
         
         void move(move_dir_t direction) {

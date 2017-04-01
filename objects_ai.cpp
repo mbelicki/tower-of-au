@@ -1,9 +1,9 @@
 #define WARP_DROP_PREFIX
 #include "objects_ai.h"
 
-#include "warp/direction.h"
 #include "warp/utils/log.h"
 #include "warp/math/utils.h"
+#include "warp/utils/directions.h"
 
 #include "core.h"
 

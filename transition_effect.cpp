@@ -5,8 +5,9 @@
 #include "warp/math/utils.h"
 #include "warp/world.h"
 #include "warp/entity.h"
-#include "warp/mesh.h"
-#include "warp/textures.h"
+#include "warp/graphics/mesh.h"
+#include "warp/graphics/mesh-manager.h"
+#include "warp/graphics/texture-manager.h"
 
 using namespace warp;
 
@@ -98,24 +99,23 @@ class fade_circle_controller_t final : public controller_impl_i {
         float _duration;
         float _timer;
         bool _fade_in;
-        mesh_id_t _mesh_id;
+        res_id_t _mesh_id;
 
         void add_new_mesh(vertex_t *vertices, size_t count) {
-            mesh_manager_t *meshes = _world->get_resources().meshes;
+            resources_t *res = _world->get_resources();
 
-            _mesh_id  = meshes->add_mesh_from_buffer(vertices, count);
-            meshes->load_single(_mesh_id); /* force VBO creation */
+            _mesh_id = warp_mesh_resource_from_buffer(res, "fader", vertices, count);
 
             model_t *model = new model_t; /* TODO: oh hello, memory leaks */
-            model->initialize(_mesh_id, 0);
-            model->set_color(vec4(0, 0, 0, 1));
+            model_init(model, _mesh_id, 0);
+            model->color = vec4(0, 0, 0, 1);
             
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, model);
         }
 
         void mutate_mesh(vertex_t *vertices, size_t count) {
-            mesh_manager_t *meshes = _world->get_resources().meshes;
-            meshes->mutate_mesh(_mesh_id, vertices, count);
+            resources_t *res = _world->get_resources();
+            warp_mesh_resource_mutate(res, _mesh_id, vertices, count);
         }
 };
 
