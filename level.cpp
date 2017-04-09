@@ -90,6 +90,7 @@ static void append_tile
         , const region_t *owner
         ) {
     transforms_t transforms;
+    transforms_init(&transforms);
     transforms_change_position(&transforms, vec3(x, 0, y));
     if (tile.is_stairs || tile.is_walkable) {
         transforms_change_rotation(&transforms, quat_from_euler(0, PI, 0));

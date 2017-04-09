@@ -105,7 +105,7 @@ class label_controller_t final : public controller_impl_i {
             resources_t *res = _world->get_resources();
 
             warp_str_t name = warp_str_format("label-%d", label_mesh_id++);
-            warp_mesh_resource_from_buffer(res, warp_str_value(&name), vertices, count);
+            _mesh_id = warp_mesh_resource_from_buffer(res, warp_str_value(&name), vertices, count);
             warp_str_destroy(&name);
 
             const res_id_t tex_id

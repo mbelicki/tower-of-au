@@ -31,6 +31,14 @@ static void generate_side
     buffer[3].position = vec3(cos2 * in_radius,  sin2 * in_radius,  8.0f);
     buffer[4].position = vec3(cos1 * in_radius,  sin1 * in_radius,  8.0f);
     buffer[5].position = vec3(cos1 * out_radius, sin1 * out_radius, 8.0f);
+
+    buffer[0].texcoords = vec2(0, 1);
+    buffer[1].texcoords = vec2(1, 1);
+    buffer[2].texcoords = vec2(0, 0);
+
+    buffer[3].texcoords = vec2(1, 1);
+    buffer[4].texcoords = vec2(1, 0);
+    buffer[5].texcoords = vec2(0, 0);
 }
 
 static void tessellate(vertex_t *buffer, float out_radius, float in_radius) {
@@ -101,16 +109,18 @@ class fade_circle_controller_t final : public controller_impl_i {
         bool _fade_in;
         res_id_t _mesh_id;
 
+        model_t _model;
+
         void add_new_mesh(vertex_t *vertices, size_t count) {
             resources_t *res = _world->get_resources();
 
             _mesh_id = warp_mesh_resource_from_buffer(res, "fader", vertices, count);
+            res_id_t tex_id = resources_lookup(res, "missing.png");
 
-            model_t *model = new model_t; /* TODO: oh hello, memory leaks */
-            model_init(model, _mesh_id, 0);
-            model->color = vec4(0, 0, 0, 1);
+            model_init(&_model, _mesh_id, tex_id);
+            _model.color = vec4(0, 0, 0, 1);
             
-            _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, model);
+            _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, &_model);
         }
 
         void mutate_mesh(vertex_t *vertices, size_t count) {

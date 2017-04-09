@@ -92,7 +92,7 @@ extern controller_comp_t *create_button_controller
 static void fill_texured_quad
         (model_t *model, resources_t *res, const vec2_t size, const char *texture_name) {
     const res_id_t mesh_id = resources_lookup(res, "gen:unit-quad");
-    const res_id_t tex_id = resources_load(res, texture_name);
+    const res_id_t tex_id  = resources_load(res, texture_name);
 
     model_init(model, mesh_id, tex_id);
 

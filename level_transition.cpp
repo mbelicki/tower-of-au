@@ -3,6 +3,7 @@
 
 #include "warp/world.h"
 #include "warp/renderer.h"
+#include "warp/entity-helpers.h"
 
 #include "level.h"
 #include "region.h"
@@ -18,6 +19,9 @@ using namespace warp;
 static void reset_camera(world_t *world) {
     resources_t *res = world->get_resources();
     const res_id_t id = resources_lookup(res, "cam:main");
+    if (id == WARP_RES_ID_INVALID) {
+        warp_critical("Failed to get main camera.");
+    }
     const camera_t *cam = resources_get_camera(res, id);
     const float ratio = cam->aspect;
 
@@ -50,6 +54,19 @@ bool level_transition_t::is_entity_kept(const entity_t *entity) const {
 
 static void preload_resoureces(resources_t *res) {
     resources_load(res, "font.png");
+}
+
+static entity_t *create_static_mesh
+        ( world_t *world
+        , const char *mesh, const char *tex
+        , vec3_t pos, quat_t rot
+        ) {
+    graphics_comp_t * graphics = create_single_model_graphics(world, mesh, tex);
+    graphics->remove_pass_tags();
+    graphics->add_pass_tag(WARP_TAG("ui"));
+    entity_t *entity = world->create_entity(pos, graphics, NULL, NULL);
+    entity->receive_message(MSG_PHYSICS_ROTATE, rot);
+    return entity;
 }
 
 void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
@@ -105,4 +122,9 @@ void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
 
     create_input_controller(world);
     create_fade_circle(world, 700, 1.2f, false);
+
+    create_static_mesh
+        ( world, "gen:unit-cube", "missing.png"
+        , vec3(0, 0, 0), quat_from_euler(0, 0, 0.4f)
+        );
 }
