@@ -66,6 +66,7 @@ static int initialize_and_run(bool launch_editor) {
     config.render_config.filter_textures = true;
     config.render_config.multisample_shadows = true;
     config.render_config.discard_invisible = true;
+    config.render_config.enable_alpha_blend_in_main = true;
     config.render_config.shadow_map_size = 1024;
 
     game_t *game = new game_t;

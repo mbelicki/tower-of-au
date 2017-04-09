@@ -311,10 +311,11 @@ entity_t *create_speech_bubble
 
     graphics_comp_t *graphics = world->create_graphics();
     resources_t *res = world->get_resources();
-    const res_id_t id = resources_load(res, "speech.obj");
+    const res_id_t mesh_id = resources_load(res, "speech.obj");
+    const res_id_t tex_id = resources_load(res, "blank.png");
     float trans[16]; mat4_fill_translation(trans, vec3(0, 0, -0.05f));
     model_t model;
-    model_init(&model, id, 0);
+    model_init(&model, mesh_id, tex_id);
     model_change_local_transforms(&model, trans);
     graphics->add_model(model);
 
