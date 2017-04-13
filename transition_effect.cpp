@@ -6,8 +6,7 @@
 #include "warp/world.h"
 #include "warp/entity.h"
 #include "warp/graphics/mesh.h"
-#include "warp/graphics/mesh-manager.h"
-#include "warp/graphics/texture-manager.h"
+#include "warp/graphics/mesh-loader.h"
 
 using namespace warp;
 

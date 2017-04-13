@@ -124,6 +124,13 @@
             "spawnRate" : 0.5
         },
         {
+            "symbol" : "F",
+            "walkable" : true,
+            "object" : "friend",
+            "graphics" : "grass",
+            "spawnRate" : 0.5
+        },
+        {
             "symbol" : "-",
             "walkable" : true,
             "graphics" : "grass",
@@ -242,7 +249,7 @@
                 "R #####    lH",
                 "R  #S#     gH",
                 "R           g",
-                "         #   ",
+                "        F#   ",
                 "             ",
                 "R            ",
                 "            L",

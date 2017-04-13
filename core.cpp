@@ -150,6 +150,9 @@ class core_controller_t final : public controller_impl_i {
                     warp_critical("Failed to spawn player avatar.");
                 }
                 player = _level_state->find_player();
+                if (player == NULL) {
+                    warp_critical("Failed to find player object on the level.");
+                }
                 save_player_state(_world, player);
                 _last_player_state = *player;
             } else {
@@ -368,6 +371,8 @@ class core_controller_t final : public controller_impl_i {
                             enable_shooting_controls();
                         }
                     }
+                } else if (type == EVENT_PLAYER_STARTED_CONVERSATION) {
+                    emit_speech(obj, "hello");
                 }
             }
 

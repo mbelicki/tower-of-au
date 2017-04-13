@@ -32,6 +32,7 @@ struct object_def_t {
     bool          can_rotate;
     bool          can_push;
     bool          is_player;
+    bool          is_friendly;
 
     warp_str_t    mesh_name;
     warp_str_t    texture_name;
@@ -124,6 +125,7 @@ static void parse_definition(JSON_Object *object, warp_map_t *objects) {
     def.can_rotate    = parse_bool_flag(object, "canRotate");
     def.can_push      = parse_bool_flag(object, "canPush");
     def.is_player     = parse_bool_flag(object, "playerAvatar");
+    def.is_friendly   = parse_bool_flag(object, "friendly");
     
     parse_graphics(&def, object);
 
@@ -241,6 +243,9 @@ static object_flags_t evaluate_flags(const object_def_t *def) {
     }
     if (def->is_player) {
         flags |= FOBJ_PLAYER_AVATAR;
+    }
+    if (def->is_friendly) {
+        flags |= FOBJ_FRIENDLY;
     }
     flags |= movement_to_flag(def->movement_type);
     return flags;

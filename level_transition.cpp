@@ -52,19 +52,6 @@ bool level_transition_t::is_entity_kept(const entity_t *entity) const {
     return warp_tag_equals_buffer(&entity->get_tag(), "persistent_data");
 }
 
-static entity_t *create_static_mesh
-        ( world_t *world
-        , const char *mesh, const char *tex
-        , vec3_t pos, quat_t rot
-        ) {
-    graphics_comp_t * graphics = create_single_model_graphics(world, mesh, tex);
-    graphics->remove_pass_tags();
-    graphics->add_pass_tag(WARP_TAG("ui"));
-    entity_t *entity = world->create_entity(pos, graphics, NULL, NULL);
-    entity->receive_message(MSG_PHYSICS_ROTATE, rot);
-    return entity;
-}
-
 void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
     reset_camera(world);
 
@@ -102,10 +89,6 @@ void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
     };
     create_button(world, vec2(410, 200), vec2(60, 60), reset_handler, "reset-button.png");
 
-    //entity_t *preview
-    //    = create_button(world, vec2(320, -220), vec2(256, 256), [](){}, "warp:shadow_map");
-    //preview->receive_message(MSG_PHYSICS_ROTATE, quat_from_euler(PI, 0, 0));
-
     const portal_t *portal = get_saved_portal(world);
     entity_t *core = create_core(world, portal);
     region_lighting_t *light
@@ -116,9 +99,4 @@ void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
 
     create_input_controller(world);
     create_fade_circle(world, 700, 1.2f, false);
-
-    create_static_mesh
-        ( world, "gen:unit-cube", "missing.png"
-        , vec3(0, 0, 0), quat_from_euler(0, 0, 0.4f)
-        );
 }

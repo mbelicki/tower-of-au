@@ -6,7 +6,7 @@
 #include "warp/entity.h"
 #include "warp/graphics/model.h"
 #include "warp/graphics/mesh-builder.h"
-#include "warp/graphics/mesh-manager.h"
+#include "warp/graphics/mesh-loader.h"
 #include "warp/components.h"
 
 #include "region.h"

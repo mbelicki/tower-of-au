@@ -91,6 +91,19 @@
             }
         },
         {
+            "name" : "friend",
+            "movementType" : "still",
+            "canRotate" : true,
+            "canPush" : false,
+            "type" : "character",
+            "friendly" : true,
+            "health" : 3,
+            "graphics" : {
+                "mesh" : "player.obj",
+                "texture" : "player.png"
+            }
+        },
+        {
             "name" : "hp-pickup",
             "type" : "pick-up",
             "health" : 1,

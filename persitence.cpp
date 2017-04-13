@@ -289,11 +289,10 @@ extern entity_t *get_persitent_data(world_t *world) {
 }
 
 extern entity_t *create_persitent_data(world_t *world) {
-    controller_comp_t *controller = world->create_controller();
-    controller->initialize(new persistence_controller_t);
+    controller_comp_t *ctrl = world->create_controller();
+    ctrl->initialize(new persistence_controller_t);
 
-    entity_t *entity
-        = world->create_entity(vec3(0, 0, 0), nullptr, nullptr, controller);
+    entity_t *entity = world->create_entity(vec3(0, 0, 0), NULL, NULL, ctrl);
     entity->set_tag(WARP_TAG("persistent_data"));
 
     return entity;

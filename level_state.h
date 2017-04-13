@@ -24,14 +24,15 @@ enum object_type_t {
 };
 
 enum object_flags_t {
-    FOBJ_NONE          =  0,
-    FOBJ_PLAYER_AVATAR =  1,
-    FOBJ_NPCMOVE_STILL =  2,
-    FOBJ_NPCMOVE_LINE  =  4,
-    FOBJ_NPCMOVE_ROAM  =  8,
-    FOBJ_CAN_SHOOT     = 16,
-    FOBJ_CAN_ROTATE    = 32,
-    FOBJ_CAN_PUSH      = 64,
+    FOBJ_NONE          =   0,
+    FOBJ_PLAYER_AVATAR =   1,
+    FOBJ_NPCMOVE_STILL =   2,
+    FOBJ_NPCMOVE_LINE  =   4,
+    FOBJ_NPCMOVE_ROAM  =   8,
+    FOBJ_CAN_SHOOT     =  16,
+    FOBJ_CAN_ROTATE    =  32,
+    FOBJ_CAN_PUSH      =  64,
+    FOBJ_FRIENDLY      = 128,
 };
 
 WARP_ENABLE_FLAGS(object_flags_t)
@@ -132,6 +133,7 @@ class level_state_t {
         void update_object(const object_t *obj, const warp::message_t &command);
         void handle_move(object_t *target, warp_vec3_t pos);
         void handle_picking_up(object_t *pick_up, object_t *character);
+        void handle_conversation(object_t *npc, object_t *player);
         void handle_interaction(object_t *terminal, object_t *character);
         void handle_attack(object_t *target, object_t *attacker);
         void handle_shooting(object_t *shooter, warp_dir_t dir);

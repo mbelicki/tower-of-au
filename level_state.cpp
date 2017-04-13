@@ -174,7 +174,7 @@ const object_t *level_state_t::find_player() const {
     const size_t count = _width * _height;
     for (size_t i = 0; i < count; i++) {
         const object_t *obj = _objects[i];
-        if (obj != NULL && (obj->flags & FOBJ_PLAYER_AVATAR) != 0) {
+        if (obj != NULL && (obj->flags & FOBJ_PLAYER_AVATAR)) {
             return obj;
         }
     }
@@ -400,14 +400,18 @@ void level_state_t::handle_move(object_t *target, vec3_t pos) {
     if (can_move_to(pos)) {
         move_object(target, pos, false);
     } else {
-        object_t *npc = (object_t *)object_at_position(pos);
-        if (npc != NULL) {
-            if (npc->type == OBJ_TERMINAL) {
-                handle_interaction(npc, target);
-            } else if (npc->type == OBJ_PICK_UP) {
-                handle_picking_up(npc, target);
+        object_t *obj = (object_t *)object_at_position(pos);
+        if (obj != NULL) {
+            const bool friendly = (target->flags & FOBJ_PLAYER_AVATAR) 
+                               && (obj->flags & FOBJ_FRIENDLY);
+            if (obj->type == OBJ_TERMINAL) {
+                handle_interaction(obj, target);
+            } else if (obj->type == OBJ_PICK_UP) {
+                handle_picking_up(obj, target);
+            } else if (friendly){
+                handle_conversation(obj, target);
             } else {
-                handle_attack(npc, target);
+                handle_attack(obj, target);
             }
         } else {
             target->entity->receive_message(CORE_DO_BOUNCE, pos);
@@ -445,6 +449,12 @@ void level_state_t::handle_picking_up
     move_object(character, pick_up_pos, false);
 }
 
+void level_state_t::handle_conversation(object_t *npc, object_t *player) {
+    (void)player;
+    event_t event = {*npc, EVENT_PLAYER_STARTED_CONVERSATION};
+    _events.push_back(event);
+}
+
 void level_state_t::handle_interaction
         (object_t *terminal, object_t *character) {
     if (character == NULL) { 
@@ -466,6 +476,10 @@ void level_state_t::handle_interaction
 void level_state_t::handle_attack(object_t *target, object_t *attacker) {
     if (target == NULL) { 
         warp_log_e("Cannot handle attack, null target.");
+        return;
+    }
+    if ((attacker->flags & FOBJ_FRIENDLY) 
+            && (target->flags & FOBJ_PLAYER_AVATAR)) {
         return;
     }
     const bool attacker_can_push
