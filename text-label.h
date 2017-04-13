@@ -24,12 +24,12 @@ enum label_flags_t {
 
 WARP_ENABLE_FLAGS(label_flags_t);
 
-warp_font_t *get_default_font();
+warp_res_id_t get_default_font(warp_resources_t *res);
 
 warp::entity_t * create_label
-        (warp::world_t *world, const warp_font_t *font, label_flags_t flags);
+    (warp::world_t *world, warp_res_id_t font, label_flags_t flags);
 
 warp::entity_t *create_speech_bubble
-        ( warp::world_t *world, const warp_font_t *font
-        , warp_vec3_t pos, const char *text
-        );
+    ( warp::world_t *world, warp_res_id_t font
+    , warp_vec3_t pos, const char *text
+    );

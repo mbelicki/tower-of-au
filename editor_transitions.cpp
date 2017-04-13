@@ -54,15 +54,12 @@ static void find_all_regions(warp_array_t *regions) {
 }
 
 void enter_editor_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
-    resources_load(world->get_resources(), "font.png");
-    warp_font_t *font = get_default_font();
-    if (font != NULL) {
-        const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;
-        entity_t *label = create_label(world, font, flags);
-        if (label != NULL) {
-            label->set_tag(WARP_TAG("title"));
-            label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)"select a region:");
-        }
+    res_id_t font = get_default_font(world->get_resources());
+    const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;
+    entity_t *label = create_label(world, font, flags);
+    if (label != NULL) {
+        label->set_tag(WARP_TAG("title"));
+        label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)"select a region:");
     }
 
     warp_array_t regions;
@@ -118,14 +115,12 @@ void edit_region_transition_t::initialize_state(const warp_tag_t &, world_t *wor
     const char *name = warp_str_value(&region_name);
     region_t *region = load_region(name);   
 
-    warp_font_t *font = get_default_font();
-    if (font != NULL) {
-        const label_flags_t flags = LABEL_POS_LEFT | LABEL_POS_TOP;
-        entity_t *label = create_label(world, font, flags);
-        if (label != NULL) {
-            label->set_tag(WARP_TAG("title"));
-            label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)name);
-        }
+    res_id_t font = get_default_font(world->get_resources());
+    const label_flags_t flags = LABEL_POS_LEFT | LABEL_POS_TOP;
+    entity_t *label = create_label(world, font, flags);
+    if (label != NULL) {
+        label->set_tag(WARP_TAG("title"));
+        label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)name);
     }
     
     create_level_list(world, region);

@@ -52,10 +52,6 @@ bool level_transition_t::is_entity_kept(const entity_t *entity) const {
     return warp_tag_equals_buffer(&entity->get_tag(), "persistent_data");
 }
 
-static void preload_resoureces(resources_t *res) {
-    resources_load(res, "font.png");
-}
-
 static entity_t *create_static_mesh
         ( world_t *world
         , const char *mesh, const char *tex
@@ -71,31 +67,29 @@ static entity_t *create_static_mesh
 
 void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
     reset_camera(world);
-    preload_resoureces(world->get_resources());
 
-    warp_font_t *font = get_default_font();
-    if (font != NULL) {
-        const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;
-        entity_t *hp = create_label(world, font, flags);
-        if (hp != NULL) {
-            hp->set_tag(WARP_TAG("health_label"));
-        }
+    const res_id_t font = get_default_font(world->get_resources());
 
-        entity_t *ammo = create_label(world, font, flags);
-        if (ammo == NULL) {
-            ammo->set_tag(WARP_TAG("ammo_label"));
-            const vec3_t pos = ammo->get_position();
-            ammo->receive_message(MSG_PHYSICS_MOVE, vec3_add(pos, vec3(0, -48, 0)));
-            ammo->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
-        }
+    const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;
+    entity_t *hp = create_label(world, font, flags);
+    if (hp != NULL) {
+        hp->set_tag(WARP_TAG("health_label"));
+    }
 
-        entity_t *diag = create_label(world, font, LABEL_POS_LEFT);
-        if (diag != NULL) {
-            diag->set_tag(WARP_TAG("diag_label"));
-            diag->receive_message(MSG_PHYSICS_MOVE, vec3(-340, 340, 8));
-            diag->receive_message(MSG_PHYSICS_SCALE, vec3(0.8f, 0.8f, 0.8f));
-            diag->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
-        }
+    entity_t *ammo = create_label(world, font, flags);
+    if (ammo == NULL) {
+        ammo->set_tag(WARP_TAG("ammo_label"));
+        const vec3_t pos = ammo->get_position();
+        ammo->receive_message(MSG_PHYSICS_MOVE, vec3_add(pos, vec3(0, -48, 0)));
+        ammo->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
+    }
+
+    entity_t *diag = create_label(world, font, LABEL_POS_LEFT);
+    if (diag != NULL) {
+        diag->set_tag(WARP_TAG("diag_label"));
+        diag->receive_message(MSG_PHYSICS_MOVE, vec3(-340, 340, 8));
+        diag->receive_message(MSG_PHYSICS_SCALE, vec3(0.8f, 0.8f, 0.8f));
+        diag->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
     }
 
     std::function<void(void)> restart_handler = [=]() {

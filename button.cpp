@@ -177,12 +177,7 @@ extern entity_t *create_text_button
         return nullptr;
     }
 
-    warp_font_t *font = get_default_font();
-    if (font == NULL) {
-        warp_log_e("Failed to create text button, couldn't obtain font.");
-        return NULL;
-    }
-
+    const res_id_t font = get_default_font(world->get_resources());
     const float x = pos.x - size.x * 0.5f + 15;
     const float y = pos.y + size.y * 0.5f - 15;
 

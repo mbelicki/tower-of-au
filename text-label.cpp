@@ -22,10 +22,8 @@ static const char *get_known_text(known_text_t id) {
     }
 }
 
-extern warp_font_t *get_default_font() {
-    warp_font_t *font = (warp_font_t *) malloc(sizeof *font);
-    warp_font_create_from_grid(32, 64, 512, 512, "font.png", font);
-    return font;
+extern warp_res_id_t get_default_font(resources_t *res) {
+    return resources_lookup(res, "gen:default-font");
 }
 
 static int label_mesh_id = 0;
@@ -33,7 +31,7 @@ static int label_mesh_id = 0;
 class label_controller_t final : public controller_impl_i {
     public:
         label_controller_t
-            (const warp_font_t *font, float scale, warp_font_alignment_t align)
+            (const res_id_t font, float scale, warp_font_alignment_t align)
               : _font(font)
               , _align(align)
               , _scale(scale)
@@ -73,11 +71,13 @@ class label_controller_t final : public controller_impl_i {
         }
 
         void recreate_text_mesh(const char *str) {
+            resources_t *res = _world->get_resources();
+            const font_t *font = resources_get_font(res, _font);
             warp_str_t text = WARP_STR(str);
-            const size_t count = warp_font_tesslated_buffer_size(_font, &text);
+            const size_t count = warp_font_tesslated_buffer_size(font, &text);
             vertex_t *vertices = (vertex_t *)malloc(count * sizeof *vertices);
 
-            warp_font_tesselate(_font, vertices, count, &text, _align);
+            warp_font_tesselate(font, vertices, count, &text, _align);
             warp_str_destroy(&text);
             
             if (_mesh_id == 0) {
@@ -94,7 +94,7 @@ class label_controller_t final : public controller_impl_i {
         world_t  *_world;
         entity_t *_owner;
 
-        const warp_font_t *_font;
+        const res_id_t _font;
         
         warp_font_alignment_t _align;
         float _scale;
@@ -103,16 +103,14 @@ class label_controller_t final : public controller_impl_i {
 
         void add_new_mesh(vertex_t *vertices, size_t count) {
             resources_t *res = _world->get_resources();
+            const font_t *font = resources_get_font(res, _font);
 
             warp_str_t name = warp_str_format("label-%d", label_mesh_id++);
             _mesh_id = warp_mesh_resource_from_buffer(res, warp_str_value(&name), vertices, count);
             warp_str_destroy(&name);
 
-            const res_id_t tex_id
-                = resources_lookup(res, warp_str_value(&_font->texture_name));
-
             _model = new model_t;
-            model_init(_model, _mesh_id, tex_id);
+            model_init(_model, _mesh_id, font->texture_id);
             
             float rot_z[16]; mat4_fill_rotation_z(rot_z, PI * 0.5f);
             float rot_y[16]; mat4_fill_rotation_y(rot_y, PI * 0.5f);
@@ -164,8 +162,9 @@ static vec3_t get_position
     return position;
 }
 
-extern entity_t *create_label
-        (world_t *world, const warp_font_t *font, label_flags_t flags) {
+extern entity_t *create_label(world_t *world, res_id_t font_id, label_flags_t flags) {
+    resources_t *res = world->get_resources();
+    const font_t *font = resources_get_font(res, font_id);
     warp_font_alignment_t align = WARP_FONT_ALIGN_CENTER;
     const vec3_t position = get_position(flags, &align, font->line_height);
 
@@ -176,7 +175,7 @@ extern entity_t *create_label
 
     controller_comp_t *controller = world->create_controller();
     
-    label_controller_t *label_ctrl = new label_controller_t(font, 1, align);
+    label_controller_t *label_ctrl = new label_controller_t(font_id, 1, align);
     controller->initialize(label_ctrl);
 
     return world->create_entity(position, graphics, nullptr, controller);
@@ -303,10 +302,8 @@ class ballon_controller_t final : public controller_impl_i {
         float _acceleration;
 };
 
-entity_t *create_speech_bubble
-        ( world_t *world, const warp_font_t *font
-        , vec3_t position, const char *text
-        ) {
+extern entity_t *create_speech_bubble
+        (world_t *world, res_id_t font, vec3_t position, const char *text) {
     warp_font_alignment_t align = WARP_FONT_ALIGN_CENTER;
 
     graphics_comp_t *graphics = world->create_graphics();

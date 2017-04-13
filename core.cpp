@@ -41,26 +41,25 @@ enum core_state_t {
     CSTATE_IDLE = 0,
     CSTATE_LEVEL_TRANSITION,
     CSTATE_REGION_TRANSITION,
+    CSTATE_CONVERSATION,
 };
 
 static void destroy_string(void *raw_str) {
     warp_str_destroy((warp_str_t *)raw_str);
 }
 
-/* TODO: move this to file */
 static warp_array_t create_pain_texts() {
+    const char *texts[] = {"ouch!", "argh!", "oww!", "au!", "uggh!", "agh!"};
+    const size_t count = sizeof texts / sizeof texts[0];
     warp_array_t array = warp_array_create_typed(warp_str_t, 16, destroy_string);
-    warp_array_append_value(warp_str_t, &array, warp_str_create("ouch!"));
-    warp_array_append_value(warp_str_t, &array, warp_str_create("argh!"));
-    warp_array_append_value(warp_str_t, &array, warp_str_create("oww!"));
-    warp_array_append_value(warp_str_t, &array, warp_str_create("au!"));
-    warp_array_append_value(warp_str_t, &array, warp_str_create("uggh!"));
-    warp_array_append_value(warp_str_t, &array, warp_str_create("agh!"));
+    for (size_t i = 0; i < count; i++) {
+        warp_array_append_value(warp_str_t, &array, WARP_STR(texts[i]));
+    }
     return array;
 }
 
 static bool is_idle(const object_t *object) {
-    if (object == nullptr) {
+    if (object == NULL) {
         warp_log_e("Cannot check if object is idle, object is null.");
         return false;
     }
@@ -71,23 +70,23 @@ static bool is_idle(const object_t *object) {
 class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(const portal_t *start)
-                : _owner(nullptr)
-                , _world(nullptr)
+                : _owner(NULL)
+                , _world(NULL)
                 , _portal(*start)
                 , _waiting_for_animation(false)
-                , _region(nullptr)
-                , _level(nullptr)
+                , _region(NULL)
+                , _level(NULL)
                 , _level_x(0), _level_z(0)
                 , _previous_level_x(0), _previous_level_z(0)
-                , _level_state(nullptr)
-                , _font(nullptr)
+                , _level_state(NULL)
+                , _font(WARP_RES_ID_INVALID)
                 , _state(CSTATE_IDLE)
                 , _transition_timer(0) 
                 , _pain_texts()
-                , _random(nullptr) 
+                , _random(NULL) 
                 , _diagnostics(false)
-                , _diag_label(nullptr)
-                , _diag_buffer(nullptr) {
+                , _diag_label(NULL)
+                , _diag_buffer(NULL) {
             _portal.region_name = warp_str_copy(&start->region_name);
             _pain_texts = create_pain_texts();
         }
@@ -95,9 +94,6 @@ class core_controller_t final : public controller_impl_i {
         ~core_controller_t() {
             delete _level_state;
             delete _region;
-
-            warp_font_destroy(_font);
-            free(_font);
 
             warp_str_destroy(&_portal.region_name);
             warp_array_destroy(&_pain_texts);
@@ -135,11 +131,7 @@ class core_controller_t final : public controller_impl_i {
                 warp_critical("Failed to get level font.");
             }
             
-            _font = get_default_font();
-            if (_font == NULL) {
-                warp_critical("Failed to get default font.");
-            }
-
+            _font = get_default_font(_world->get_resources());
             const size_t width  = _level->get_width();
             const size_t height = _level->get_height();
             _level_state = new level_state_t(_world, width, height);
@@ -152,7 +144,7 @@ class core_controller_t final : public controller_impl_i {
             const object_t *player = get_saved_player_state(_world);
             const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
             
-            if (player == nullptr || player->type == OBJ_NONE) {
+            if (player == NULL || player->type == OBJ_NONE) {
                 bool added = _level_state->spawn_object(WARP_TAG("player"), pos, _random);
                 if (added == false) {
                     warp_critical("Failed to spawn player avatar.");
@@ -283,7 +275,7 @@ class core_controller_t final : public controller_impl_i {
 
         level_state_t *_level_state;
 
-        warp_font_t *_font;
+        res_id_t _font;
 
         core_state_t _state;
         float _transition_timer;
@@ -299,18 +291,18 @@ class core_controller_t final : public controller_impl_i {
             _diagnostics = enable;
             _diag_label = _world->find_entity(WARP_TAG("diag_label"));
             _diag_label->receive_message(MSG_GRAPHICS_VISIBLITY, (int)enable);
-            if (_diag_buffer == nullptr) {
+            if (_diag_buffer == NULL) {
                 _diag_buffer = new char [1024];
             }
         }
 
         void update_diagnostics() {
-            if (_diagnostics == false || _diag_label == nullptr) return;
+            if (_diagnostics == false || _diag_label == NULL) return;
 
             size_t x = 0; 
             size_t z = 0; 
             const object_t *player = _level_state->find_player();
-            if (player != nullptr) {
+            if (player != NULL) {
                 x = round(player->position.x);
                 z = round(player->position.z);
             }
@@ -438,7 +430,7 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void change_region(const portal_t *portal, bool save_data) {
-            if (portal == nullptr) return;
+            if (portal == NULL) return;
 
             const float change_time = 2.0f;
             create_fade_circle(_world, 700, change_time, true);

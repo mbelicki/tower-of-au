@@ -77,6 +77,7 @@ enum event_type_t : int {
     EVENT_OBJECT_HURT,
     EVENT_OBJECT_KILLED,
     EVENT_PLAYER_ACTIVATED_TERMINAL,
+    EVENT_PLAYER_STARTED_CONVERSATION,
 };
 
 struct event_t {
