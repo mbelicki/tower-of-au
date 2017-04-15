@@ -161,20 +161,13 @@ extern entity_t *create_button
 
 extern entity_t *create_text_button
         ( world_t *world, vec2_t pos, vec2_t size
-        , std::function<void(void)> handler, const char *text
+        , std::function<void(void)> raw_handler, const char *text
         ) {
     graphics_comp_t *graphics
             = create_button_graphics(world, size, "blank.png", vec4(0.8f, 0.8f, 0.8f, 1));
-    if (graphics == nullptr) {
+    if (graphics == NULL) {
         warp_log_e("Failed to create button graphics.");
-        return nullptr;
-    }
-
-    controller_comp_t *controller
-        = create_button_controller(world, pos, size, handler);
-    if (graphics == nullptr) {
-        warp_log_e("Failed to create button controller.");
-        return nullptr;
+        return NULL;
     }
 
     const res_id_t font = get_default_font(world->get_resources());
@@ -182,12 +175,24 @@ extern entity_t *create_text_button
     const float y = pos.y + size.y * 0.5f - 15;
 
     entity_t *label = create_label(world, font, LABEL_POS_TOP | LABEL_POS_LEFT);
-    label->receive_message(MSG_PHYSICS_MOVE, vec3(x, y, 0));
+    label->receive_message(MSG_PHYSICS_MOVE, vec3(x, y, 2));
     label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)text);
     label->set_tag(WARP_TAG("button-label"));
 
-    const vec3_t position = vec3(pos.x, pos.y, -2);
-    entity_t *entity = world->create_entity(position, graphics, nullptr, controller);
+    std::function<void(void)> handler = [=]() {
+        world->destroy_later(label);
+        raw_handler();
+    };
+
+    controller_comp_t *controller
+        = create_button_controller(world, pos, size, handler);
+    if (controller == NULL) {
+        warp_log_e("Failed to create button controller.");
+        return NULL;
+    }
+
+    const vec3_t position = vec3(pos.x, pos.y, 1);
+    entity_t *entity = world->create_entity(position, graphics, NULL, controller);
     entity->set_tag(WARP_TAG("text-button"));
 
     return entity;

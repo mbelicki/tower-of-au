@@ -69,7 +69,7 @@ class fade_circle_controller_t final : public controller_impl_i {
         }
 
         void update(float dt, const input_t &) override { 
-            if (_timer <= 0) {
+            if (_timer <= 0 && _fade_in == false) {
                 _world->destroy_later(_owner);
             }
             if (_timer > 0) {

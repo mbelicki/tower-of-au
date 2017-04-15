@@ -128,7 +128,7 @@
             "walkable" : true,
             "object" : "friend",
             "graphics" : "grass",
-            "spawnRate" : 0.5
+            "spawnRate" : 1.0
         },
         {
             "symbol" : "-",

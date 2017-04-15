@@ -123,8 +123,7 @@ class label_controller_t final : public controller_impl_i {
             model_change_local_transforms(_model, final_trans);
 
             _owner->receive_message(MSG_GRAPHICS_ADD_MODEL, _model);
-            const vec3_t pos = _owner->get_position();
-            _owner->receive_message(MSG_PHYSICS_MOVE, pos);
+            _owner->receive_message(MSG_PHYSICS_MOVE, _owner->get_position());
         }
 
         void mutate_mesh(vertex_t *vertices, size_t count) {
@@ -163,8 +162,7 @@ static vec3_t get_position
 }
 
 extern entity_t *create_label(world_t *world, res_id_t font_id, label_flags_t flags) {
-    resources_t *res = world->get_resources();
-    const font_t *font = resources_get_font(res, font_id);
+    const font_t *font = resources_get_font(world->get_resources(), font_id);
     warp_font_alignment_t align = WARP_FONT_ALIGN_CENTER;
     const vec3_t position = get_position(flags, &align, font->line_height);
 
@@ -174,9 +172,7 @@ extern entity_t *create_label(world_t *world, res_id_t font_id, label_flags_t fl
     graphics->add_pass_tag(pass);
 
     controller_comp_t *controller = world->create_controller();
-    
-    label_controller_t *label_ctrl = new label_controller_t(font_id, 1, align);
-    controller->initialize(label_ctrl);
+    controller->initialize(new label_controller_t(font_id, 1, align));
 
     return world->create_entity(position, graphics, nullptr, controller);
 }

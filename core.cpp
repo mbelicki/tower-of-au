@@ -27,6 +27,7 @@
 #include "character.h"
 #include "features.h"
 #include "bullets.h"
+#include "button.h"
 #include "persitence.h"
 #include "text-label.h"
 #include "transition_effect.h"
@@ -42,6 +43,14 @@ enum core_state_t {
     CSTATE_LEVEL_TRANSITION,
     CSTATE_REGION_TRANSITION,
     CSTATE_CONVERSATION,
+};
+
+struct converation_state_t {
+    entity_t *fader;
+    entity_t *text;
+    entity_t *button;
+    entity_t *portrait;
+    const object_t *npc;
 };
 
 static void destroy_string(void *raw_str) {
@@ -89,6 +98,7 @@ class core_controller_t final : public controller_impl_i {
                 , _diag_buffer(NULL) {
             _portal.region_name = warp_str_copy(&start->region_name);
             _pain_texts = create_pain_texts();
+            memset(&_conversation, 0, sizeof _conversation);
         }
 
         ~core_controller_t() {
@@ -206,6 +216,7 @@ class core_controller_t final : public controller_impl_i {
                     _level_state->spawn(_level, _random);
                     _level_state->add_object(_last_player_state, WARP_TAG("player"));
                 }
+            //} else if (_state == CSTATE_CONVERSATION) {
             }
         }
 
@@ -282,6 +293,8 @@ class core_controller_t final : public controller_impl_i {
 
         core_state_t _state;
         float _transition_timer;
+
+        converation_state_t _conversation;
 
         warp_array_t _pain_texts;
         warp_random_t *_random;
@@ -373,6 +386,7 @@ class core_controller_t final : public controller_impl_i {
                     }
                 } else if (type == EVENT_PLAYER_STARTED_CONVERSATION) {
                     emit_speech(obj, "hello");
+                    start_conversation(obj);
                 }
             }
 
@@ -432,6 +446,39 @@ class core_controller_t final : public controller_impl_i {
                     ammo_label->receive_message(MSG_GRAPHICS_VISIBLITY, 0);
                 }
             }
+        }
+
+        void end_conversation() {
+            _state = CSTATE_IDLE;
+            _world->destroy_later(_conversation.button);
+            _world->destroy_later(_conversation.fader);
+            _world->destroy_later(_conversation.text);
+
+            _conversation.fader = create_fade_circle(_world, 700, 1.0f, false);
+            _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
+        }
+
+        void start_conversation(const object_t *npc) {
+            _state = CSTATE_CONVERSATION;
+            if (_conversation.fader != NULL) {
+                _world->destroy_later(_conversation.fader);
+            }
+
+            _conversation.fader = create_fade_circle(_world, 700, 1.0f, true);
+            _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
+
+            _conversation.button = create_text_button
+                ( _world, vec2(170, -100), vec2(600, 80)
+                , [this]() { this->end_conversation(); }, "hello"
+                );
+            _conversation.npc = npc;
+
+            const res_id_t font = get_default_font(_world->get_resources());
+            const char *message = "hi there!\nhow are you?";
+            _conversation.text  = create_label(_world, font, LABEL_POS_LEFT);
+            _conversation.text->receive_message(MSG_PHYSICS_MOVE, vec3(-130, 200, 8));
+            _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
+
         }
 
         void change_region(const portal_t *portal, bool save_data) {

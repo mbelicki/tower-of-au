@@ -450,7 +450,7 @@ void level_state_t::handle_picking_up
 }
 
 void level_state_t::handle_conversation(object_t *npc, object_t *player) {
-    (void)player;
+    player->entity->receive_message(CORE_DO_ATTACK, npc->position);
     event_t event = {*npc, EVENT_PLAYER_STARTED_CONVERSATION};
     _events.push_back(event);
 }

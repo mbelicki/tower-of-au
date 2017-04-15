@@ -92,7 +92,7 @@
         },
         {
             "name" : "friend",
-            "movementType" : "still",
+            "movementType" : "roam",
             "canRotate" : true,
             "canPush" : false,
             "type" : "character",
@@ -100,7 +100,7 @@
             "health" : 3,
             "graphics" : {
                 "mesh" : "player.obj",
-                "texture" : "player.png"
+                "texture" : "missing.png"
             }
         },
         {
