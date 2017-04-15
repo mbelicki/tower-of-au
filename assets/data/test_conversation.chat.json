@@ -1,0 +1,42 @@
+{
+    "entries" : [
+        {
+            "id" : "start",
+            "canStart" : true,
+            "text" : "hello there!",
+            "responses" : [
+                {
+                    "text" : "hi!",
+                    "nextId" : "quest"
+                },
+                {
+                    "text" : "I have no time for you!",
+                    "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "id" : "quest",
+            "text" : "Can you go there and bring me that?",
+            "responses" : [
+                {
+                    "text" : "sure",
+                    "nextId" : "end"
+                },
+                {
+                    "text" : "nope",
+                    "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "id" : "end",
+            "text" : "It was nice talking to you!",
+            "responses" : [
+                {
+                    "text" : "goodbye!"
+                }
+            ]
+        }
+    ]
+}
