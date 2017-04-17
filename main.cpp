@@ -8,7 +8,6 @@
 #include "warp/game.h"
 #include "warp/statemanager.h"
 
-#include "editor_transitions.h"
 #include "level_transition.h"
 #include "chat.h"
 #include "version.h"
@@ -17,12 +16,10 @@ using namespace warp;
 
 struct cliopts_t {
     bool show_version;
-    bool launch_editor;
 };
 
 static void fill_default_options(cliopts_t *opts) {
     opts->show_version = false;
-    opts->launch_editor = false;
 }
 
 static void parse_options(int argc, char **argv, cliopts_t *opts) {
@@ -31,8 +28,6 @@ static void parse_options(int argc, char **argv, cliopts_t *opts) {
         const char *opt = argv[i];
         if (strcmp(opt, "--version") == 0) {
             opts->show_version = true;
-        } else  if (strcmp(opt, "--editor") == 0) {
-            opts->launch_editor = true;
         }
     }
 }
@@ -45,29 +40,22 @@ static void register_loaders(resources_t *res) {
     add_chat_loader(res);
 }
 
-static int initialize_and_run(bool launch_editor) {
-    shared_editor_state_t *editor_state = new shared_editor_state_t;
-
+static int initialize_and_run() {
     transition_i *start_level = new level_transition_t;
-    transition_i *start_editor = new enter_editor_transition_t(editor_state);
-    transition_i *edit_region = new edit_region_transition_t(editor_state);
 
-    warp_tag_t state_tags[4] =
-        { WARP_TAG("level"), WARP_TAG("editor-region-sel")
-        , WARP_TAG("editor-region"), WARP_TAG("editor-level")
-        };
-    statemanager_t *states = new statemanager_t(state_tags, 4);
-    states->insert_transition(WARP_TAG(START_STATE),         WARP_TAG("level"), start_level, false);
-    states->insert_transition(WARP_TAG("level"),             WARP_TAG("level"), start_level, false);
-    states->insert_transition(WARP_TAG(START_STATE),         WARP_TAG("editor-region-sel"), start_editor, false);
-    states->insert_transition(WARP_TAG("editor-region-sel"), WARP_TAG("editor-region"), edit_region, false);
+    warp_tag_t state_tags[1] = { WARP_TAG("level") };
+    statemanager_t *states = new statemanager_t(state_tags, 1);
+    const warp_tag_t start = WARP_TAG(START_STATE);
+    const warp_tag_t level = WARP_TAG("level");
+    states->insert_transition(start, level, start_level, false);
+    states->insert_transition(level, level, start_level, false);
 
     game_config_t config;
     fill_default_config(&config);
 
     config.max_entites_count = 512;
     config.window_name = APP_NAME;
-    config.first_state = WARP_TAG(launch_editor ? "editor-region-sel" : "level");
+    config.first_state = WARP_TAG("level");
     config.vsync_enabled = true;
     config.init_loaders = register_loaders;
     config.render_config.filter_textures = true;
@@ -100,6 +88,6 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    return initialize_and_run(opts.launch_editor);
+    return initialize_and_run();
 }
 

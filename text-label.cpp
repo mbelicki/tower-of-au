@@ -26,6 +26,10 @@ extern warp_res_id_t get_default_font(resources_t *res) {
     return resources_lookup(res, "gen:default-font");
 }
 
+extern warp_res_id_t get_dialog_font(resources_t *res) {
+    return resources_lookup(res, "din32.fnt");
+}
+
 static int label_mesh_id = 0;
 
 class label_controller_t final : public controller_impl_i {
@@ -143,19 +147,19 @@ static vec3_t get_position
 
     if ((flags & LABEL_POS_TOP) != 0) {
         position.y += 350;
-        *origin = (warp_font_alignment_t) (WARP_FONT_ALIGN_TOP | WARP_FONT_ALIGN_LEFT);
+        *origin |= WARP_FONT_ALIGN_TOP;
     }
     if ((flags & LABEL_POS_BOTTOM) != 0) {
         position.y -= 350 - font_size;
-        *origin = WARP_FONT_ALIGN_CENTER;
+        *origin |= WARP_FONT_ALIGN_BOTTOM;
     }
     if ((flags & LABEL_POS_LEFT) != 0) {
         position.x -= 460;
-        *origin = (warp_font_alignment_t) (WARP_FONT_ALIGN_TOP | WARP_FONT_ALIGN_LEFT);
+        *origin |= WARP_FONT_ALIGN_LEFT;
     }
     if ((flags & LABEL_POS_RIGHT) != 0) {
         position.x += 360;
-        *origin = (warp_font_alignment_t) (WARP_FONT_ALIGN_TOP | WARP_FONT_ALIGN_LEFT);
+        *origin |= WARP_FONT_ALIGN_RIGHT;
     }
 
     return position;

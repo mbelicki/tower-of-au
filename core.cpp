@@ -491,12 +491,13 @@ class core_controller_t final : public controller_impl_i {
                 get_chat(_world->get_resources(), "test_conversation.chat.json");
             const chat_entry_t *start = get_first_start_entry(_conversation.chat);
 
-            const res_id_t font = get_default_font(_world->get_resources());
+            const res_id_t font = get_dialog_font(_world->get_resources());
             const char *message = warp_str_value(&start->text);
-            _conversation.text  = create_label(_world, font, LABEL_POS_LEFT);
-            _conversation.text->receive_message(MSG_PHYSICS_MOVE, vec3(-130, 200, 8));
-            _conversation.text->receive_message(MSG_PHYSICS_SCALE, vec3(0.7f, 0.7f, 0.7f));
+            _conversation.text
+                = create_label(_world, font, LABEL_POS_LEFT | LABEL_POS_BOTTOM);
+            _conversation.text->receive_message(MSG_PHYSICS_MOVE, vec3(-130 + 16, -64, 8));
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
+            _conversation.text->receive_message(MSG_PHYSICS_SCALE, vec3(1.6f, 1.6f, 1));
             
             create_conversation_buttons(start);
         }
@@ -506,11 +507,11 @@ class core_controller_t final : public controller_impl_i {
             for (size_t i = 0; i < entry->responses_count; i++) {
                 const char *resp = warp_str_value(&entry->responses[i].text);
                 const warp_tag_t next_id = entry->responses[i].next_id;
-                const float y = -100.0f + (-90.0f * i);
+                const float y = -128.0f + (-96.0f * i);
                 _conversation.buttons[i] = create_text_button
-                    ( _world, vec2(170, y), vec2(600, 80)
+                    ( _world, vec2(170, y), vec2(600, 64)
                     , [this, next_id]() { this->update_conversation(next_id); }
-                    , resp
+                    , resp, vec4(0, 0, 0, 0.6f)
                     );
             }
         }

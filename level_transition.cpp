@@ -55,6 +55,7 @@ bool level_transition_t::is_entity_kept(const entity_t *entity) const {
 void level_transition_t::initialize_state(const warp_tag_t &, world_t *world) {
     reset_camera(world);
 
+    resources_load(world->get_resources(), "din32.fnt");
     const res_id_t font = get_default_font(world->get_resources());
 
     const label_flags_t flags = LABEL_LARGE | LABEL_POS_LEFT | LABEL_POS_TOP;

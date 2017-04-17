@@ -192,15 +192,16 @@ class parent_controller_t final : public controller_impl_i {
 extern entity_t *create_text_button
         ( world_t *world, vec2_t pos, vec2_t size
         , std::function<void(void)> handler, const char *text
+        , vec4_t background_color
         ) {
     graphics_comp_t *graphics
-            = create_button_graphics(world, size, "blank.png", vec4(0.8f, 0.8f, 0.8f, 1));
+            = create_button_graphics(world, size, "blank.png", background_color);
     if (graphics == NULL) {
         warp_log_e("Failed to create button graphics.");
         return NULL;
     }
 
-    const res_id_t font = get_default_font(world->get_resources());
+    const res_id_t font = get_dialog_font(world->get_resources());
     const float x = pos.x - size.x * 0.5f + 15;
     const float y = pos.y + size.y * 0.5f - 15;
 
