@@ -2,11 +2,139 @@
 #include "chat.h"
 
 #include "warp/utils/io.h"
+#include "warp/utils/tokenizer.h"
 #include "warp/resources/resources.h"
 #include "libs/parson/parson.h"
 #include "game-resources.h"
 
 static const char *DATA_DIR = "assets/data";
+
+/* predicate: */
+
+enum pred_op {
+    EQ = 0, NEQ = 1
+};
+
+struct pred_arg {
+    bool is_literal;
+    union {
+        int literal_value;
+        warp_str_t fact_name;
+    };
+};
+
+struct predicate {
+    enum   pred_op  op;
+    struct pred_arg arg1;  
+    struct pred_arg arg2;  
+};
+
+typedef bool (*pred_operation)(int a, int b);
+
+static bool equals    (int a, int b) { return a == b; }
+static bool not_equals(int a, int b) { return a != b; }
+
+pred_operation operations[] = {
+    [EQ]  = equals,
+    [NEQ] = not_equals
+};
+
+bool parse_operator(enum pred_op *op, tokenizer_t *tok) {
+    if (token_equals(tok, "==")) {
+        *op = EQ;
+        return true;
+    } else if (token_equals(tok, "!=")) {
+        *op = NEQ;
+        return true;
+    }
+    return false;
+}
+
+bool parse_argument(struct pred_arg *arg, tokenizer_t *tok) {
+    if (token_is_int(tok)) {
+        arg->is_literal = true;
+        token_parse_int(tok, &arg->literal_value);
+        return true;
+    } else if (token_equals(tok, "true")) {
+        arg->is_literal = true;
+        arg->literal_value = 1;
+        return true;
+    } else if (token_equals(tok, "false")) {
+        arg->is_literal = true;
+        arg->literal_value = 0;
+        return true;
+    } else {
+        arg->is_literal = false;
+        arg->fact_name = token_parse_string(tok, false);
+        return true;
+    }
+    return false;
+}
+
+warp_result_t parse_predicate(struct predicate *p, const char *str) {
+    tokenizer_t tok;
+    tokenizer_init(&tok, str, " ");
+    memset(p, 0, sizeof *p);
+    
+    token_next(&tok, '\0');
+    if (parse_argument(&p->arg1, &tok) == false) {
+        char buffer[64];
+        token_copy(&tok, buffer, 64);
+        return warp_failure("Failed to parse '%s' as first predicate argument", buffer);
+    }
+
+    token_next(&tok, '\0');
+    if (parse_operator(&p->op, &tok) == false) {
+        char buffer[64];
+        token_copy(&tok, buffer, 64);
+        return warp_failure("Failed to parse '%s' as predicate operator", buffer);
+    }
+
+    token_next(&tok, '\0');
+    if (parse_argument(&p->arg2, &tok) == false) {
+        char buffer[64];
+        token_copy(&tok, buffer, 64);
+        return warp_failure("Failed to parse '%s' as second predicate argument", buffer);
+    }
+
+    if (token_next(&tok, '\0')) {
+        warp_log_d("Predicate '%s' has some unexpected tokens that were ignored.", str);
+    }
+
+    return warp_success();
+}
+
+static void destroy_predicate(struct predicate *p) {
+    if (p == NULL) return;
+    if (p->arg1.is_literal == false) {
+        warp_str_destroy(&p->arg1.fact_name);
+    }
+    if (p->arg2.is_literal == false) {
+        warp_str_destroy(&p->arg2.fact_name);
+    }
+}
+
+static int evaluate_argument(const struct pred_arg *arg, const warp_map_t *facts) {
+    if (arg->is_literal) {
+        return arg->literal_value;
+    }
+    const char *fact = warp_str_value(&arg->fact_name);
+    if (warp_map_has_key(facts, fact)) {
+        return warp_map_get_value(int, facts, fact);
+    }
+    return 0;
+}
+
+static bool evaluate_predicate(const struct predicate *p, const warp_map_t *facts) {
+    if (p == NULL) { 
+        return true; 
+    }
+    const int a = evaluate_argument(&p->arg1, facts);
+    const int b = evaluate_argument(&p->arg2, facts);
+    return operations[p->op](a, b);
+}
+
+/* rest of the chat: */
 
 static void destroy_response(response_t *resp) {
     warp_str_destroy(&resp->text);
@@ -18,20 +146,23 @@ static void destroy_entry(void *raw_entry) {
     for (size_t i = 0; i < MAX_CHAT_RESPONSES_COUNT; i++) {
         destroy_response(&entry->responses[i]);
     }
+    destroy_predicate(entry->predicate);
+    free(entry->predicate);
 }
 
-extern const chat_entry_t *get_start_entry
-        (const chat_t *chat, warp_random_t *rand) {
-    if (chat == NULL || rand == NULL) {
-        warp_log_e("One of the arguments of get_start_entry was null.");
-        return NULL;
-    }
-
+static const chat_entry_t *find_entry
+        ( const chat_t *chat, warp_random_t *rand
+        , const warp_map_t *facts
+        , bool (*condition)(void *, const chat_entry_t *)
+        , void *condition_context
+        ) {
     warp_array_t indices = warp_array_create_typed(size_t, 16, NULL);
     const size_t count = warp_array_get_size(&chat->entries);
     for (size_t i = 0; i < count; i++) {
         const chat_entry_t *entry = warp_array_get(&chat->entries, i);
-        if (entry->can_start) {
+        const bool meets_prerequsites = evaluate_predicate(entry->predicate, facts); 
+        const bool condition_is_true  = condition(condition_context, entry);
+        if (meets_prerequsites && condition_is_true) {
             warp_array_append_value(size_t, &indices, i);
         }
     }
@@ -43,31 +174,38 @@ extern const chat_entry_t *get_start_entry
     return entry;
 }
 
-extern const chat_entry_t *get_first_start_entry(const chat_t *chat) {
-    if (chat == NULL) {
-        warp_log_e("get_start_entry called with null chat.");
-        return NULL;
-    }
-
-    const size_t count = warp_array_get_size(&chat->entries);
-    for (size_t i = 0; i < count; i++) {
-        const chat_entry_t *entry = warp_array_get(&chat->entries, i);
-        if (entry->can_start) {
-            return entry;
-        }
-    }
-    return NULL;
+static bool is_start(void *ctx, const chat_entry_t *e) {
+    (void)ctx;
+    return e->can_start;
 }
 
-extern const chat_entry_t *get_entry(const chat_t *chat, warp_tag_t id) {
-    const size_t count = warp_array_get_size(&chat->entries);
-    for (size_t i = 0; i < count; i++) {
-        const chat_entry_t *entry = warp_array_get(&chat->entries, i);
-        if (warp_tag_equals(&entry->id, &id)) {
-            return entry;
-        }
-    }
-    return NULL;
+static bool has_id(void *ctx, const chat_entry_t *e) {
+    const warp_tag_t *id = ctx;
+    return warp_tag_equals(&e->id, id);
+}
+
+#define RETURN_IF_NULL(arg, ret) \
+    if ((arg) == NULL) { \
+       warp_log_e("Unexpeced null argument '##arg' of function '%s'.", __func__); \
+       return (ret); \
+    } \
+
+extern const chat_entry_t *get_start_entry
+        (const chat_t *chat, warp_random_t *rand, const warp_map_t *facts) {
+    RETURN_IF_NULL(chat, NULL);
+    RETURN_IF_NULL(rand, NULL);
+    RETURN_IF_NULL(facts, NULL);
+    return find_entry(chat, rand, facts, is_start, NULL);
+}
+
+extern const chat_entry_t *get_entry
+        ( const chat_t *chat, warp_random_t *rand, const warp_map_t *facts
+        , warp_tag_t id
+        ) {
+    RETURN_IF_NULL(chat, NULL);
+    RETURN_IF_NULL(rand, NULL);
+    RETURN_IF_NULL(facts, NULL);
+    return find_entry(chat, rand, facts, has_id, &id);
 }
 
 static bool has_json_member(const JSON_Object *o, const char *member_name) {
@@ -110,12 +248,32 @@ static warp_result_t parse_responses
     return warp_success();
 }
 
+static warp_result_t parse_entry_predicate
+        (chat_entry_t *entry, const JSON_Object *raw_entry) {
+    entry->predicate = NULL;
+    if (has_json_member(raw_entry, "predicate") == false) {
+        return warp_success();
+    }
+    
+    struct predicate *pred = malloc(sizeof *pred);
+    const char *str = json_object_get_string(raw_entry, "predicate");
+    warp_result_t result = parse_predicate(pred, str);
+    if (WARP_FAILED(result)) {
+        free(pred);
+        return result;
+    }
+    
+    entry->predicate = pred;
+    return warp_success();
+}
+
 static warp_result_t parse(chat_t *chat, const JSON_Object *root) {
     chat->entries = warp_array_create_typed(chat_entry_t, 16, destroy_entry);
 
     const JSON_Array *entries = json_object_get_array(root, "entries");
     const size_t count = json_array_get_count(entries);
     for (size_t i = 0; i < count; i++) {
+        warp_result_t result = warp_success();
         const JSON_Object *e = json_array_get_object(entries, i);
 
         chat_entry_t entry;
@@ -124,7 +282,11 @@ static warp_result_t parse(chat_t *chat, const JSON_Object *root) {
         entry.text = WARP_STR(json_object_get_string(e, "text"));
 
         const JSON_Array *responses = json_object_get_array(e, "responses");
-        parse_responses(&entry, responses);
+        result = parse_responses(&entry, responses);
+        if (WARP_FAILED(result)) return result;
+        
+        result = parse_entry_predicate(&entry, e);
+        if (WARP_FAILED(result)) return result;
 
         warp_array_append(&chat->entries, &entry, 1);
     }

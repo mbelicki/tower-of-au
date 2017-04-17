@@ -114,7 +114,6 @@ class persistence_controller_t final : public controller_impl_i {
                 const object_t *player = (object_t *) value;
                 _player = *player;
                 _player.entity = nullptr;
-                warp_log_d("player saved.");
             } else if (type == CORE_SAVE_PORTAL) {
                 void * value = message.data.get_pointer();
                 if (value == NULL) {

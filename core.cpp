@@ -100,6 +100,7 @@ class core_controller_t final : public controller_impl_i {
                 , _diag_buffer(NULL) {
             _portal.region_name = warp_str_copy(&start->region_name);
             _pain_texts = create_pain_texts();
+            _facts = warp_map_create_typed(int, NULL);
             memset(&_conversation, 0, sizeof _conversation);
         }
 
@@ -109,6 +110,7 @@ class core_controller_t final : public controller_impl_i {
 
             warp_str_destroy(&_portal.region_name);
             warp_array_destroy(&_pain_texts);
+            warp_map_destroy(&_facts);
             warp_random_destroy(_random);
         }
 
@@ -299,6 +301,7 @@ class core_controller_t final : public controller_impl_i {
         converation_state_t _conversation;
 
         warp_array_t _pain_texts;
+        warp_map_t _facts;
         warp_random_t *_random;
 
         bool _diagnostics;
@@ -467,7 +470,8 @@ class core_controller_t final : public controller_impl_i {
                 end_conversation();
                 return;
             }
-            const chat_entry_t *entry = get_entry(_conversation.chat, next_id);
+            const chat_entry_t *entry
+                = get_entry(_conversation.chat, _random, &_facts, next_id);
             const char *message = warp_str_value(&entry->text);
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
 
@@ -489,7 +493,7 @@ class core_controller_t final : public controller_impl_i {
 
             _conversation.chat = 
                 get_chat(_world->get_resources(), "test_conversation.chat.json");
-            const chat_entry_t *start = get_first_start_entry(_conversation.chat);
+            const chat_entry_t *start = get_start_entry(_conversation.chat, _random, &_facts);
 
             const res_id_t font = get_dialog_font(_world->get_resources());
             const char *message = warp_str_value(&start->text);

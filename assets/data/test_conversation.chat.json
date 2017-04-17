@@ -4,6 +4,24 @@
             "id" : "start",
             "canStart" : true,
             "text" : "hello there!",
+            "predicate" : "test_conversation.already_talked == false",
+            "setFact" : "test_conversation.already_talked",
+            "responses" : [
+                {
+                    "text" : "hi!",
+                    "nextId" : "quest"
+                },
+                {
+                    "text" : "I have no time for you!",
+                    "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "id" : "start",
+            "canStart" : true,
+            "text" : "hello again!",
+            "predicate" : "test_conversation.already_talked == true",
             "responses" : [
                 {
                     "text" : "hi!",
@@ -26,6 +44,22 @@
                 {
                     "text" : "nope",
                     "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "id" : "end",
+            "text" : "OK then, have a nice day!",
+            "responses" : [
+                {
+                    "text" : "goodbye!"
+                },
+                {
+                    "text" : "see you!"
+                },
+                {
+                    "text" : "wait a second!",
+                    "nextId" : "again"
                 }
             ]
         },

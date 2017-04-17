@@ -13,6 +13,7 @@ extern "C" {
 #endif
 
 typedef struct warp_resources warp_resources_t;
+typedef struct warp_map warp_map_t;
 
 typedef struct response {
     warp_str_t text;
@@ -23,6 +24,7 @@ typedef struct chat_entry {
     warp_tag_t id;
     bool can_start;
     warp_str_t text;
+    void *predicate;
     size_t responses_count;
     response_t responses[MAX_CHAT_RESPONSES_COUNT];
 } chat_entry_t;
@@ -31,9 +33,10 @@ typedef struct chat {
     warp_array_t entries;
 } chat_t;
 
-const chat_entry_t *get_start_entry(const chat_t *chat, warp_random_t *rand);
-const chat_entry_t *get_first_start_entry(const chat_t *chat);
-const chat_entry_t *get_entry(const chat_t *chat, warp_tag_t id);
+const chat_entry_t *get_start_entry
+    (const chat_t *chat, warp_random_t *rand, const warp_map_t *facts);
+const chat_entry_t *get_entry
+    (const chat_t *chat, warp_random_t *rand, const warp_map_t *facts, warp_tag_t id);
 
 warp_result_t chat_parse(chat_t *chat, const char *file_path);
 void add_chat_loader(warp_resources_t *res);

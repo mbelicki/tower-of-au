@@ -55,7 +55,7 @@ static int initialize_and_run() {
 
     config.max_entites_count = 512;
     config.window_name = APP_NAME;
-    config.first_state = WARP_TAG("level");
+    config.first_state = level;
     config.vsync_enabled = true;
     config.init_loaders = register_loaders;
     config.render_config.filter_textures = true;
