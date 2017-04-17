@@ -1,3 +1,4 @@
+#define WARP_DROP_PREFIX
 #include <stdio.h>
 
 #ifdef IOS
@@ -9,6 +10,7 @@
 
 #include "editor_transitions.h"
 #include "level_transition.h"
+#include "chat.h"
 #include "version.h"
 
 using namespace warp;
@@ -39,6 +41,10 @@ static void print_version() {
     printf("%s, version: %s\n", APP_NAME, VERSION);
 }
 
+static void register_loaders(resources_t *res) {
+    add_chat_loader(res);
+}
+
 static int initialize_and_run(bool launch_editor) {
     shared_editor_state_t *editor_state = new shared_editor_state_t;
 
@@ -63,6 +69,7 @@ static int initialize_and_run(bool launch_editor) {
     config.window_name = APP_NAME;
     config.first_state = WARP_TAG(launch_editor ? "editor-region-sel" : "level");
     config.vsync_enabled = true;
+    config.init_loaders = register_loaders;
     config.render_config.filter_textures = true;
     config.render_config.multisample_shadows = true;
     config.render_config.discard_invisible = true;

@@ -21,6 +21,7 @@
 
 #include "warp/graphics/font.h"
 
+#include "chat.h"
 #include "region.h"
 #include "level.h"
 #include "level_state.h"
@@ -467,18 +468,24 @@ class core_controller_t final : public controller_impl_i {
             _conversation.fader = create_fade_circle(_world, 700, 1.0f, true);
             _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
 
-            _conversation.button = create_text_button
-                ( _world, vec2(170, -100), vec2(600, 80)
-                , [this]() { this->end_conversation(); }, "hello"
-                );
             _conversation.npc = npc;
 
+            const chat_t *chat
+                = get_chat(_world->get_resources(), "test_conversation.chat.json");
+            const chat_entry_t *start = get_first_start_entry(chat);
+
             const res_id_t font = get_default_font(_world->get_resources());
-            const char *message = "hi there!\nhow are you?";
+            const char *message = warp_str_value(&start->text);
             _conversation.text  = create_label(_world, font, LABEL_POS_LEFT);
             _conversation.text->receive_message(MSG_PHYSICS_MOVE, vec3(-130, 200, 8));
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
 
+            const char *resp = warp_str_value(&start->responses[0].text);
+            warp_log_d("Resp: %s", resp);
+            _conversation.button = create_text_button
+                ( _world, vec2(170, -100), vec2(600, 80)
+                , [this]() { this->end_conversation(); }, resp
+                );
         }
 
         void change_region(const portal_t *portal, bool save_data) {

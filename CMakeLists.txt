@@ -70,7 +70,7 @@ endif()
 set(PARSON_SOURCES "${PROJECT_LIB_DIR}/parson/parson.c")
 add_library(parson STATIC ${PARSON_SOURCES})
 
-file(GLOB SOURCES *.cpp)
+file(GLOB SOURCES *.cpp *.c)
 
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_INCLUDE_DIR})
