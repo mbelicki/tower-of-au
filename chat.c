@@ -12,7 +12,7 @@ static const char *DATA_DIR = "assets/data";
 /* predicate: */
 
 enum pred_op {
-    EQ = 0, NEQ = 1
+    EQ = 0, NEQ, GT, GTE, LT, LTE
 };
 
 struct pred_arg {
@@ -31,12 +31,20 @@ struct predicate {
 
 typedef bool (*pred_operation)(int a, int b);
 
-static bool equals    (int a, int b) { return a == b; }
-static bool not_equals(int a, int b) { return a != b; }
+static bool equals          (int a, int b) { return a == b; }
+static bool not_equals      (int a, int b) { return a != b; }
+static bool greater_than    (int a, int b) { return a >  b; }
+static bool greater_or_equal(int a, int b) { return a >= b; }
+static bool lower_than      (int a, int b) { return a <  b; }
+static bool lower_or_equal  (int a, int b) { return a <= b; }
 
 pred_operation operations[] = {
     [EQ]  = equals,
-    [NEQ] = not_equals
+    [NEQ] = not_equals,
+    [GT]  = greater_than,
+    [GTE] = greater_or_equal,
+    [LT]  = lower_than,
+    [LTE] = lower_or_equal,
 };
 
 bool parse_operator(enum pred_op *op, tokenizer_t *tok) {
@@ -45,6 +53,18 @@ bool parse_operator(enum pred_op *op, tokenizer_t *tok) {
         return true;
     } else if (token_equals(tok, "!=")) {
         *op = NEQ;
+        return true;
+    } else if (token_equals(tok, ">")) {
+        *op = GT;
+        return true;
+    } else if (token_equals(tok, ">=")) {
+        *op = GTE;
+        return true;
+    } else if (token_equals(tok, "<")) {
+        *op = LT;
+        return true;
+    } else if (token_equals(tok, "<=")) {
+        *op = LTE;
         return true;
     }
     return false;
@@ -94,7 +114,7 @@ warp_result_t parse_predicate(struct predicate *p, const char *str) {
     if (parse_argument(&p->arg2, &tok) == false) {
         char buffer[64];
         token_copy(&tok, buffer, 64);
-        return warp_failure("Failed to parse '%s' as second predicate argument", buffer);
+        return warp_failure("Failed to parse '%s' as second predicate argument.", buffer);
     }
 
     if (token_next(&tok, '\0')) {
@@ -114,15 +134,19 @@ static void destroy_predicate(struct predicate *p) {
     }
 }
 
+static int get_fact(const char *name, const warp_map_t *facts) {
+    if (warp_map_has_key(facts, name)) {
+        return warp_map_get_value(int, facts, name);
+    }
+    return 0;
+}
+
 static int evaluate_argument(const struct pred_arg *arg, const warp_map_t *facts) {
     if (arg->is_literal) {
         return arg->literal_value;
     }
-    const char *fact = warp_str_value(&arg->fact_name);
-    if (warp_map_has_key(facts, fact)) {
-        return warp_map_get_value(int, facts, fact);
-    }
-    return 0;
+    const char *name = warp_str_value(&arg->fact_name);
+    return get_fact(name, facts);
 }
 
 static bool evaluate_predicate(const struct predicate *p, const warp_map_t *facts) {
@@ -132,6 +156,101 @@ static bool evaluate_predicate(const struct predicate *p, const warp_map_t *fact
     const int a = evaluate_argument(&p->arg1, facts);
     const int b = evaluate_argument(&p->arg2, facts);
     return operations[p->op](a, b);
+}
+
+/* side effects: */
+
+enum side_op {
+    MUT = 0, INC, DEC
+};
+
+struct side_effect {
+    warp_str_t   fact_name;
+    enum side_op op;
+    int          imm_value;
+};
+
+typedef void (*side_operation)(const char *name, int value, warp_map_t *facts);
+
+void mutate(const char *name, int value, warp_map_t *facts) {
+    warp_map_insert(facts, name, &value);
+}
+
+void increment(const char *name, int value, warp_map_t *facts) {
+    const int result = get_fact(name, facts) + value;
+    warp_map_insert(facts, name, &result);
+}
+
+void decrement(const char *name, int value, warp_map_t *facts) {
+    const int result = get_fact(name, facts) - value;
+    warp_map_insert(facts, name, &result);
+}
+
+side_operation side_operations[] = {
+    [MUT] = mutate,
+    [INC] = increment,
+    [DEC] = decrement,
+};
+
+bool parse_side_operator(enum side_op *op, tokenizer_t *tok) {
+    if (token_equals(tok, "<-")) {
+        *op = MUT;
+        return true;
+    } else if (token_equals(tok, "+=")) {
+        *op = INC;
+        return true;
+    } else if (token_equals(tok, "-=")) {
+        *op = DEC;
+        return true;
+    }
+    return false;
+}
+
+static warp_result_t parse_side_effect(struct side_effect *se, const char *str) {
+    tokenizer_t tok;
+    tokenizer_init(&tok, str, " ");
+    memset(se, 0, sizeof *se);
+    
+    token_next(&tok, '\0');
+    se->fact_name = token_parse_string(&tok, false);
+
+    token_next(&tok, '\0');
+    if (parse_side_operator(&se->op, &tok) == false) {
+        char buffer[64];
+        token_copy(&tok, buffer, 64);
+        return warp_failure("Failed to parse '%s' as side effect operator.", buffer);
+    }
+
+    token_next(&tok, '\0');
+    if (token_is_int(&tok) == false) {
+        char buffer[64];
+        token_copy(&tok, buffer, 64);
+        return warp_failure("Failed to parse '%s' as immediate value of side effect.", buffer);
+    }
+    token_parse_int(&tok, &se->imm_value);
+
+    if (token_next(&tok, '\0')) {
+        warp_log_d("Predicate '%s' has some unexpected tokens that were ignored.", str);
+    }
+
+    return warp_success();
+}
+
+static void destroy_side_effect(struct side_effect *se) {
+    if (se == NULL) {
+        return;
+    }
+    warp_str_destroy(&se->fact_name);
+}
+
+extern void chat_entry_evaluate_side_effects
+        (const chat_entry_t *entry, warp_map_t *facts) {
+    if (entry->side_effect == NULL) {
+        return;
+    }
+    struct side_effect *se = entry->side_effect;
+    const char *fact_name = warp_str_value(&se->fact_name);
+    side_operations[se->op](fact_name, se->imm_value, facts);
 }
 
 /* rest of the chat: */
@@ -146,8 +265,12 @@ static void destroy_entry(void *raw_entry) {
     for (size_t i = 0; i < MAX_CHAT_RESPONSES_COUNT; i++) {
         destroy_response(&entry->responses[i]);
     }
+
     destroy_predicate(entry->predicate);
     free(entry->predicate);
+
+    destroy_side_effect(entry->side_effect);
+    free(entry->side_effect);
 }
 
 static const chat_entry_t *find_entry
@@ -267,6 +390,25 @@ static warp_result_t parse_entry_predicate
     return warp_success();
 }
 
+static warp_result_t parse_entry_side_effect
+        (chat_entry_t *entry, const JSON_Object *raw_entry) {
+    entry->side_effect = NULL;
+    if (has_json_member(raw_entry, "sideEffect") == false) {
+        return warp_success();
+    }
+    
+    struct side_effect *se = malloc(sizeof *se);
+    const char *str = json_object_get_string(raw_entry, "sideEffect");
+    warp_result_t result = parse_side_effect(se, str);
+    if (WARP_FAILED(result)) {
+        free(se);
+        return result;
+    }
+    
+    entry->side_effect = se;
+    return warp_success();
+}
+
 static warp_result_t parse(chat_t *chat, const JSON_Object *root) {
     chat->entries = warp_array_create_typed(chat_entry_t, 16, destroy_entry);
 
@@ -286,6 +428,9 @@ static warp_result_t parse(chat_t *chat, const JSON_Object *root) {
         if (WARP_FAILED(result)) return result;
         
         result = parse_entry_predicate(&entry, e);
+        if (WARP_FAILED(result)) return result;
+
+        result = parse_entry_side_effect(&entry, e);
         if (WARP_FAILED(result)) return result;
 
         warp_array_append(&chat->entries, &entry, 1);

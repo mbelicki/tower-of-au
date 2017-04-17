@@ -25,6 +25,7 @@ typedef struct chat_entry {
     bool can_start;
     warp_str_t text;
     void *predicate;
+    void *side_effect;
     size_t responses_count;
     response_t responses[MAX_CHAT_RESPONSES_COUNT];
 } chat_entry_t;
@@ -37,6 +38,8 @@ const chat_entry_t *get_start_entry
     (const chat_t *chat, warp_random_t *rand, const warp_map_t *facts);
 const chat_entry_t *get_entry
     (const chat_t *chat, warp_random_t *rand, const warp_map_t *facts, warp_tag_t id);
+
+void chat_entry_evaluate_side_effects(const chat_entry_t *entry, warp_map_t *facts);
 
 warp_result_t chat_parse(chat_t *chat, const char *file_path);
 void add_chat_loader(warp_resources_t *res);

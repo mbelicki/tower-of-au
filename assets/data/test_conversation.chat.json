@@ -5,7 +5,7 @@
             "canStart" : true,
             "text" : "hello there!",
             "predicate" : "test_conversation.already_talked == false",
-            "setFact" : "test_conversation.already_talked",
+            "sideEffect" : "test_conversation.already_talked <- 1",
             "responses" : [
                 {
                     "text" : "hi!",

@@ -474,6 +474,8 @@ class core_controller_t final : public controller_impl_i {
                 = get_entry(_conversation.chat, _random, &_facts, next_id);
             const char *message = warp_str_value(&entry->text);
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
+            
+            chat_entry_evaluate_side_effects(entry, &_facts);
 
             for (size_t i = 0; i < _conversation.buttons_count; i++) {
                 _world->destroy_later(_conversation.buttons[i]);
@@ -503,6 +505,7 @@ class core_controller_t final : public controller_impl_i {
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
             _conversation.text->receive_message(MSG_PHYSICS_SCALE, vec3(1.6f, 1.6f, 1));
             
+            chat_entry_evaluate_side_effects(start, &_facts);
             create_conversation_buttons(start);
         }
 
