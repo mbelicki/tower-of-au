@@ -159,9 +159,39 @@ extern entity_t *create_button
     return entity;
 }
 
+class parent_controller_t final : public controller_impl_i {
+    public:
+        parent_controller_t(entity_t *child) : _child(child) {}
+
+        dynval_t get_property(const warp_tag_t &) const override {
+            return dynval_t::make_null();
+        }
+
+        void initialize(entity_t *, world_t *world) override {
+            _world = world;
+        }
+
+        void update(float, const input_t &) override { }
+
+        bool accepts(messagetype_t type) const override {
+            return type == MSG_ENTITY_WILL_BE_DESTROYED;
+        }
+
+        void handle_message(const message_t &message) override {
+            const messagetype_t type = message.type;
+            if (type == MSG_ENTITY_WILL_BE_DESTROYED) {
+                _world->destroy_later(_child);
+            }
+        }
+
+    private:
+        entity_t *_child;
+        world_t *_world;
+};
+
 extern entity_t *create_text_button
         ( world_t *world, vec2_t pos, vec2_t size
-        , std::function<void(void)> raw_handler, const char *text
+        , std::function<void(void)> handler, const char *text
         ) {
     graphics_comp_t *graphics
             = create_button_graphics(world, size, "blank.png", vec4(0.8f, 0.8f, 0.8f, 1));
@@ -179,17 +209,13 @@ extern entity_t *create_text_button
     label->receive_message(CORE_SHOW_POINTER_TEXT, (void *)text);
     label->set_tag(WARP_TAG("button-label"));
 
-    std::function<void(void)> handler = [=]() {
-        world->destroy_later(label);
-        raw_handler();
-    };
-
     controller_comp_t *controller
         = create_button_controller(world, pos, size, handler);
     if (controller == NULL) {
         warp_log_e("Failed to create button controller.");
         return NULL;
     }
+    controller->add_controller(new parent_controller_t(label));
 
     const vec3_t position = vec3(pos.x, pos.y, 1);
     entity_t *entity = world->create_entity(position, graphics, NULL, controller);

@@ -49,9 +49,10 @@ enum core_state_t {
 struct converation_state_t {
     entity_t *fader;
     entity_t *text;
-    entity_t *button;
     entity_t *portrait;
-    const object_t *npc;
+    entity_t *buttons[3];
+    size_t buttons_count;
+    const chat_t *chat;
 };
 
 static void destroy_string(void *raw_str) {
@@ -451,7 +452,9 @@ class core_controller_t final : public controller_impl_i {
 
         void end_conversation() {
             _state = CSTATE_IDLE;
-            _world->destroy_later(_conversation.button);
+            for (size_t i = 0; i < _conversation.buttons_count; i++) {
+                _world->destroy_later(_conversation.buttons[i]);
+            }
             _world->destroy_later(_conversation.fader);
             _world->destroy_later(_conversation.text);
 
@@ -459,7 +462,23 @@ class core_controller_t final : public controller_impl_i {
             _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
         }
 
+        void update_conversation(warp_tag_t next_id) {
+            if (warp_tag_equals_buffer(&next_id, "")) {
+                end_conversation();
+                return;
+            }
+            const chat_entry_t *entry = get_entry(_conversation.chat, next_id);
+            const char *message = warp_str_value(&entry->text);
+            _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
+
+            for (size_t i = 0; i < _conversation.buttons_count; i++) {
+                _world->destroy_later(_conversation.buttons[i]);
+            }
+            create_conversation_buttons(entry);
+        }
+
         void start_conversation(const object_t *npc) {
+            (void) npc;
             _state = CSTATE_CONVERSATION;
             if (_conversation.fader != NULL) {
                 _world->destroy_later(_conversation.fader);
@@ -468,24 +487,32 @@ class core_controller_t final : public controller_impl_i {
             _conversation.fader = create_fade_circle(_world, 700, 1.0f, true);
             _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
 
-            _conversation.npc = npc;
-
-            const chat_t *chat
-                = get_chat(_world->get_resources(), "test_conversation.chat.json");
-            const chat_entry_t *start = get_first_start_entry(chat);
+            _conversation.chat = 
+                get_chat(_world->get_resources(), "test_conversation.chat.json");
+            const chat_entry_t *start = get_first_start_entry(_conversation.chat);
 
             const res_id_t font = get_default_font(_world->get_resources());
             const char *message = warp_str_value(&start->text);
             _conversation.text  = create_label(_world, font, LABEL_POS_LEFT);
             _conversation.text->receive_message(MSG_PHYSICS_MOVE, vec3(-130, 200, 8));
+            _conversation.text->receive_message(MSG_PHYSICS_SCALE, vec3(0.7f, 0.7f, 0.7f));
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
+            
+            create_conversation_buttons(start);
+        }
 
-            const char *resp = warp_str_value(&start->responses[0].text);
-            warp_log_d("Resp: %s", resp);
-            _conversation.button = create_text_button
-                ( _world, vec2(170, -100), vec2(600, 80)
-                , [this]() { this->end_conversation(); }, resp
-                );
+        void create_conversation_buttons(const chat_entry_t *entry) {
+            _conversation.buttons_count = entry->responses_count;
+            for (size_t i = 0; i < entry->responses_count; i++) {
+                const char *resp = warp_str_value(&entry->responses[i].text);
+                const warp_tag_t next_id = entry->responses[i].next_id;
+                const float y = -100.0f + (-90.0f * i);
+                _conversation.buttons[i] = create_text_button
+                    ( _world, vec2(170, y), vec2(600, 80)
+                    , [this, next_id]() { this->update_conversation(next_id); }
+                    , resp
+                    );
+            }
         }
 
         void change_region(const portal_t *portal, bool save_data) {

@@ -15,7 +15,7 @@ static void destroy_response(response_t *resp) {
 static void destroy_entry(void *raw_entry) {
     chat_entry_t *entry = raw_entry;
     warp_str_destroy(&entry->text);
-    for (size_t i = 0; i < MAX_RESPONSES_COUNT; i++) {
+    for (size_t i = 0; i < MAX_CHAT_RESPONSES_COUNT; i++) {
         destroy_response(&entry->responses[i]);
     }
 }
@@ -59,6 +59,17 @@ extern const chat_entry_t *get_first_start_entry(const chat_t *chat) {
     return NULL;
 }
 
+extern const chat_entry_t *get_entry(const chat_t *chat, warp_tag_t id) {
+    const size_t count = warp_array_get_size(&chat->entries);
+    for (size_t i = 0; i < count; i++) {
+        const chat_entry_t *entry = warp_array_get(&chat->entries, i);
+        if (warp_tag_equals(&entry->id, &id)) {
+            return entry;
+        }
+    }
+    return NULL;
+}
+
 static bool has_json_member(const JSON_Object *o, const char *member_name) {
     return json_object_get_value(o, member_name) != NULL;
 }
@@ -78,22 +89,22 @@ static warp_tag_t parse_tag(const JSON_Object *o, const char *name) {
 }
 
 static warp_result_t parse_responses
-        (response_t *resps, const JSON_Array *raw_resps) {
+        (chat_entry_t *entry, const JSON_Array *raw_resps) {
     const size_t count = json_array_get_count(raw_resps);
-    if (count > MAX_RESPONSES_COUNT) {
-        warp_log_d( "Maximum number of responses is %d, "
+    const size_t max = MAX_CHAT_RESPONSES_COUNT;
+    if (count > MAX_CHAT_RESPONSES_COUNT) {
+        warp_log_d( "Maximum number of responses is %zu, "
                     "found chat entry with %zu responses. "
                     "Additional responses will be ignored."
-                  , (int)MAX_RESPONSES_COUNT, count
+                  , max, count
                   );
     }
 
-    const size_t final_count
-        = count >= MAX_RESPONSES_COUNT ? MAX_RESPONSES_COUNT : count;
-    for (size_t i = 0; i < final_count; i++) {
+    entry->responses_count = count >= max ? max : count;
+    for (size_t i = 0; i < entry->responses_count; i++) {
         const JSON_Object *r = json_array_get_object(raw_resps, i);
-        resps[i].text    = WARP_STR(json_object_get_string(r, "text"));
-        resps[i].next_id = parse_tag(r, "nextId");
+        entry->responses[i].text    = WARP_STR(json_object_get_string(r, "text"));
+        entry->responses[i].next_id = parse_tag(r, "nextId");
     }
 
     return warp_success();
@@ -113,7 +124,7 @@ static warp_result_t parse(chat_t *chat, const JSON_Object *root) {
         entry.text = WARP_STR(json_object_get_string(e, "text"));
 
         const JSON_Array *responses = json_object_get_array(e, "responses");
-        parse_responses(entry.responses, responses);
+        parse_responses(&entry, responses);
 
         warp_array_append(&chat->entries, &entry, 1);
     }
