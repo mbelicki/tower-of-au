@@ -131,6 +131,9 @@ class core_controller_t final : public controller_impl_i {
             const uint32_t seed = get_saved_seed(_world);
             _random = warp_random_create(seed);
 
+            const warp_map_t *facts = get_saved_facts(_world);
+            warp_map_copy_entries(&_facts, facts);
+
             const char *region_name = warp_str_value(&_portal.region_name); 
             _region = load_region(region_name);
             if (_region == NULL) {
@@ -581,6 +584,7 @@ class core_controller_t final : public controller_impl_i {
             save_portal(_world, &_portal);
             save_player_state(_world, &_last_player_state);
             save_random_seed(_world, new_seed);
+            save_facts(_world, &_facts);
 
             _world->broadcast_message(CORE_SAVE_TO_FILE, 0);
         }

@@ -38,6 +38,7 @@ enum core_msgs_t : unsigned int {
     CORE_SAVE_PLAYER,
     CORE_SAVE_PORTAL,
     CORE_SAVE_SEED,
+    CORE_SAVE_FACTS,
     CORE_SAVE_RESET_DEFAULTS,
     CORE_SAVE_TO_FILE,
 };

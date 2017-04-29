@@ -43,10 +43,12 @@ class persistence_controller_t final : public controller_impl_i {
         persistence_controller_t()
                 : _owner(NULL)
                 , _world(NULL) {
+            _facts = warp_map_create_typed(int, NULL);
         }
 
         ~persistence_controller_t() {
             warp_str_destroy(&_portal.region_name);
+            warp_map_destroy(&_facts);
         }
 
         dynval_t get_property(const warp_tag_t &name) const override {
@@ -56,6 +58,8 @@ class persistence_controller_t final : public controller_impl_i {
                 return (void *)&_player;
             } else if (warp_tag_equals_buffer(&name, "seed")) {
                 return *(int *)&_seed;
+            } else if (warp_tag_equals_buffer(&name, "facts")) {
+                return (void *)&_facts;
             }
 
             return dynval_t::make_null();
@@ -81,6 +85,10 @@ class persistence_controller_t final : public controller_impl_i {
 
             /* default seed */
             _seed = DEFAULT_SEED;
+
+            /* default fact set */
+            warp_map_destroy(&_facts);
+            _facts = warp_map_create_typed(int, NULL);
         }
 
         void initialize(entity_t *owner, world_t *world) override {
@@ -98,6 +106,7 @@ class persistence_controller_t final : public controller_impl_i {
             return type == CORE_SAVE_PORTAL 
                 || type == CORE_SAVE_PLAYER
                 || type == CORE_SAVE_SEED
+                || type == CORE_SAVE_FACTS
                 || type == CORE_SAVE_RESET_DEFAULTS
                 || type == CORE_SAVE_TO_FILE
                 ;
@@ -127,6 +136,10 @@ class persistence_controller_t final : public controller_impl_i {
             } else if (type == CORE_SAVE_SEED) {
                 const int packed_seed = message.data.get_int();
                 _seed = *(uint32_t *)&packed_seed;
+            } else if (type == CORE_SAVE_FACTS) {
+                const warp_map_t *facts
+                        = (const warp_map_t *)message.data.get_pointer();
+                warp_map_copy_entries(&_facts, facts);
             } else if (type == CORE_SAVE_RESET_DEFAULTS) {
                 set_defaults();
             } else if (type == CORE_SAVE_TO_FILE) {
@@ -138,9 +151,10 @@ class persistence_controller_t final : public controller_impl_i {
         entity_t *_owner;
         world_t *_world;
 
-        portal_t _portal;
-        object_t _player;
-        uint32_t _seed;
+        portal_t   _portal;
+        object_t   _player;
+        uint32_t   _seed;
+        warp_map_t _facts;
 
         JSON_Value *save_portal() {
             JSON_Value *portal_value = json_value_init_object();
@@ -232,6 +246,15 @@ class persistence_controller_t final : public controller_impl_i {
             _player.type = OBJ_CHARACTER;
         }
 
+        void read_facts(JSON_Object *facts) {
+            const size_t count = json_object_get_count(facts);
+            for (size_t i = 0; i < count; i++) {
+                const char *fact = json_object_get_name(facts, i);
+                const int value  = json_object_get_number(facts, fact);
+                warp_map_insert(&_facts, fact, &value);
+            }
+        }
+
         void save_data() {
             JSON_Value *root_value = json_value_init_object();
             JSON_Object *root_object = json_value_get_object(root_value);
@@ -239,6 +262,18 @@ class persistence_controller_t final : public controller_impl_i {
             json_object_set_value(root_object, "portal", save_portal());
             json_object_set_value(root_object, "player", save_player());
             json_object_set_number(root_object, "seed", (double)_seed);
+
+            JSON_Value *facts_value = json_value_init_object();
+            JSON_Object *facts_object = json_value_get_object(facts_value);
+            warp_map_it_t *it = warp_map_iterate(&_facts);
+            for (; it != NULL; it = warp_map_it_next(it, &_facts)) {
+                const char *key = warp_map_it_get_key(it);
+                int *value = (int *) warp_map_it_get_value(it);
+
+                json_object_set_number(facts_object, key, *value);
+                warp_log_d("[%s] -> %d", key, *value);
+            }
+            json_object_set_value(root_object, "facts", facts_value);
 
             char *serialized = json_serialize_to_string_pretty(root_value);
             const size_t size = strnlen(serialized, 4096);
@@ -272,6 +307,7 @@ class persistence_controller_t final : public controller_impl_i {
             
             read_portal(json_object_get_object(root, "portal"));
             read_player(json_object_get_object(root, "player"));
+            read_facts(json_object_get_object(root, "facts"));
             _seed = json_object_get_number(root, "seed");
 
             json_value_free(root_value);
@@ -320,6 +356,10 @@ extern uint32_t get_saved_seed(world_t *world) {
     return *(uint32_t *)&packed_seed;
 }
 
+extern const warp_map_t *get_saved_facts(world_t *world) {
+    return (const warp_map_t *)get_saved_data(world, WARP_TAG("facts"));
+}
+
 extern void save_player_state(world_t *world, const object_t *player) {
     entity_t *data = get_persitent_data(world);
     data->receive_message(CORE_SAVE_PLAYER, (void *)player);
@@ -334,4 +374,9 @@ extern void save_random_seed(world_t *world, uint32_t seed) {
     entity_t *data = get_persitent_data(world);
     const int packed_seed = *(int*)&seed;
     data->receive_message(CORE_SAVE_SEED, packed_seed);
+}
+
+extern void save_facts(world_t *world, const warp_map_t *facts) {
+    entity_t *data = get_persitent_data(world);
+    data->receive_message(CORE_SAVE_FACTS, (void *)facts);
 }

@@ -198,7 +198,7 @@ cleanup:
 void object_factory_t::load_resources(resources_t *res) {
     warp_map_it_t *it = warp_map_iterate(&_objects);
     for (; it != NULL; it = warp_map_it_next(it, &_objects)) {
-        const object_def_t *def = (object_def_t *) warp_map_it_get(it);
+        const object_def_t *def = (object_def_t *) warp_map_it_get_value(it);
         const char *mesh = warp_str_value(&def->mesh_name); 
         const char *tex  = warp_str_value(&def->texture_name); 
         resources_load(res, mesh);
