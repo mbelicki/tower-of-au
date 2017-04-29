@@ -402,13 +402,13 @@ void level_state_t::handle_move(object_t *target, vec3_t pos) {
     } else {
         object_t *obj = (object_t *)object_at_position(pos);
         if (obj != NULL) {
-            const bool friendly = (target->flags & FOBJ_PLAYER_AVATAR) 
-                               && (obj->flags & FOBJ_FRIENDLY);
+            const bool can_chat = (target->flags & FOBJ_PLAYER_AVATAR) 
+                               && obj->chat_scipt != NULL;
             if (obj->type == OBJ_TERMINAL) {
                 handle_interaction(obj, target);
             } else if (obj->type == OBJ_PICK_UP) {
                 handle_picking_up(obj, target);
-            } else if (friendly){
+            } else if (can_chat){
                 handle_conversation(obj, target);
             } else {
                 handle_attack(obj, target);

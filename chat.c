@@ -15,7 +15,7 @@ enum pred_op {
     EQ = 0, NEQ, GT, GTE, LT, LTE
 };
 
-struct pred_arg {
+struct arg {
     bool is_literal;
     union {
         int literal_value;
@@ -24,9 +24,9 @@ struct pred_arg {
 };
 
 struct predicate {
-    enum   pred_op  op;
-    struct pred_arg arg1;  
-    struct pred_arg arg2;  
+    enum   pred_op op;
+    struct arg     arg1;  
+    struct arg     arg2;  
 };
 
 typedef bool (*pred_operation)(int a, int b);
@@ -70,7 +70,7 @@ bool parse_operator(enum pred_op *op, tokenizer_t *tok) {
     return false;
 }
 
-bool parse_argument(struct pred_arg *arg, tokenizer_t *tok) {
+bool parse_argument(struct arg *arg, tokenizer_t *tok) {
     if (token_is_int(tok)) {
         arg->is_literal = true;
         token_parse_int(tok, &arg->literal_value);
@@ -124,14 +124,16 @@ warp_result_t parse_predicate(struct predicate *p, const char *str) {
     return warp_success();
 }
 
+static void destroy_argument(struct arg *a) {
+    if (a->is_literal == false) {
+        warp_str_destroy(&a->fact_name);
+    }
+}
+
 static void destroy_predicate(struct predicate *p) {
     if (p == NULL) return;
-    if (p->arg1.is_literal == false) {
-        warp_str_destroy(&p->arg1.fact_name);
-    }
-    if (p->arg2.is_literal == false) {
-        warp_str_destroy(&p->arg2.fact_name);
-    }
+    destroy_argument(&p->arg1);
+    destroy_argument(&p->arg2);
 }
 
 static int get_fact(const char *name, const warp_map_t *facts) {
@@ -141,7 +143,7 @@ static int get_fact(const char *name, const warp_map_t *facts) {
     return 0;
 }
 
-static int evaluate_argument(const struct pred_arg *arg, const warp_map_t *facts) {
+static int evaluate_argument(const struct arg *arg, const warp_map_t *facts) {
     if (arg->is_literal) {
         return arg->literal_value;
     }
@@ -165,9 +167,9 @@ enum side_op {
 };
 
 struct side_effect {
-    warp_str_t   fact_name;
     enum side_op op;
-    int          imm_value;
+    struct arg   arg1;
+    struct arg   arg2;
 };
 
 typedef void (*side_operation)(const char *name, int value, warp_map_t *facts);
@@ -212,7 +214,16 @@ static warp_result_t parse_side_effect(struct side_effect *se, const char *str) 
     memset(se, 0, sizeof *se);
     
     token_next(&tok, '\0');
-    se->fact_name = token_parse_string(&tok, false);
+    if (parse_argument(&se->arg1, &tok) == false) {
+        char buffer[64];
+        token_copy(&tok, buffer, 64);
+        return warp_failure("Failed to parse '%s' as side effect's fact.", buffer);
+    }
+    if (se->arg1.is_literal) {
+        return warp_failure( "Cannot use '%d' value as side effect's fact."
+                           , se->arg1.literal_value
+                           );
+    }
 
     token_next(&tok, '\0');
     if (parse_side_operator(&se->op, &tok) == false) {
@@ -222,12 +233,11 @@ static warp_result_t parse_side_effect(struct side_effect *se, const char *str) 
     }
 
     token_next(&tok, '\0');
-    if (token_is_int(&tok) == false) {
+    if (parse_argument(&se->arg2, &tok) == false) {
         char buffer[64];
         token_copy(&tok, buffer, 64);
-        return warp_failure("Failed to parse '%s' as immediate value of side effect.", buffer);
+        return warp_failure("Failed to parse '%s' as side effect value.", buffer);
     }
-    token_parse_int(&tok, &se->imm_value);
 
     if (token_next(&tok, '\0')) {
         warp_log_d("Predicate '%s' has some unexpected tokens that were ignored.", str);
@@ -237,10 +247,9 @@ static warp_result_t parse_side_effect(struct side_effect *se, const char *str) 
 }
 
 static void destroy_side_effect(struct side_effect *se) {
-    if (se == NULL) {
-        return;
-    }
-    warp_str_destroy(&se->fact_name);
+    if (se == NULL) return;
+    destroy_argument(&se->arg1);
+    destroy_argument(&se->arg2);
 }
 
 extern void chat_entry_evaluate_side_effects
@@ -249,8 +258,9 @@ extern void chat_entry_evaluate_side_effects
         return;
     }
     struct side_effect *se = entry->side_effect;
-    const char *fact_name = warp_str_value(&se->fact_name);
-    side_operations[se->op](fact_name, se->imm_value, facts);
+    const char *fact = warp_str_value(&se->arg1.fact_name);
+    const int value  = evaluate_argument(&se->arg2, facts);
+    side_operations[se->op](fact, value, facts);
 }
 
 /* rest of the chat: */
@@ -309,7 +319,7 @@ static bool has_id(void *ctx, const chat_entry_t *e) {
 
 #define RETURN_IF_NULL(arg, ret) \
     if ((arg) == NULL) { \
-       warp_log_e("Unexpeced null argument '##arg' of function '%s'.", __func__); \
+       warp_log_e("Unexpeced null argument '" #arg "' of function '%s'.", __func__); \
        return (ret); \
     } \
 

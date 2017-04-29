@@ -36,6 +36,7 @@ struct object_def_t {
 
     warp_str_t    mesh_name;
     warp_str_t    texture_name;
+    warp_str_t    chat_script;
 };
 
 static bool has_json_member(JSON_Object *obj, const char *member_name) {
@@ -46,6 +47,7 @@ static void destroy_element(void *raw) {
     object_def_t *def = (object_def_t *) raw;
     warp_str_destroy(&def->mesh_name);
     warp_str_destroy(&def->texture_name);
+    warp_str_destroy(&def->chat_script);
     free(def);
 }
 
@@ -104,8 +106,8 @@ static void parse_graphics(object_def_t *def, JSON_Object *object) {
     const char *mesh_name = json_object_dotget_string(object, "graphics.mesh");
     const char *tex_name  = json_object_dotget_string(object, "graphics.texture");
     
-    def->mesh_name = warp_str_create(mesh_name == NULL ? "npc.obj" : mesh_name);
-    def->texture_name = warp_str_create(tex_name == NULL ? "missing.png" : tex_name);
+    def->mesh_name    = WARP_STR(mesh_name == NULL ? "npc.obj" : mesh_name);
+    def->texture_name = WARP_STR(tex_name  == NULL ? "missing.png" : tex_name);
 }
 
 static void parse_definition(JSON_Object *object, warp_map_t *objects) {
@@ -128,6 +130,8 @@ static void parse_definition(JSON_Object *object, warp_map_t *objects) {
     def.is_friendly   = parse_bool_flag(object, "friendly");
     
     parse_graphics(&def, object);
+
+    def.chat_script = WARP_STR(json_object_get_string(object, "chatScript"));
 
     warp_map_tag_insert(objects, name, &def);
 }
@@ -303,6 +307,7 @@ static object_t *evaluate_definition
     obj->health = def->health;
     obj->max_health = def->max_health;
     obj->ammo = def->ammo;
+    obj->chat_scipt = warp_str_value(&def->chat_script);
 
     obj->direction = evaluate_direction(dir, rand);
     obj->flags = evaluate_flags(def);

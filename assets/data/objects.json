@@ -94,13 +94,26 @@
             "name" : "friend",
             "movementType" : "roam",
             "canRotate" : true,
-            "canPush" : false,
             "type" : "character",
             "friendly" : true,
+            "chatScript" : "test1.chat.json",
             "health" : 3,
             "graphics" : {
                 "mesh" : "player.obj",
                 "texture" : "missing.png"
+            }
+        },
+        {
+            "name" : "otherFriend",
+            "movementType" : "roam",
+            "canRotate" : true,
+            "type" : "character",
+            "friendly" : true,
+            "chatScript" : "test2.chat.json",
+            "health" : 3,
+            "graphics" : {
+                "mesh" : "player.obj",
+                "texture" : "red.png"
             }
         },
         {

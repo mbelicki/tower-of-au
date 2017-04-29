@@ -1,0 +1,105 @@
+{
+    "entries" : [
+        {
+            "canStart" : true,
+            "text" : "hello there!",
+            "predicate" : "test.already_talked == false",
+            "sideEffect" : "test.already_talked <- 1",
+            "responses" : [
+                {
+                    "text" : "hi!",
+                    "nextId" : "quest"
+                },
+                {
+                    "text" : "I have no time for you!",
+                    "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "canStart" : true,
+            "text" : "hello again!",
+            "predicate" : "test.already_talked == true",
+            "responses" : [
+                {
+                    "text" : "hi!",
+                    "nextId" : "quest"
+                },
+                {
+                    "text" : "I have no time for you!",
+                    "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "id" : "quest",
+            "text" : "Can you go there\nand bring me that thing?",
+            "predicate" : "test.quest_given == false",
+            "responses" : [
+                {
+                    "text" : "sure",
+                    "nextId" : "end-given"
+                },
+                {
+                    "text" : "nope",
+                    "nextId" : "end"
+                }
+            ]
+        },
+        {
+            "id" : "quest",
+            "text" : "How is your progress\non bringing me that thing going?",
+            "predicate" : "test.quest_given == true",
+            "responses" : [
+                {
+                    "text" : "very well, I have that thing!",
+                    "nextId" : "item-check"
+                },
+                {
+                    "text" : "well, it could be better",
+                    "nextId" : "end-given"
+                }
+            ]
+        },
+        {
+            "id" : "item-check",
+            "text" : "Wow, thanks for bringing that thing!",
+            "predicate" : "test.item_taken == true",
+            "sideEffect" : "test.quest_given <- false",
+            "responses" : [
+                {
+                    "text" : "no problem, see you!"
+                }
+            ]
+        },
+        {
+            "id" : "item-check",
+            "text" : "Oh c'mon, I can see you don't have it",
+            "predicate" : "test.item_taken == false",
+            "responses" : [
+                {
+                    "text" : "wait a sec, I'll bring it"
+                }
+            ]
+        },
+        {
+            "id" : "end-given",
+            "text" : "OK then, have a nice day!",
+            "sideEffect" : "test.quest_given <- 1",
+            "responses" : [
+                {
+                    "text" : "see you!"
+                }
+            ]
+        },
+        {
+            "id" : "end",
+            "text" : "It was nice talking to you!",
+            "responses" : [
+                {
+                    "text" : "goodbye!"
+                }
+            ]
+        }
+    ]
+}

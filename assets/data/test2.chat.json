@@ -1,0 +1,41 @@
+{
+    "entries" : [
+        {
+            "canStart" : true,
+            "text" : "Sorry, I have no time for you!",
+            "predicate" : "test.quest_given == false",
+            "responses" : [
+                {
+                    "text" : "but..."
+                },
+                {
+                    "text" : "alright :("
+                }
+            ]
+        },
+        {
+            "canStart" : true,
+            "text" : "Did you come to take that thing?",
+            "predicate" : "test.quest_given == true",
+            "responses" : [
+                {
+                    "text" : "yes. give it to me please",
+                    "nextId" : "give"
+                },
+                {
+                    "text" : "not sure what you are talking about"
+                }
+            ]
+        },
+        {
+            "id" : "give",
+            "text" : "Here you go. Have a nice day",
+            "sideEffect" : "test.item_taken <- true",
+            "responses" : [
+                {
+                    "text" : "thanks"
+                }
+            ]
+        }
+    ]
+}

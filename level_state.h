@@ -49,6 +49,8 @@ struct object_t {
     int health;
     int max_health;
     int ammo;
+
+    const char *chat_scipt;
 };
 
 void initialize_player_object

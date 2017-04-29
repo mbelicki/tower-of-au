@@ -131,6 +131,13 @@
             "spawnRate" : 1.0
         },
         {
+            "symbol" : "f",
+            "walkable" : true,
+            "object" : "otherFriend",
+            "graphics" : "grass",
+            "spawnRate" : 1.0
+        },
+        {
             "symbol" : "-",
             "walkable" : true,
             "graphics" : "grass",
@@ -252,7 +259,7 @@
                 "        F#   ",
                 "             ",
                 "R            ",
-                "            L",
+                "    f       L",
                 "R      B  LHH",
                 "HHR   B LHHHH",
                 "HHHHHHHHHHHHH"

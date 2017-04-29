@@ -493,8 +493,7 @@ class core_controller_t final : public controller_impl_i {
             _conversation.fader = create_fade_circle(_world, 700, 1.0f, true);
             _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
 
-            _conversation.chat = 
-                get_chat(_world->get_resources(), "test_conversation.chat.json");
+            _conversation.chat = get_chat(_world->get_resources(), npc->chat_scipt);
             const chat_entry_t *start = get_start_entry(_conversation.chat, _random, &_facts);
 
             const res_id_t font = get_dialog_font(_world->get_resources());
