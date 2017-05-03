@@ -53,13 +53,6 @@ class label_controller_t final : public controller_impl_i {
 
         void update(float, const input_t &) override { }
 
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_SHOW_KNOWN_TEXT
-                || type == CORE_SHOW_TAG_TEXT
-                || type == CORE_SHOW_POINTER_TEXT
-                ;
-        }
-
         void handle_message(const message_t &message) override {
             messagetype_t type = message.type;
             if (type == CORE_SHOW_KNOWN_TEXT) {
@@ -231,7 +224,6 @@ class shrink_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t) const override { return false; }
         void handle_message(const message_t &) override { }
 
     private:
@@ -292,7 +284,6 @@ class ballon_controller_t final : public controller_impl_i {
             _owner->receive_message(MSG_PHYSICS_MOVE, pos);
         }
 
-        bool accepts(messagetype_t) const override { return false; }
         void handle_message(const message_t &) override { }
 
     private:

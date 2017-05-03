@@ -81,7 +81,6 @@ class fade_circle_controller_t final : public controller_impl_i {
             recreate_mesh(k);
         }
 
-        bool accepts(messagetype_t) const override { return false; }
         void handle_message(const message_t &) override { }
 
         void recreate_mesh(float k) {

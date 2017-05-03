@@ -46,6 +46,19 @@
             }
         },
         {
+            "name" : "weak_sentery",
+            "type" : "character",
+            "movementType" : "sentery",
+            "canRotate" : true,
+            "health" : 1,
+            "canShoot" : false,
+            "ammo" : 0,
+            "graphics" : {
+                "mesh" : "npc.obj",
+                "texture" : "red.png"
+            }
+        },
+        {
             "name" : "stationary_shooter",
             "type" : "character",
             "movementType" : "still",

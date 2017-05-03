@@ -102,16 +102,6 @@ class persistence_controller_t final : public controller_impl_i {
 
         void update(float, const input_t &) override { }
 
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_SAVE_PORTAL 
-                || type == CORE_SAVE_PLAYER
-                || type == CORE_SAVE_SEED
-                || type == CORE_SAVE_FACTS
-                || type == CORE_SAVE_RESET_DEFAULTS
-                || type == CORE_SAVE_TO_FILE
-                ;
-        }
-
         void handle_message(const message_t &message) override { 
             const messagetype_t type = message.type;
             if (type == CORE_SAVE_PLAYER) {

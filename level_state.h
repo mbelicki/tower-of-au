@@ -24,15 +24,16 @@ enum object_type_t {
 };
 
 enum object_flags_t {
-    FOBJ_NONE          =   0,
-    FOBJ_PLAYER_AVATAR =   1,
-    FOBJ_NPCMOVE_STILL =   2,
-    FOBJ_NPCMOVE_LINE  =   4,
-    FOBJ_NPCMOVE_ROAM  =   8,
-    FOBJ_CAN_SHOOT     =  16,
-    FOBJ_CAN_ROTATE    =  32,
-    FOBJ_CAN_PUSH      =  64,
-    FOBJ_FRIENDLY      = 128,
+    FOBJ_NONE            =   0,
+    FOBJ_PLAYER_AVATAR   =   1,
+    FOBJ_NPCMOVE_STILL   =   2,
+    FOBJ_NPCMOVE_LINE    =   4,
+    FOBJ_NPCMOVE_ROAM    =   8,
+    FOBJ_NPCMOVE_SENTERY =  16,
+    FOBJ_CAN_SHOOT       =  32,
+    FOBJ_CAN_ROTATE      =  64,
+    FOBJ_CAN_PUSH        = 128,
+    FOBJ_FRIENDLY        = 256,
 };
 
 WARP_ENABLE_FLAGS(object_flags_t)

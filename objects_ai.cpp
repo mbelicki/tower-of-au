@@ -10,7 +10,7 @@
 using namespace warp;
 
 extern bool needs_update(const object_t *obj) {
-    return obj != nullptr
+    return obj != NULL
         && obj->type == OBJ_CHARACTER 
         && ((obj->flags & FOBJ_PLAYER_AVATAR) == 0);
 }
@@ -33,7 +33,7 @@ static bool can_attack(const object_t *attacker, const object_t *target) {
 }
 
 static bool can_shoot(const object_t *shooter, const object_t *target) {
-    if (shooter == nullptr || target == nullptr) return false;
+    if (shooter == NULL || target == NULL) return false;
     if ((shooter->flags & FOBJ_CAN_SHOOT) == 0 || shooter->ammo <= 0) return false;
     return true;
 }
@@ -155,6 +155,8 @@ static dir_t pick_move_direction
             const object_t *player = state->find_player();
             dir = pick_roam_direction(*obj, *player, state, rand);
         }
+    } else if (obj->flags & FOBJ_NPCMOVE_SENTERY) {
+
     } else if (obj->flags & FOBJ_NPCMOVE_LINE) {
         if (obstacle_ahead) {
             dir = opposite_dir(dir);
@@ -174,15 +176,15 @@ extern bool pick_next_command
         ( command_t *command, const object_t *obj
         , const level_state_t* state, warp_random_t *rand
         ) {
-    if (command == nullptr) {
+    if (command == NULL) {
         warp_log_e("Cannot fill null command.");
         return false;
     }
-    if (obj == nullptr) {
+    if (obj == NULL) {
         warp_log_e("Cannot pick command for null object.");
         return false;
     }
-    if (state == nullptr) {
+    if (state == NULL) {
         warp_log_e("Cannot pick command with null state.");
         return false;
     }
@@ -191,7 +193,7 @@ extern bool pick_next_command
     }
 
     const object_t *player = state->find_player();
-    if (player == nullptr) {
+    if (player == NULL) {
         warp_log_e("Couldn't find player.");
         return false;
     }

@@ -117,27 +117,22 @@ class movement_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_DO_MOVE
-                || type == CORE_DO_MOVE_IMMEDIATE
-                || type == CORE_DO_ATTACK
-                || type == CORE_DO_BOUNCE
-                || type == CORE_DO_FALL
-                ;
-        }
-
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
-            const vec3_t pos = message.data.get_vec3();
             if (type == CORE_DO_MOVE) {
+                const vec3_t pos = message.data.get_vec3();
                 change_state(MOVE_MOVING, pos);
             } else if (type == CORE_DO_MOVE_IMMEDIATE) {
+                const vec3_t pos = message.data.get_vec3();
                 move_immediate(pos);
             } else if (type == CORE_DO_BOUNCE) {
+                const vec3_t pos = message.data.get_vec3();
                 change_state(MOVE_BOUNCING, pos);
             } else if (type == CORE_DO_ATTACK) {
+                const vec3_t pos = message.data.get_vec3();
                 change_state(MOVE_ATTACKING, pos);
             } else if (type == CORE_DO_FALL) {
+                const vec3_t pos = message.data.get_vec3();
                 change_state(MOVE_FALLING, pos);
             }
         }
@@ -230,10 +225,6 @@ class rotation_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_DO_ROTATE;
-        }
-
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_DO_ROTATE) {
@@ -319,12 +310,6 @@ class health_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_DO_HURT
-                || type == CORE_DO_DIE
-                ;
-        }
-
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_DO_DIE) {
@@ -358,11 +343,43 @@ class health_controller_t final : public controller_impl_i {
         }
 };
 
-extern controller_comp_t *create_character_controller(world_t *world, bool confirm_move) {
+class ai_controller_t final : public controller_impl_i {
+    public:
+        ai_controller_t() : _owner(NULL), _world(NULL) { }
+
+        dynval_t get_property(const warp_tag_t &) const override {
+            return dynval_t::make_null();
+        }
+
+        void initialize(entity_t *owner, world_t *world) override {
+            _owner = owner;
+            _world = world;
+        }
+
+        void update(float, const input_t &) override { }
+
+        void handle_message(const message_t &message) override {
+            const messagetype_t type = message.type;
+            if (type == CORE_NEXT_TURN) {
+                command_t cmd;
+                if (pick_next_command(&cmd, _obj, _level_state, _random)) {
+                }
+            }
+        }
+
+    private:
+        entity_t *_owner;
+        world_t *_world;
+};
+
+extern controller_comp_t *create_character_controller(world_t *world, bool is_player) {
     controller_comp_t *controller = world->create_controller();
-    controller->initialize(new movement_controller_t(confirm_move));
+    controller->initialize(new movement_controller_t(is_player));
     controller->add_controller(new rotation_controller_t);
     controller->add_controller(new health_controller_t);
+    if (is_player == false) {
+        controller->add_controller(new ai_controller_t);
+    }
     return controller;
 }
 

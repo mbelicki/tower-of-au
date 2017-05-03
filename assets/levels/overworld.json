@@ -138,6 +138,14 @@
             "spawnRate" : 1.0
         },
         {
+            "symbol" : "!",
+            "walkable" : true,
+            "object" : "weak_sentery",
+            "objectDirection" : "x_plus",
+            "graphics" : "grass",
+            "spawnRate" : 1.0
+        },
+        {
             "symbol" : "-",
             "walkable" : true,
             "graphics" : "grass",
@@ -232,11 +240,11 @@
                 "GGGGGR   gGGG",
                 "HHHHR       l",
                 "HHR    # ## l",
-                "HR     x    g",
-                "R x  ###     ",
-                "R      x     ",
-                "R    #  ##  L",
-                "R   x#  x    ",
+                "HHHR## #     g",
+                "R  !   #     ",
+                "R##### #     ",
+                "HR   # ###  L",
+                "R    #       ",
                 "R           l",
                 "R   lHR     l",
                 "R  gHHHH  gHH"

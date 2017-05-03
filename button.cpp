@@ -46,10 +46,6 @@ class button_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == MSG_INPUT_GESTURE_DETECTED;
-        }
-
         bool is_touching_button(vec2_t screen_pos) {
             vec2_t pos = vec2_sub(screen_pos, vec2_scale(_screen_size, 0.5f));
             pos.y = -pos.y;
@@ -172,10 +168,6 @@ class parent_controller_t final : public controller_impl_i {
         }
 
         void update(float, const input_t &) override { }
-
-        bool accepts(messagetype_t type) const override {
-            return type == MSG_ENTITY_WILL_BE_DESTROYED;
-        }
 
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;

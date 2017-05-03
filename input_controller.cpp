@@ -104,12 +104,6 @@ class input_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == MSG_INPUT_KEY_UP
-                || type == CORE_INPUT_ENABLE_SHOOTING
-                ;
-        }
-
         bool is_touching_button(vec2_t screen_pos) {
             vec2_t pos = vec2_sub( screen_pos , vec2_scale(_screen_size, 0.5f));
             pos.y = -pos.y;

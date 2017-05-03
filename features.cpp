@@ -43,10 +43,6 @@ class door_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_FEAT_STATE_CHANGE;
-        }
-
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_FEAT_STATE_CHANGE) {

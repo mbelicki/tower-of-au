@@ -19,6 +19,7 @@ enum move_type_t : int {
     OBJMOVE_STILL,
     OBJMOVE_LINE,
     OBJMOVE_ROAM,
+    OBJMOVE_SENTERY,
 };
 
 struct object_def_t {
@@ -83,6 +84,8 @@ static move_type_t parse_movement(JSON_Object *obj) {
         return OBJMOVE_LINE;
     } else if (strncmp("roam", value, 5) == 0) {
         return OBJMOVE_ROAM;
+    } else if (strncmp("sentery", value, 8) == 0) {
+        return OBJMOVE_SENTERY;
     } 
     return OBJMOVE_STILL;
 }
@@ -228,6 +231,8 @@ static object_flags_t movement_to_flag(move_type_t move) {
             return FOBJ_NPCMOVE_LINE;
         case OBJMOVE_ROAM:
             return FOBJ_NPCMOVE_ROAM;
+        case OBJMOVE_SENTERY:
+            return FOBJ_NPCMOVE_SENTERY;
         case OBJMOVE_NONE:
         default:
             return FOBJ_NONE;

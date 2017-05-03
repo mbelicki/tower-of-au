@@ -32,10 +32,6 @@ class bullet_controller_t final : public controller_impl_i {
             }
         }
 
-        bool accepts(messagetype_t type) const override {
-            return type == MSG_PHYSICS_COLLISION_DETECTED;
-        }
-
         void handle_message(const message_t &message) override {
             messagetype_t type = message.type;
             if (type == MSG_PHYSICS_COLLISION_DETECTED) {

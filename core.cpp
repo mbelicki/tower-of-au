@@ -223,19 +223,7 @@ class core_controller_t final : public controller_impl_i {
                     _level_state->spawn(_level, _random);
                     _level_state->add_object(_last_player_state, WARP_TAG("player"));
                 }
-            //} else if (_state == CSTATE_CONVERSATION) {
             }
-        }
-
-        bool accepts(messagetype_t type) const override {
-            return type == CORE_TRY_MOVE
-                || type == CORE_TRY_SHOOT
-                || type == CORE_MOVE_DONE
-                || type == CORE_BULLET_HIT
-                || type == CORE_RESTART_LEVEL
-                || type == CORE_SAVE_RESET_DEFAULTS
-                || type == MSG_INPUT_KEY_UP
-                ;
         }
 
         void handle_message(const message_t &message) override {
@@ -267,7 +255,8 @@ class core_controller_t final : public controller_impl_i {
                 next_turn();
 
                 check_events();
-            } else if (is_idle(player)) {
+            } else if (is_idle(player) &&
+                        (type == CORE_TRY_MOVE || type == CORE_TRY_SHOOT)) {
                 warp_log_d("player turn");
                 command_t cmd = {player, message};
                 std::vector<command_t> commands;
