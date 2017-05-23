@@ -9,10 +9,9 @@
 
 using namespace warp;
 
-extern bool needs_update(const object_t *obj) {
-    return obj != NULL
-        && obj->type == OBJ_CHARACTER 
-        && ((obj->flags & FOBJ_PLAYER_AVATAR) == 0);
+extern bool needs_update(obj_id_t id, const level_state_t *st) {
+    return st->has_object_type(id, OBJ_CHARACTER)
+        && (st->has_object_flag(id, FOBJ_PLAYER_AVATAR) == false);
 }
 
 static bool can_attack(const object_t *attacker, const object_t *target) {
@@ -152,7 +151,8 @@ static dir_t pick_move_direction
     if (obj->flags & FOBJ_NPCMOVE_ROAM) {
         const bool change_dir = warp_random_float(rand) > 0.6f;
         if (change_dir || obstacle_ahead) {
-            const object_t *player = state->find_player();
+            obj_id_t player_id = state->find_player();
+            const object_t *player = state->get_object(player_id);
             dir = pick_roam_direction(*obj, *player, state, rand);
         }
     } else if (obj->flags & FOBJ_NPCMOVE_SENTERY) {
@@ -167,54 +167,57 @@ static dir_t pick_move_direction
 }
 
 static void fill_command
-        (command_t *command, const object_t *obj, int type, dir_t dir) {
-    command->object = obj;
+        (command_t *command, const obj_id_t id, int type, dir_t dir) {
+    command->object_id = id;
     command->command = message_t(type, (int)dir_to_move(dir));
 }
 
 extern bool pick_next_command
-        ( command_t *command, const object_t *obj
-        , const level_state_t* state, warp_random_t *rand
+        ( command_t *command, obj_id_t id
+        , const level_state_t* st, warp_random_t *rand
         ) {
     if (command == NULL) {
         warp_log_e("Cannot fill null command.");
         return false;
     }
-    if (obj == NULL) {
-        warp_log_e("Cannot pick command for null object.");
-        return false;
-    }
-    if (state == NULL) {
+    if (st == NULL) {
         warp_log_e("Cannot pick command with null state.");
         return false;
     }
-    if (needs_update(obj) == false) {
+    if (id == OBJ_ID_INVALID) {
+        warp_log_e("Cannot pick command for invalid object.");
+        return false;
+    }
+    if ((st->is_object_valid(id) == false)
+            || (needs_update(id, st) == false)) {
         return false;
     }
 
-    const object_t *player = state->find_player();
-    if (player == NULL) {
+    obj_id_t player_id = st->find_player();
+    if (player_id == OBJ_ID_INVALID) {
         warp_log_e("Couldn't find player.");
         return false;
     }
+    const object_t *player = st->get_object(player_id);
+    const object_t *obj = st->get_object(id);
 
     /* try to perform one of the attacks */
     if (can_attack(obj, player)) {
         const vec3_t diff = vec3_sub(player->position, obj->position);
-        fill_command(command, obj, CORE_TRY_MOVE, vec3_to_dir(diff));
+        fill_command(command, id, CORE_TRY_MOVE, vec3_to_dir(diff));
         return true;
     } else if (can_shoot(obj, player)) {
-        const dir_t shoot_dir = pick_shooting_direction(obj, player, state);
+        const dir_t shoot_dir = pick_shooting_direction(obj, player, st);
         if (shoot_dir != DIR_NONE) {
-            fill_command(command, obj, CORE_TRY_SHOOT, shoot_dir);
+            fill_command(command, id, CORE_TRY_SHOOT, shoot_dir);
             return true;
         }
     } 
 
     /* if none of the attacks succeeded try to move: */
-    const dir_t dir = pick_move_direction(obj, state, rand);
+    const dir_t dir = pick_move_direction(obj, st, rand);
     if (dir != DIR_NONE) {
-        fill_command(command, obj, CORE_TRY_MOVE, dir);
+        fill_command(command, id, CORE_TRY_MOVE, dir);
         return true;
     }
 

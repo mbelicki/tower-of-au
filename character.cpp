@@ -361,9 +361,9 @@ class ai_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_NEXT_TURN) {
-                command_t cmd;
-                if (pick_next_command(&cmd, _obj, _level_state, _random)) {
-                }
+                //command_t cmd;
+                //if (pick_next_command(&cmd, _obj, _level_state, _random)) {
+                //}
             }
         }
 

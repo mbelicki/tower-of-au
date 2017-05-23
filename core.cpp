@@ -69,15 +69,6 @@ static warp_array_t create_pain_texts() {
     return array;
 }
 
-static bool is_idle(const object_t *object) {
-    if (object == NULL) {
-        warp_log_e("Cannot check if object is idle, object is null.");
-        return false;
-    }
-    const dynval_t is_idle = object->entity->get_property(WARP_TAG("avat.is_idle"));
-    return is_idle.get_int() == 1;
-}
-
 class core_controller_t final : public controller_impl_i {
     public:
         core_controller_t(const portal_t *start)
@@ -166,7 +157,8 @@ class core_controller_t final : public controller_impl_i {
                 if (added == false) {
                     warp_critical("Failed to spawn player avatar.");
                 }
-                player = _level_state->find_player();
+                const obj_id_t id = _level_state->find_player();
+                player = _level_state->get_object(id);
                 if (player == NULL) {
                     warp_critical("Failed to find player object on the level.");
                 }
@@ -175,7 +167,7 @@ class core_controller_t final : public controller_impl_i {
             } else {
                 _last_player_state = *player;
                 _last_player_state.position = pos;
-                _level_state->add_object(_last_player_state, WARP_TAG("player"));
+                _level_state->add_object(&_last_player_state, WARP_TAG("player"));
             }
 
             update_player_health_display(&_last_player_state);
@@ -221,7 +213,7 @@ class core_controller_t final : public controller_impl_i {
                 if (_state == CSTATE_IDLE) {
                     _region->change_display_positions(_level_x, _level_z);
                     _level_state->spawn(_level, _random);
-                    _level_state->add_object(_last_player_state, WARP_TAG("player"));
+                    _level_state->add_object(&_last_player_state, WARP_TAG("player"));
                 }
             }
         }
@@ -238,7 +230,7 @@ class core_controller_t final : public controller_impl_i {
                 return;
             }
 
-            const object_t *player = _level_state->find_player();
+            const obj_id_t player = _level_state->find_player();
             if (type == CORE_RESTART_LEVEL) {
                 change_region(&_portal, true);
             } else if (type == CORE_SAVE_RESET_DEFAULTS) {
@@ -255,7 +247,7 @@ class core_controller_t final : public controller_impl_i {
                 next_turn();
 
                 check_events();
-            } else if (is_idle(player) &&
+            } else if (_level_state->is_object_idle(player) &&
                         (type == CORE_TRY_MOVE || type == CORE_TRY_SHOOT)) {
                 warp_log_d("player turn");
                 command_t cmd = {player, message};
@@ -314,7 +306,8 @@ class core_controller_t final : public controller_impl_i {
 
             size_t x = 0; 
             size_t z = 0; 
-            const object_t *player = _level_state->find_player();
+            const obj_id_t id = _level_state->find_player();
+            const object_t *player = _level_state->get_object(id);
             if (player != NULL) {
                 x = round(player->position.x);
                 z = round(player->position.z);
@@ -337,7 +330,12 @@ class core_controller_t final : public controller_impl_i {
         void check_events() {
             for (const event_t &event : _level_state->get_last_turn_events()) {
                 const event_type_t type = event.type;
-                const object_t *obj = &event.object;
+                const obj_id_t obj_id = event.object_id;
+                const object_t *obj = _level_state->get_object(obj_id);
+                if (obj == NULL) {
+                    continue;
+                }
+
                 const int x = round(obj->position.x);
                 const int z = round(obj->position.z);
                 if (type == EVENT_PLAYER_LEAVE) {
@@ -367,17 +365,18 @@ class core_controller_t final : public controller_impl_i {
                         change_region(&_portal, true);
                     }
                 } else if (type == EVENT_PLAYER_ACTIVATED_TERMINAL) {
-                    const object_t *player = _level_state->find_player();
+                    const obj_id_t player_id = _level_state->find_player();
+                    const object_t *player = _level_state->get_object(player_id);
                     /* push terminal: */
                     if (obj->flags & FOBJ_CAN_PUSH) {
                         if ((player->flags & FOBJ_CAN_PUSH) == 0) {
                             emit_speech(obj, "gained\n push");
-                            _level_state->set_object_flag(player, FOBJ_CAN_PUSH);
+                            _level_state->set_object_flag(player_id, FOBJ_CAN_PUSH);
                         }
                     } else if (obj->flags & FOBJ_CAN_SHOOT) {
                         if ((player->flags & FOBJ_CAN_SHOOT) == 0) {
                             emit_speech(obj, " gained\nshooting");
-                            _level_state->set_object_flag(player, FOBJ_CAN_SHOOT);
+                            _level_state->set_object_flag(player_id, FOBJ_CAN_SHOOT);
                             enable_shooting_controls();
                         }
                     }
@@ -387,7 +386,8 @@ class core_controller_t final : public controller_impl_i {
                 }
             }
 
-            const object_t *player = _level_state->find_player();
+            const obj_id_t player_id = _level_state->find_player();
+            const object_t *player = _level_state->get_object(player_id);
             if (player != NULL) {
                 update_player_health_display(player);
                 update_player_ammo_display(player);
@@ -586,14 +586,13 @@ class core_controller_t final : public controller_impl_i {
         }
 
         void next_turn() {
-            std::vector<const object_t *> characters;
+            std::vector<obj_id_t> characters;
             _level_state->find_all_characters(&characters);
 
             std::vector<command_t> commands;
-            for (const object_t *obj : characters) {
+            for (obj_id_t id : characters) {
                 command_t buffer;
-                const bool picked
-                    = pick_next_command(&buffer, obj, _level_state, _random);
+                const bool picked = pick_next_command(&buffer, id, _level_state, _random);
                 if (picked) commands.push_back(buffer);
             }
             _level_state->next_turn(commands);

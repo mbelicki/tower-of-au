@@ -1,6 +1,8 @@
 #define WARP_DROP_PREFIX
 #include "level_state.h"
 
+#include <stdlib.h>
+
 #include "warp/utils/log.h"
 #include "warp/world.h"
 #include "warp/entity.h"
@@ -78,128 +80,135 @@ static feature_t *create_feature
     feat->entity = entity;
     feat->entity->set_tag(WARP_TAG("feature"));
     feat->state = type == FEAT_SPIKES ? FSTATE_ACTIVE : FSTATE_INACTIVE;
+    feat->x = x; feat->z = z;
 
     return feat;
 }
 
 level_state_t::level_state_t(world_t *world, size_t width, size_t height) 
         : _initialized(false)
+        , _obj_pool(NULL)
+        , _feat_pool(NULL)
+        , _obj_placement(NULL)
+        , _feat_placement(NULL)
         , _world(world)
         , _width(width)
         , _height(height)
-        , _objects(NULL)
-        , _features(NULL)
         , _bullet_factory(NULL) 
         , _object_factory(NULL) {
     const size_t count = _width * _height;
-    _objects  = new object_t  * [count];
-    _features = new feature_t * [count];
+    _obj_placement  = (obj_id_t *)  calloc(count, sizeof *_obj_placement);
+    _feat_placement = (feat_id_t *) calloc(count, sizeof *_feat_placement);
 
-    for (size_t i = 0; i < count; i++) {
-        _objects[i] = NULL;
-        _features[i] = NULL;
-    }
+    _obj_pool  = pool_create_typed(object_t, count, NULL);
+    _feat_pool = pool_create_typed(feature_t, count, NULL);
 }
 
 level_state_t::~level_state_t() {
-    const size_t count = _width * _height;
-    for (size_t i = 0; i < count; i++) {
-        delete _objects[i];
-        delete _features[i];
-    }
-    delete _objects;
-    delete _features;
     delete _bullet_factory;
     delete _object_factory;
+
+    warp_pool_destroy(_obj_pool);
+    warp_pool_destroy(_feat_pool);
+
+    free(_obj_placement);
+    free(_feat_placement);
 }
 
-bool level_state_t::add_object
-        (const object_t &obj, const warp_tag_t &def_name) {
-    const size_t x = round(obj.position.x);
-    const size_t z = round(obj.position.z);
-    if (object_at(x, z) != NULL) return false;
-    
-    object_t *new_obj = new object_t;
-    *new_obj = obj;
+obj_id_t level_state_t::add_object
+        (const object_t *obj, const warp_tag_t &def_name) {
+    const size_t x = round(obj->position.x);
+    const size_t z = round(obj->position.z);
+    if (object_at(x, z) != OBJ_ID_INVALID) {
+        return OBJ_ID_INVALID;
+    }
+
+    obj_id_t id = pool_create_item(_obj_pool);
+    object_t *new_obj = pool_get(object_t, _obj_pool, id);
+    memmove(new_obj, obj, sizeof *new_obj);
+
     if (new_obj->entity == NULL) {
         new_obj->entity
             = _object_factory->create_object_entity(new_obj, def_name, _world);
     }
 
-    _objects[x + _width * z] = new_obj;
+    _obj_placement[x + _width * z] = id;
     new_obj->entity->receive_message(CORE_DO_ROTATE, (int)new_obj->direction);
-    return true;
+    return id;
 }
 
-bool level_state_t::spawn_object
+obj_id_t level_state_t::spawn_object
         (warp_tag_t name, vec3_t pos, warp_random_t *rand) {
-    const size_t x = round(pos.x);
-    const size_t z = round(pos.z);
-    if (object_at(x, z) != NULL) return false;
-
     object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_PLUS, rand, _world);
-
-    _objects[x + _width * z] = new_obj;
-    new_obj->entity->receive_message(CORE_DO_ROTATE, (int)DIR_Z_PLUS);
-    return true;
+    const bool result = add_object(new_obj, name);
+    delete new_obj;
+    return result;
 }
 
-void level_state_t::set_object_flag(const object_t *obj, object_flags_t flag) {
-    if (obj == NULL) {
-        warp_log_e("Cannot set flag, null object.");
-        return;
+feat_id_t level_state_t::spawn_feature
+        (feature_type_t type, size_t target, size_t x, size_t z) {
+    if (feature_at(x, z) != FEAT_ID_INVALID) {
+        return FEAT_ID_INVALID;
     }
 
-    object_t *object = (object_t *)object_at_position(obj->position);
+    feature_t *feat = create_feature(_world, type, target, x, z);
+
+    feat_id_t id = pool_create_item(_feat_pool);
+    feature_t *new_feat = pool_get(feature_t, _feat_pool, id);
+    memmove(new_feat, &feat, sizeof *new_feat);
+
+    _feat_placement[x + _width * z] = id;
+    return id;
+}
+
+void level_state_t::set_object_flag(obj_id_t obj, object_flags_t flag) {
+    object_t *object = pool_get(object_t, _obj_pool, obj);
     if (object == NULL) {
-        warp_log_e("Cannot set flag, object is not there.");
+        warp_log_e("Cannot set flag, object not found.");
         return;
     }
-
     object->flags |= flag;
 }
 
-const object_t *level_state_t::object_at_position(vec3_t pos) const {
-    const size_t x = round(pos.x);
-    const size_t z = round(pos.z);
-    return object_at(x, z);
+obj_id_t level_state_t::object_at_position(vec3_t pos) const {
+    return object_at(round(pos.x), round(pos.z));
 }
 
-const object_t *level_state_t::object_at(size_t x, size_t y) const {
-    if (x >= _width || y >= _height) return NULL;
-    return _objects[x + _width * y];
+obj_id_t level_state_t::object_at(size_t x, size_t y) const {
+    if (x >= _width || y >= _height) return OBJ_ID_INVALID;
+    return _obj_placement[x + _width * y];
 }
 
-const object_t *level_state_t::find_player() const {
-    const size_t count = _width * _height;
-    for (size_t i = 0; i < count; i++) {
-        const object_t *obj = _objects[i];
-        if (obj != NULL && (obj->flags & FOBJ_PLAYER_AVATAR)) {
-            return obj;
+obj_id_t  level_state_t::find_player() const {
+    pool_it_t *it = pool_iterate(_obj_pool);
+    for (; it != NULL; it = pool_it_next(it)) {
+        const object_t *obj = pool_it_get(object_t, it);
+        if (obj->flags & FOBJ_PLAYER_AVATAR) {
+            return pool_it_to_id(_obj_pool, it);
         }
     }
-    return NULL;
+    return OBJ_ID_INVALID;
 }
 
-void level_state_t::find_all_characters
-        (std::vector<const object_t *> *characters) {
+void level_state_t::find_all_characters(std::vector<obj_id_t> *characters) {
     if (characters == NULL) {
         warp_log_e("Called with null 'characters' paramter, skipping call.");
         return;
     }
 
-    const size_t count = _width * _height;
-    for (size_t i = 0; i < count; i++) {
-        object_t *obj = _objects[i];
-        if (obj != NULL && obj->type == OBJ_CHARACTER) {
-            characters->push_back(obj);
+    pool_it_t *it = pool_iterate(_obj_pool);
+    for (; it != NULL; it = pool_it_next(it)) {
+        const object_t *obj = pool_it_get(object_t, it);
+        if (obj->type == OBJ_CHARACTER) {
+            obj_id_t id = pool_it_to_id(_obj_pool, it);
+            characters->push_back(id);
         }
     }
 }
 
-const feature_t *level_state_t::feature_at(size_t x, size_t y) const {
-    if (x >= _width || y >= _height) return NULL;
-    return _features[x + _width * y];
+feat_id_t level_state_t::feature_at(size_t x, size_t y) const {
+    if (x >= _width || y >= _height) return OBJ_ID_INVALID;
+    return _feat_placement[x + _width * y];
 }
 
 bool level_state_t::can_move_to(vec3_t new_pos) const {
@@ -211,17 +220,31 @@ bool level_state_t::can_move_to(vec3_t new_pos) const {
 
     if (tile->is_walkable == false) return false;
 
-    const object_t *object = object_at(x, z);
-    if (object != NULL) return false;
+    const obj_id_t object = object_at(x, z);
+    if (object != OBJ_ID_INVALID) return false;
 
-    const feature_t *feature = feature_at(x, z);
-    if (feature != NULL) {
-        if (feature->type == FEAT_DOOR 
-                && feature->state == FSTATE_INACTIVE) {
+    const feat_id_t feature = feature_at(x, z);
+    if (feature != OBJ_ID_INVALID) {
+        feature_t *feat = pool_get(feature_t, _feat_pool, feature);
+        if (feat->type == FEAT_DOOR && feat->state == FSTATE_INACTIVE) {
             return false;
         }
     }
     return true;
+}
+
+bool level_state_t::is_object_idle(obj_id_t obj) const {
+    const object_t *o = pool_get(object_t, _obj_pool, obj);
+    if (o && o->entity) {
+        const dynval_t is_idle = o->entity->get_property(WARP_TAG("avat.is_idle"));
+        return is_idle.get_int() == 1;
+    }
+    return false;
+}
+
+bool level_state_t::is_object_valid(obj_id_t obj) const {
+    void *maybe_data = pool_get_data(_obj_pool, obj);
+    return maybe_data != NULL;
 }
 
 static void change_direction(object_t *obj, dir_t dir) {
@@ -270,7 +293,6 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
             const tile_t * tile = level->get_tile_at(i, j);
             if (tile == NULL) continue;
 
-            const size_t id = i + _width * j;
             const feature_type_t feat_type = tile->feature;
 
             if (warp_tag_equals_buffer(&tile->object_id, "") == false 
@@ -278,18 +300,19 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
-                    object_t *obj = _object_factory->spawn
-                        (tile->object_id, pos, DIR_Z_MINUS, rand, _world);
-                    if (obj != NULL) {
-                        change_direction(obj, tile->object_dir);
-                        _objects[id] = obj;
-                    }
+                    spawn_object(tile->object_id, pos, rand);
+                    //object_t *obj = _object_factory->spawn
+                    //    (tile->object_id, pos, DIR_Z_MINUS, rand, _world);
+                    //if (obj != NULL) {
+                    //    change_direction(obj, tile->object_dir);
+                    //    _objects[id] = obj;
+                    //}
                 }
             }
 
             if (feat_type != FEAT_NONE) {
                 const size_t target = tile->feat_target_id;
-                _features[id] = create_feature(_world, feat_type, target, i, j);
+                spawn_feature(feat_type, target, i, j);
             }
         }
     }
@@ -302,7 +325,7 @@ void level_state_t::next_turn(const std::vector<command_t> &commands) {
     }
     _events.clear();
     for (const command_t &command : commands) {
-        update_object(command.object, command.command);
+        update_object(command.object_id, command.command);
     }
 }
 
@@ -312,11 +335,11 @@ void level_state_t::process_real_time_event(const rt_event_t &event) {
         return;
     }
 
-    _events.clear();
+    //_events.clear();
     if (event.type == RT_EVENT_BULETT_HIT) {
         const vec3_t target_pos = event.value.get_vec3();
-        object_t *object = (object_t *)object_at_position(target_pos);
-        handle_attack(object, NULL);
+        obj_id_t object = object_at_position(target_pos);
+        handle_attack(object, OBJ_ID_INVALID);
     }
 }
 
@@ -336,13 +359,14 @@ void level_state_t::clear() {
         _world->destroy_later(e);
     }
 
-    const size_t count = _width * _height;
-    for (size_t i = 0; i < count; i++) {
-        delete _objects[i];
-        delete _features[i];
-        _objects[i]  = NULL;
-        _features[i] = NULL;
-    }
+    _events.clear();
+
+    pool_clear(_obj_pool);
+    pool_clear(_feat_pool);
+
+    const size_t pl_size = _width * _height * sizeof (warp_pool_id_t);
+    memset(_obj_placement,  0, pl_size);
+    memset(_feat_placement, 0, pl_size);
 }
 
 static dir_t get_move_direction(move_dir_t move_dir) {
@@ -359,214 +383,261 @@ static dir_t get_move_direction(move_dir_t move_dir) {
     }
 }
 
-static vec3_t calculate_new_pos(const object_t *character, move_dir_t dir) {
-    const dir_t direction = get_move_direction(dir);
-    const vec3_t step = dir_to_vec3(direction);
-    return vec3_add(character->position, step);
+object_t *level_state_t::get_mutable_object(obj_id_t id) const {
+    return pool_get(object_t, _obj_pool, id);
 }
 
-void level_state_t::update_object
-        (const object_t *obj, const message_t &command) {
-    if (obj == NULL) {
-        warp_log_e("Cannot update null object.");
+feature_t *level_state_t::get_mutable_feature(feat_id_t id) const {
+    return pool_get(feature_t, _feat_pool, id);
+}
+
+const object_t *level_state_t::get_object(obj_id_t id) const {
+    return get_mutable_object(id);
+}
+
+const feature_t *level_state_t::get_feature(feat_id_t id) const {
+    return get_mutable_feature(id);
+}
+
+static vec3_t calculate_new_pos(const object_t *obj, move_dir_t dir) {
+    const dir_t direction = get_move_direction(dir);
+    const vec3_t step = dir_to_vec3(direction);
+    return vec3_add(obj->position, step);
+}
+
+void level_state_t::update_object(obj_id_t obj, const message_t &command) {
+    if (obj == OBJ_ID_INVALID) {
+        warp_log_e("Cannot update invalid object.");
         return;
     }
 
-    object_t *object = (object_t *)object_at_position(obj->position);
-    if (object == NULL) {
-        warp_log_e("Cannot update object, object is not there.");
-        return;
-    }
-    
+    const object_t *object = get_object(obj);
     const messagetype_t type = command.type;
     if (type == CORE_TRY_MOVE) {
         move_dir_t dir = (move_dir_t) command.data.get_int();
         const vec3_t pos = calculate_new_pos(object, dir);
-        handle_move(object, pos);
+        handle_move(obj, pos);
     } else if (type == CORE_TRY_SHOOT) {
         const move_dir_t direction = (move_dir_t) command.data.get_int();
-        handle_shooting(object, get_move_direction(direction));
+        handle_shooting(obj, get_move_direction(direction));
     } else {
         warp_log_d("Object not updated: unsupported message type: %d.", (int)type);
     }
 }
 
-void level_state_t::handle_move(object_t *target, vec3_t pos) {
-    if (target == NULL) { 
-        warp_log_e("Cannot handle move, null target.");
+bool level_state_t::has_object_flag(obj_id_t id, object_flags_t flag) const {
+    const object_t *obj = get_object(id);
+    return obj != NULL && (obj->flags & flag);
+}
+
+bool level_state_t::has_object_type(obj_id_t id, object_type_t type) const {
+    const object_t *obj = get_object(id);
+    return obj != NULL && obj->type == type;
+}
+
+bool level_state_t::has_feature_type(feat_id_t id, feature_type_t type) const {
+    const feature_t *feat = get_feature(id);
+    return feat != NULL && feat->type == type;
+}
+
+void level_state_t::handle_move(obj_id_t target, vec3_t pos) {
+    if (target == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle move, invalid target.");
         return;
     }
 
     if (can_move_to(pos)) {
         move_object(target, pos, false);
     } else {
-        object_t *obj = (object_t *)object_at_position(pos);
-        if (obj != NULL) {
-            const bool can_chat = (target->flags & FOBJ_PLAYER_AVATAR) 
+        obj_id_t other = object_at_position(pos);
+        if (other != OBJ_ID_INVALID) {
+            const object_t *obj = get_object(other);
+            const bool can_chat = has_object_flag(target, FOBJ_PLAYER_AVATAR)
                                && obj->chat_scipt != NULL;
             if (obj->type == OBJ_TERMINAL) {
-                handle_interaction(obj, target);
+                handle_interaction(other, target);
             } else if (obj->type == OBJ_PICK_UP) {
-                handle_picking_up(obj, target);
+                handle_picking_up(other, target);
             } else if (can_chat){
-                handle_conversation(obj, target);
+                handle_conversation(other, target);
             } else {
-                handle_attack(obj, target);
+                handle_attack(other, target);
             }
         } else {
-            target->entity->receive_message(CORE_DO_BOUNCE, pos);
+            const object_t *obj = get_object(target);
+            obj->entity->receive_message(CORE_DO_BOUNCE, pos);
         }
     }
 }
 
-static int calculate_damage(const object_t &target) {
-    return target.type == OBJ_BOULDER ? 0 : 1;
+static int calculate_damage(const object_t *target) {
+    return target->type == OBJ_BOULDER ? 0 : 1;
 }
 
-void level_state_t::handle_picking_up
-        (object_t *pick_up, object_t *character) {
-    if (character == NULL) { 
-        warp_log_e("Cannot handle picking up, null character.");
+void level_state_t::handle_picking_up(obj_id_t pick_up, obj_id_t character) {
+    if (character == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle picking up, invalid character.");
         return;
     }
-    if (pick_up == NULL) { 
-        warp_log_e("Cannot handle picking up, null pick up.");
+    if (pick_up == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle picking up, invalid pick up.");
         return;
     }
 
-    character->health += pick_up->health;
-    character->ammo += pick_up->ammo;
-    character->max_health += pick_up->max_health;
+    object_t *pick_obj = get_mutable_object(pick_up);
+    object_t *char_obj = get_mutable_object(character);
 
-    if (character->health > character->max_health) {
-        character->health = character->max_health;
+    char_obj->health     += pick_obj->health;
+    char_obj->ammo       += pick_obj->ammo;
+    char_obj->max_health += pick_obj->max_health;
+
+    if (char_obj->health > char_obj->max_health) {
+        char_obj->health = char_obj->max_health;
     }
 
-    const vec3_t pick_up_pos = pick_up->position;
-    pick_up->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
+    const vec3_t pick_up_pos = pick_obj->position;
+    pick_obj->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
     destroy_object(pick_up);
 
     move_object(character, pick_up_pos, false);
 }
 
-void level_state_t::handle_conversation(object_t *npc, object_t *player) {
-    player->entity->receive_message(CORE_DO_ATTACK, npc->position);
-    event_t event = {*npc, EVENT_PLAYER_STARTED_CONVERSATION};
+void level_state_t::handle_conversation(obj_id_t npc, obj_id_t player) {
+    const object_t *npc_obj    = get_object(npc);
+    const object_t *player_obj = get_object(player);
+
+    player_obj->entity->receive_message(CORE_DO_ATTACK, npc_obj->position);
+    event_t event = {npc, EVENT_PLAYER_STARTED_CONVERSATION};
     _events.push_back(event);
 }
 
-void level_state_t::handle_interaction
-        (object_t *terminal, object_t *character) {
-    if (character == NULL) { 
-        warp_log_e("Cannot handle interaction, null character.");
+void level_state_t::handle_interaction(obj_id_t terminal, obj_id_t character) {
+    if (character == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle interaction, invalid character.");
         return;
     }
-    if (terminal == NULL) { 
-        warp_log_e("Cannot handle interaction, null terminal.");
+    if (terminal == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle interaction, invalid terminal.");
         return;
     }
 
-    character->entity->receive_message(CORE_DO_BOUNCE, terminal->position);
-    if (character->flags & FOBJ_PLAYER_AVATAR) {
-        event_t event = {*terminal, EVENT_PLAYER_ACTIVATED_TERMINAL};
+    const object_t *term_obj = get_object(terminal);
+    const object_t *char_obj = get_object(character);
+
+    char_obj->entity->receive_message(CORE_DO_BOUNCE, term_obj->position);
+    if (char_obj->flags & FOBJ_PLAYER_AVATAR) {
+        event_t event = {terminal, EVENT_PLAYER_ACTIVATED_TERMINAL};
         _events.push_back(event);
     }
 }
 
-void level_state_t::handle_attack(object_t *target, object_t *attacker) {
-    if (target == NULL) { 
-        warp_log_e("Cannot handle attack, null target.");
+void level_state_t::handle_attack(obj_id_t target, obj_id_t attacker) {
+    if (target == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle attack, invalid target.");
         return;
     }
-    if ((attacker->flags & FOBJ_FRIENDLY) 
-            && (target->flags & FOBJ_PLAYER_AVATAR)) {
+    //if (attacker == OBJ_ID_INVALID) { 
+    //    warp_log_e("Cannot handle attack, invalid attacker.");
+    //    return;
+    //}
+    
+    if (has_object_flag(attacker, FOBJ_FRIENDLY) 
+            && has_object_flag(target, FOBJ_PLAYER_AVATAR)) {
         return;
     }
-    const bool attacker_can_push
-        = attacker == NULL ? false : (attacker->flags & FOBJ_CAN_PUSH) != 0;
-    const bool target_is_boulder = target->type == OBJ_BOULDER;
+
+    const bool attacker_can_push = has_object_flag(attacker, FOBJ_CAN_PUSH);
+    const bool target_is_boulder = has_object_type(target, OBJ_BOULDER);
+
+    const object_t *target_obj   = get_object(target);
+    const object_t *attacker_obj = get_object(attacker);
+
     /* TODO: shouldn't this be a separate function? */
-    const vec3_t original_position = target->position;
+    const vec3_t original_position = target_obj->position;
     const vec3_t attacker_position
-        = attacker == NULL ? original_position : attacker->position;
+        = attacker_obj == NULL ? original_position : attacker_obj->position;
     const vec3_t d = vec3_sub(original_position, attacker_position);
-    const vec3_t push_back = vec3_add(target->position, d);
+    const vec3_t push_back = vec3_add(target_obj->position, d);
     bool can_push_back = can_move_to(push_back);
     if (target_is_boulder) {
         can_push_back = can_push_back && attacker_can_push;
     }
 
-    const int damage = calculate_damage(*target);
+    const int damage = calculate_damage(target_obj);
     const bool alive = hurt_object(target, damage);
 
     if (alive && can_push_back) {
         move_object(target, push_back, false);
     }
 
-
-    if (attacker != NULL) {
+    if (attacker_obj != NULL) {
         /* rotate attacker */
-        const vec3_t diff = vec3_sub(target->position, original_position);
-        change_direction(attacker, vec3_to_dir(diff));
+        const vec3_t diff = vec3_sub(target_obj->position, original_position);
+        change_direction(get_mutable_object(attacker), vec3_to_dir(diff));
         
         if (target_is_boulder) {
             if (can_move_to(original_position) && attacker_can_push) {
                 move_object(attacker, original_position, false);
             } else {
-                attacker->entity->receive_message(CORE_DO_BOUNCE, original_position);
+                attacker_obj->entity->receive_message(CORE_DO_BOUNCE, original_position);
             }
         } else {
-            attacker->entity->receive_message(CORE_DO_ATTACK, original_position);
+            attacker_obj->entity->receive_message(CORE_DO_ATTACK, original_position);
         }
     }
 }
 
-void level_state_t::handle_shooting(object_t *shooter, warp_dir_t dir) {
-    if (shooter == NULL) { 
-        warp_log_e("Cannot handle shooting, null shooter.");
+void level_state_t::handle_shooting(obj_id_t shooter, warp_dir_t dir) {
+    if (shooter == OBJ_ID_INVALID) { 
+        warp_log_e("Cannot handle shooting, invalid shooter.");
         return;
     }
-    if ((shooter->flags & FOBJ_CAN_SHOOT) == 0 || shooter->ammo <= 0) { 
+    object_t *obj = get_mutable_object(shooter);
+    if (has_object_flag(shooter, FOBJ_CAN_SHOOT) == false || obj->ammo <= 0) { 
         return;
     }
 
-    change_direction(shooter, dir);
+    change_direction(obj, dir);
 
     const float speed = 4.5f;
 
     const vec3_t d = dir_to_vec3(dir);
-    const vec3_t pos = vec3_add(shooter->position, vec3_scale(d, 0.5f));
+    const vec3_t pos = vec3_add(obj->position, vec3_scale(d, 0.5f));
     const vec3_t v = vec3_add(vec3_scale(d, speed), vec3(0.001f, 0, 0.001f));
     _bullet_factory->create_bullet(pos, v, BULLET_ARROW, _level);
 
-    const vec3_t recoil = vec3_add(shooter->position, vec3_scale(d, -1));
-    shooter->entity->receive_message(CORE_DO_BOUNCE, recoil);
-    shooter->ammo -= 1;
+    const vec3_t recoil = vec3_add(obj->position, vec3_scale(d, -1));
+    obj->entity->receive_message(CORE_DO_BOUNCE, recoil);
+    obj->ammo -= 1;
 }
 
-void level_state_t::change_button_state(feature_t *feat, feat_state_t state) {
-    if (feat == NULL) {
-        warp_log_e("Cannot change state of null feature.");
+void level_state_t::change_button_state(feat_id_t button, feat_state_t state) {
+    if (button == FEAT_ID_INVALID) {
+        warp_log_e("Cannot change state of invalid feature.");
         return;
     }
-    if (feat->type != FEAT_BUTTON) {
+    if (has_feature_type(button, FEAT_BUTTON) == false) {
         warp_log_e("Expected feature to be of button type.");
         return;
     }
 
+    feature_t *feat = get_mutable_feature(button);
     feat->state = state;
-    feature_t *target = _features[feat->target_id];
-    if (target != NULL) {
-        target->state = state;
-        target->entity->receive_message(CORE_FEAT_STATE_CHANGE, target->state);
+    feat_id_t target = _feat_placement[feat->target_id];
+    if (target != FEAT_ID_INVALID) {
+        feature_t *targ_feat = get_mutable_feature(target);
+        targ_feat->state = state;
+        targ_feat->entity->receive_message(CORE_FEAT_STATE_CHANGE, targ_feat->state);
     }
 }
 
-void level_state_t::move_object(object_t *target, vec3_t pos, bool immediate) {
-    if (target == NULL) {
-        warp_log_e("Cannot handle move, null target.");
+void level_state_t::move_object(obj_id_t id, vec3_t pos, bool immediate) {
+    if (id == OBJ_ID_INVALID) {
+        warp_log_e("Cannot handle move, invalid target.");
         return;
     }
+
+    object_t *target = get_mutable_object(id);
 
     const vec3_t old_position = target->position;
     const size_t old_x = round(old_position.x);
@@ -578,18 +649,17 @@ void level_state_t::move_object(object_t *target, vec3_t pos, bool immediate) {
     const dir_t new_dir = vec3_to_dir(diff); 
     change_direction(target, new_dir);
 
-    _objects[old_x + _width * old_z] = NULL;
-    _objects[new_x + _width * new_z] = target;
+    _obj_placement[old_x + _width * old_z] = 0;
+    _obj_placement[new_x + _width * new_z] = id;
 
-    feature_t *old_feat = (feature_t *)feature_at(old_x, old_z);
-    if (old_feat != NULL) {
-        if (old_feat->type == FEAT_BUTTON) {
+    feat_id_t old_feat = feature_at(old_x, old_z);
+    if (old_feat != FEAT_ID_INVALID) {
+        if (has_feature_type(old_feat, FEAT_BUTTON)) {
             change_button_state(old_feat, FSTATE_INACTIVE);
-        } else if (old_feat->type == FEAT_BREAKABLE_FLOOR) {
-            old_feat->entity->receive_message(CORE_FEAT_STATE_CHANGE, FSTATE_ACTIVE);
-            _features[old_x + _width * old_z]
-                = create_feature(_world, FEAT_SPIKES, 0, old_x, old_z);
-            delete old_feat;
+        } else if (has_feature_type(old_feat, FEAT_BREAKABLE_FLOOR)) {
+            get_feature(old_feat)->entity->receive_message(CORE_FEAT_STATE_CHANGE, FSTATE_ACTIVE);
+            spawn_feature(FEAT_SPIKES, 0, old_x, old_z);
+            destroy_feature(old_feat);
         }
     }
 
@@ -601,70 +671,77 @@ void level_state_t::move_object(object_t *target, vec3_t pos, bool immediate) {
         const int x = round(pos.x);
         const int z = round(pos.z);
         if (x < 0 || x >= 13 || z < 0 || z >= 11) {
-            event_t event = {*target, EVENT_PLAYER_LEAVE};
+            event_t event = {id, EVENT_PLAYER_LEAVE};
             _events.push_back(event);
         } else {
             const tile_t *tile = _level->get_tile_at(x, z);
             if (tile != NULL && tile->is_stairs) { 
-                event_t event = {*target, EVENT_PLAYER_ENTER_PORTAL};
+                event_t event = {id, EVENT_PLAYER_ENTER_PORTAL};
                 _events.push_back(event);
             }
         }
     }
 
-    feature_t *new_feat = (feature_t *)feature_at(new_x, new_z);
-    if (new_feat != NULL) {
-        const feature_type_t type = new_feat->type;
-        if (type == FEAT_BUTTON) {
+    feat_id_t new_feat = feature_at(new_x, new_z);
+    if (new_feat != FEAT_ID_INVALID) {
+        if (has_feature_type(new_feat, FEAT_BUTTON)) {
             change_button_state(new_feat, FSTATE_ACTIVE);
-        } else if (type == FEAT_SPIKES) {
-            if (new_feat->state == FSTATE_ACTIVE) {
-                hurt_object(target, target->health);
+        } else if (has_feature_type(new_feat, FEAT_SPIKES)) {
+            feature_t *feat = get_mutable_feature(new_feat);
+            if (feat->state == FSTATE_ACTIVE) {
+                hurt_object(id, target->health);
                 target->entity->receive_message(CORE_DO_FALL, pos);
                 if (target->type == OBJ_BOULDER) {
-                    destroy_object(target);
-                    new_feat->state = FSTATE_INACTIVE;
+                    destroy_object(id);
+                    feat->state = FSTATE_INACTIVE;
                 }
             }
         }
     }
 }
 
-bool level_state_t::hurt_object(object_t *target, int damage) {
-    if (target == NULL) {
-        warp_log_e("Cannot hurt object, target is null.");
+bool level_state_t::hurt_object(obj_id_t id, int damage) {
+    if (id == OBJ_ID_INVALID) {
+        warp_log_e("Cannot hurt object, target is invalid.");
         return false;
     }
     if (damage <= 0) {
         return true;
     }
-    if (target->type == OBJ_BOULDER) {
+    if (has_object_type(id, OBJ_BOULDER)) {
         return true;
     }
 
+    object_t *target = get_mutable_object(id);
     const int health_left = target->health - damage;
     target->health = health_left;
     if (health_left <= 0) {
         target->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
-        event_t event = {*target, EVENT_OBJECT_KILLED};
+        event_t event = {id, EVENT_OBJECT_KILLED};
         _events.push_back(event);
         
-        destroy_object(target);
+        destroy_object(id);
     } else {
         if (target->type != OBJ_BOULDER) {
             target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
         }
-        event_t event = {*target, EVENT_OBJECT_HURT};
+        event_t event = {id, EVENT_OBJECT_HURT};
         _events.push_back(event);
     }
 
     return health_left > 0;
 }
 
-void level_state_t::destroy_object(object_t *obj) {
+void level_state_t::destroy_object(obj_id_t id) {
+    const object_t *obj = get_object(id);
     const size_t x = round(obj->position.x);
     const size_t z = round(obj->position.z);
-    _objects[x + _width * z] = NULL;
-    delete obj;
+    _obj_placement[x + _width * z] = OBJ_ID_INVALID;
+    pool_destroy_item(_obj_pool, id);
 }
 
+void level_state_t::destroy_feature(feat_id_t id) {
+    const feature_t *feat = get_feature(id);
+    _feat_placement[feat->x + _width * feat->z] = OBJ_ID_INVALID;
+    pool_destroy_item(_feat_pool, id);
+}
