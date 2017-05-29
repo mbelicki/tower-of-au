@@ -99,6 +99,7 @@ enum event_type_t : int {
 
 struct event_t {
     obj_id_t object_id;
+    object_t object_state; /* state of the object when the event happened */
     event_type_t type;
 };
 
@@ -176,6 +177,8 @@ class level_state_t {
 
         object_t *get_mutable_object(obj_id_t id) const;
         feature_t *get_mutable_feature(feat_id_t id) const;
+
+        void place_object_at(obj_id_t id, size_t x, size_t z);
 
     private:
         bool _initialized;

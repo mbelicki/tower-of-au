@@ -100,7 +100,7 @@ level_state_t::level_state_t(world_t *world, size_t width, size_t height)
     _obj_placement  = (obj_id_t *)  calloc(count, sizeof *_obj_placement);
     _feat_placement = (feat_id_t *) calloc(count, sizeof *_feat_placement);
 
-    _obj_pool  = pool_create_typed(object_t, count, NULL);
+    _obj_pool  = pool_create_typed(object_t,  count, NULL);
     _feat_pool = pool_create_typed(feature_t, count, NULL);
 }
 
@@ -113,6 +113,17 @@ level_state_t::~level_state_t() {
 
     free(_obj_placement);
     free(_feat_placement);
+}
+
+void level_state_t::place_object_at(obj_id_t id, size_t x, size_t z) {
+    if (x >= _width || z >= _height) {
+        warp_log_e("Trying to place object out of level bounds. "
+                   "Placement: (%zu, %zu), level size: (%zu, %zu). "
+                  , x, z, _width, _height
+                  );
+        return;
+    }
+    _obj_placement[x + _width * z] = id;
 }
 
 obj_id_t level_state_t::add_object
@@ -132,7 +143,7 @@ obj_id_t level_state_t::add_object
             = _object_factory->create_object_entity(new_obj, def_name, _world);
     }
 
-    _obj_placement[x + _width * z] = id;
+    place_object_at(id, x, z);
     new_obj->entity->receive_message(CORE_DO_ROTATE, (int)new_obj->direction);
     return id;
 }
@@ -140,9 +151,9 @@ obj_id_t level_state_t::add_object
 obj_id_t level_state_t::spawn_object
         (warp_tag_t name, vec3_t pos, warp_random_t *rand) {
     object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_PLUS, rand, _world);
-    const bool result = add_object(new_obj, name);
+    obj_id_t id = add_object(new_obj, name);
     delete new_obj;
-    return result;
+    return id != OBJ_ID_INVALID; 
 }
 
 feat_id_t level_state_t::spawn_feature
@@ -155,14 +166,15 @@ feat_id_t level_state_t::spawn_feature
 
     feat_id_t id = pool_create_item(_feat_pool);
     feature_t *new_feat = pool_get(feature_t, _feat_pool, id);
-    memmove(new_feat, &feat, sizeof *new_feat);
+    memmove(new_feat, feat, sizeof *new_feat);
+    delete feat;
 
     _feat_placement[x + _width * z] = id;
     return id;
 }
 
 void level_state_t::set_object_flag(obj_id_t obj, object_flags_t flag) {
-    object_t *object = pool_get(object_t, _obj_pool, obj);
+    object_t *object = get_mutable_object(obj);
     if (object == NULL) {
         warp_log_e("Cannot set flag, object not found.");
         return;
@@ -224,8 +236,9 @@ bool level_state_t::can_move_to(vec3_t new_pos) const {
     if (object != OBJ_ID_INVALID) return false;
 
     const feat_id_t feature = feature_at(x, z);
-    if (feature != OBJ_ID_INVALID) {
-        feature_t *feat = pool_get(feature_t, _feat_pool, feature);
+    if (feature != FEAT_ID_INVALID) {
+        const feature_t *feat = get_feature(feature);
+        warp_log_d("feature type: %d", (int)feat->type);
         if (feat->type == FEAT_DOOR && feat->state == FSTATE_INACTIVE) {
             return false;
         }
@@ -259,12 +272,11 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
         warp_log_e("Cannot spawn objects, null level.");
         return;
     }
-    if (level->get_width() != _width) {
-        warp_log_e("Cannot spawn objects, level width does not match level state width.");
-        return;
-    }
-    if (level->get_height() != _height) {
-        warp_log_e("Cannot spawn objects, level height does not match level state height.");
+    if (level->get_width() != _width || level->get_height() != _height) {
+        warp_log_e("Cannot spawn objects, level size does not match "
+                   "level state size (level: %zux%zu, state: %zux%zu)."
+                  , level->get_width(), level->get_height(), _width, _height
+                  );
         return;
     }
     if (rand == NULL) {
@@ -290,29 +302,22 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
 
     for (size_t i = 0; i < _width; i++) {
         for (size_t j = 0; j < _height; j++) {
-            const tile_t * tile = level->get_tile_at(i, j);
-            if (tile == NULL) continue;
-
-            const feature_type_t feat_type = tile->feature;
-
+            const tile_t *tile = level->get_tile_at(i, j);
             if (warp_tag_equals_buffer(&tile->object_id, "") == false 
                     && tile->spawn_probablity > 0) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
                     spawn_object(tile->object_id, pos, rand);
-                    //object_t *obj = _object_factory->spawn
-                    //    (tile->object_id, pos, DIR_Z_MINUS, rand, _world);
                     //if (obj != NULL) {
                     //    change_direction(obj, tile->object_dir);
                     //    _objects[id] = obj;
                     //}
                 }
             }
-
-            if (feat_type != FEAT_NONE) {
+            if (tile->feature != FEAT_NONE) {
                 const size_t target = tile->feat_target_id;
-                spawn_feature(feat_type, target, i, j);
+                spawn_feature(tile->feature, target, i, j);
             }
         }
     }
@@ -358,15 +363,18 @@ void level_state_t::clear() {
         entity_t *e = warp_array_get_value(entity_t *, &buffer, i);
         _world->destroy_later(e);
     }
+    warp_array_destroy(&buffer);
 
     _events.clear();
 
     pool_clear(_obj_pool);
     pool_clear(_feat_pool);
 
-    const size_t pl_size = _width * _height * sizeof (warp_pool_id_t);
-    memset(_obj_placement,  0, pl_size);
-    memset(_feat_placement, 0, pl_size);
+    const size_t count = _width * _height;
+    for (size_t i = 0; i < count; i++) {
+        _obj_placement[i]  = OBJ_ID_INVALID;
+        _feat_placement[i] = FEAT_ID_INVALID;
+    }
 }
 
 static dir_t get_move_direction(move_dir_t move_dir) {
@@ -507,7 +515,7 @@ void level_state_t::handle_conversation(obj_id_t npc, obj_id_t player) {
     const object_t *player_obj = get_object(player);
 
     player_obj->entity->receive_message(CORE_DO_ATTACK, npc_obj->position);
-    event_t event = {npc, EVENT_PLAYER_STARTED_CONVERSATION};
+    event_t event = {npc, *npc_obj, EVENT_PLAYER_STARTED_CONVERSATION};
     _events.push_back(event);
 }
 
@@ -526,7 +534,7 @@ void level_state_t::handle_interaction(obj_id_t terminal, obj_id_t character) {
 
     char_obj->entity->receive_message(CORE_DO_BOUNCE, term_obj->position);
     if (char_obj->flags & FOBJ_PLAYER_AVATAR) {
-        event_t event = {terminal, EVENT_PLAYER_ACTIVATED_TERMINAL};
+        event_t event = {terminal, *term_obj, EVENT_PLAYER_ACTIVATED_TERMINAL};
         _events.push_back(event);
     }
 }
@@ -631,6 +639,19 @@ void level_state_t::change_button_state(feat_id_t button, feat_state_t state) {
     }
 }
 
+const char *name_object_type(object_type_t t) {
+    switch (t) {
+#define entry(n) case n: return #n;
+        entry(OBJ_NONE)
+        entry(OBJ_BOULDER)
+        entry(OBJ_TERMINAL)
+        entry(OBJ_CHARACTER)
+        entry(OBJ_PICK_UP)
+#undef entry
+        default: return "<unknown>";
+    }
+}
+
 void level_state_t::move_object(obj_id_t id, vec3_t pos, bool immediate) {
     if (id == OBJ_ID_INVALID) {
         warp_log_e("Cannot handle move, invalid target.");
@@ -645,12 +666,24 @@ void level_state_t::move_object(obj_id_t id, vec3_t pos, bool immediate) {
     const size_t new_x = round(pos.x);
     const size_t new_z = round(pos.z);
 
+    if (object_at(old_x, old_z) != id) {
+        warp_log_e("Cannot move, object is not there! "
+                   "id: %d, old position: (%zu, %zu), type: %s" 
+                  , (int)id, old_x, old_z, name_object_type(target->type)
+                  );
+        return;
+    }
+
     const vec3_t diff = vec3_sub(pos, old_position);
     const dir_t new_dir = vec3_to_dir(diff); 
     change_direction(target, new_dir);
 
-    _obj_placement[old_x + _width * old_z] = 0;
-    _obj_placement[new_x + _width * new_z] = id;
+    place_object_at(OBJ_ID_INVALID, old_x, old_z);
+    place_object_at(id,             new_x, new_z);
+
+    target->position = pos;
+    const int msg_type = immediate ? CORE_DO_MOVE_IMMEDIATE : CORE_DO_MOVE;
+    target->entity->receive_message(msg_type, pos);
 
     feat_id_t old_feat = feature_at(old_x, old_z);
     if (old_feat != FEAT_ID_INVALID) {
@@ -658,25 +691,21 @@ void level_state_t::move_object(obj_id_t id, vec3_t pos, bool immediate) {
             change_button_state(old_feat, FSTATE_INACTIVE);
         } else if (has_feature_type(old_feat, FEAT_BREAKABLE_FLOOR)) {
             get_feature(old_feat)->entity->receive_message(CORE_FEAT_STATE_CHANGE, FSTATE_ACTIVE);
-            spawn_feature(FEAT_SPIKES, 0, old_x, old_z);
             destroy_feature(old_feat);
+            spawn_feature(FEAT_SPIKES, 0, old_x, old_z);
         }
     }
 
-    target->position = pos;
-    const int msg_type = immediate ? CORE_DO_MOVE_IMMEDIATE : CORE_DO_MOVE;
-    target->entity->receive_message(msg_type, pos);
-
-    if ((target->flags & FOBJ_PLAYER_AVATAR) != 0) {
+    if (has_object_flag(id, FOBJ_PLAYER_AVATAR)) {
         const int x = round(pos.x);
         const int z = round(pos.z);
         if (x < 0 || x >= 13 || z < 0 || z >= 11) {
-            event_t event = {id, EVENT_PLAYER_LEAVE};
+            event_t event = {id, *target, EVENT_PLAYER_LEAVE};
             _events.push_back(event);
         } else {
             const tile_t *tile = _level->get_tile_at(x, z);
             if (tile != NULL && tile->is_stairs) { 
-                event_t event = {id, EVENT_PLAYER_ENTER_PORTAL};
+                event_t event = {id, *target, EVENT_PLAYER_ENTER_PORTAL};
                 _events.push_back(event);
             }
         }
@@ -717,7 +746,7 @@ bool level_state_t::hurt_object(obj_id_t id, int damage) {
     target->health = health_left;
     if (health_left <= 0) {
         target->entity->receive_message(CORE_DO_DIE, vec3(0, 0, 0));
-        event_t event = {id, EVENT_OBJECT_KILLED};
+        event_t event = {id, *target, EVENT_OBJECT_KILLED};
         _events.push_back(event);
         
         destroy_object(id);
@@ -725,7 +754,7 @@ bool level_state_t::hurt_object(obj_id_t id, int damage) {
         if (target->type != OBJ_BOULDER) {
             target->entity->receive_message(CORE_DO_HURT, vec3(0, 0, 0));
         }
-        event_t event = {id, EVENT_OBJECT_HURT};
+        event_t event = {id, *target, EVENT_OBJECT_HURT};
         _events.push_back(event);
     }
 
@@ -736,12 +765,12 @@ void level_state_t::destroy_object(obj_id_t id) {
     const object_t *obj = get_object(id);
     const size_t x = round(obj->position.x);
     const size_t z = round(obj->position.z);
-    _obj_placement[x + _width * z] = OBJ_ID_INVALID;
+    place_object_at(OBJ_ID_INVALID, x, z);
     pool_destroy_item(_obj_pool, id);
 }
 
 void level_state_t::destroy_feature(feat_id_t id) {
     const feature_t *feat = get_feature(id);
-    _feat_placement[feat->x + _width * feat->z] = OBJ_ID_INVALID;
+    _feat_placement[feat->x + _width * feat->z] = FEAT_ID_INVALID;
     pool_destroy_item(_feat_pool, id);
 }

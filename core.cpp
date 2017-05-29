@@ -330,11 +330,7 @@ class core_controller_t final : public controller_impl_i {
         void check_events() {
             for (const event_t &event : _level_state->get_last_turn_events()) {
                 const event_type_t type = event.type;
-                const obj_id_t obj_id = event.object_id;
-                const object_t *obj = _level_state->get_object(obj_id);
-                if (obj == NULL) {
-                    continue;
-                }
+                const object_t *obj = &event.object_state;
 
                 const int x = round(obj->position.x);
                 const int z = round(obj->position.z);
@@ -387,8 +383,8 @@ class core_controller_t final : public controller_impl_i {
             }
 
             const obj_id_t player_id = _level_state->find_player();
-            const object_t *player = _level_state->get_object(player_id);
-            if (player != NULL) {
+            if (player_id != OBJ_ID_INVALID) {
+                const object_t *player = _level_state->get_object(player_id);
                 update_player_health_display(player);
                 update_player_ammo_display(player);
             }
