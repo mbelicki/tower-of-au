@@ -7,6 +7,8 @@
 #include "warp/collections/map.h"
 #include "warp/resources/resources.h"
 
+#include "level_state.h"
+
 struct object_def_t;
 struct object_t;
 
@@ -22,12 +24,14 @@ class object_factory_t {
         void load_resources(warp_resources_t *res);
 
         warp::entity_t *create_object_entity
-            (const object_t *obj, const warp_tag_t &def_name, warp::world_t *world);
+            ( const object_t *obj, obj_id_t id
+            , const warp_tag_t &def_name, warp::world_t *world
+            );
 
-        object_t *spawn
-            ( warp_tag_t name, warp_vec3_t pos
-            , warp_dir_t dir, warp_random_t *rand
-            , warp::world_t *world
+        bool spawn
+            ( object_t *buffer, warp_tag_t name
+            , warp_vec3_t pos, warp_dir_t dir
+            , warp_random_t *rand
             );
 
     private:

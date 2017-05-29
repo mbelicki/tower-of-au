@@ -251,12 +251,13 @@ class core_controller_t final : public controller_impl_i {
                         (type == CORE_TRY_MOVE || type == CORE_TRY_SHOOT)) {
                 warp_log_d("player turn");
                 command_t cmd = {player, message};
-                std::vector<command_t> commands;
-                commands.push_back(cmd);
-                _level_state->next_turn(commands);
+                _level_state->apply_command(&cmd);
 
                 check_events();
                 _waiting_for_animation = true;
+            } else if (type == CORE_AI_COMMAND) {
+                const command_t *cmd = (command_t *) message.data.get_pointer();
+                _level_state->apply_command(cmd);
             }
         }
 
@@ -388,6 +389,8 @@ class core_controller_t final : public controller_impl_i {
                 update_player_health_display(player);
                 update_player_ammo_display(player);
             }
+
+            _level_state->clear_events();
         }
 
         void emit_speech(const object_t *obj, const char* text) {
@@ -584,14 +587,11 @@ class core_controller_t final : public controller_impl_i {
         void next_turn() {
             std::vector<obj_id_t> characters;
             _level_state->find_all_characters(&characters);
-
-            std::vector<command_t> commands;
+            message_t next_turn(CORE_NEXT_TURN, (void *)_level_state);
             for (obj_id_t id : characters) {
-                command_t buffer;
-                const bool picked = pick_next_command(&buffer, id, _level_state, _random);
-                if (picked) commands.push_back(buffer);
+                const object_t *obj = _level_state->get_object(id);
+                obj->entity->receive(next_turn);
             }
-            _level_state->next_turn(commands);
         }
 };
 

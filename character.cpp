@@ -9,6 +9,7 @@
 #include "warp/entity-helpers.h"
 
 #include "core.h"
+#include "objects_ai.h"
 
 using namespace warp;
 
@@ -345,7 +346,8 @@ class health_controller_t final : public controller_impl_i {
 
 class ai_controller_t final : public controller_impl_i {
     public:
-        ai_controller_t() : _owner(NULL), _world(NULL) { }
+        ai_controller_t(obj_id_t id)
+            : _owner(NULL), _world(NULL), _id(id) { }
 
         dynval_t get_property(const warp_tag_t &) const override {
             return dynval_t::make_null();
@@ -354,6 +356,7 @@ class ai_controller_t final : public controller_impl_i {
         void initialize(entity_t *owner, world_t *world) override {
             _owner = owner;
             _world = world;
+            _rand = warp_random_create(209); /* TODO: temporary! */
         }
 
         void update(float, const input_t &) override { }
@@ -361,24 +364,30 @@ class ai_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_NEXT_TURN) {
-                //command_t cmd;
-                //if (pick_next_command(&cmd, _obj, _level_state, _random)) {
-                //}
+                (void) _id;
+                const level_state_t *st = (level_state_t *) message.data.get_pointer();
+                if (pick_next_command(&_cmd, _id, st, _rand)) {
+                    _world->broadcast_message(CORE_AI_COMMAND, (void *)&_cmd);
+                }
             }
         }
 
     private:
         entity_t *_owner;
         world_t *_world;
+        warp_random_t *_rand;
+        obj_id_t _id;
+        command_t _cmd;
 };
 
-extern controller_comp_t *create_character_controller(world_t *world, bool is_player) {
+extern controller_comp_t *create_character_controller
+        (world_t *world, obj_id_t id, bool is_player) {
     controller_comp_t *controller = world->create_controller();
     controller->initialize(new movement_controller_t(is_player));
     controller->add_controller(new rotation_controller_t);
     controller->add_controller(new health_controller_t);
     if (is_player == false) {
-        controller->add_controller(new ai_controller_t);
+        controller->add_controller(new ai_controller_t(id));
     }
     return controller;
 }

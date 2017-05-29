@@ -25,6 +25,7 @@ enum core_msgs_t : unsigned int {
     CORE_MOVE_DONE,
 
     CORE_NEXT_TURN,
+    CORE_AI_COMMAND,
 
     CORE_INPUT_ENABLE_SHOOTING,
 

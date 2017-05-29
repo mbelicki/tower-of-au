@@ -148,12 +148,17 @@ class level_state_t {
     
         /* global state changes: */
         void spawn(const level_t *level, warp_random_t *rand);
-        void next_turn(const std::vector<command_t> &commands);
+        //void next_turn(const std::vector<command_t> &commands);
+        bool apply_command(const command_t *cmd);
         void process_real_time_event(const rt_event_t &event);
         void clear();
 
         const std::vector<event_t> &get_last_turn_events() const {
             return _events;
+        }
+
+        void clear_events() {
+            _events.clear();
         }
 
         const level_t *get_current_level() const { return _level; }

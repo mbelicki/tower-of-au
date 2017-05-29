@@ -140,7 +140,7 @@ obj_id_t level_state_t::add_object
 
     if (new_obj->entity == NULL) {
         new_obj->entity
-            = _object_factory->create_object_entity(new_obj, def_name, _world);
+            = _object_factory->create_object_entity(new_obj, id, def_name, _world);
     }
 
     place_object_at(id, x, z);
@@ -150,9 +150,10 @@ obj_id_t level_state_t::add_object
 
 obj_id_t level_state_t::spawn_object
         (warp_tag_t name, vec3_t pos, warp_random_t *rand) {
-    object_t *new_obj = _object_factory->spawn(name, pos, DIR_Z_PLUS, rand, _world);
-    obj_id_t id = add_object(new_obj, name);
-    delete new_obj;
+    object_t buffer;
+    memset(&buffer, 0, sizeof buffer);
+    _object_factory->spawn(&buffer, name, pos, DIR_Z_PLUS, rand);
+    obj_id_t id = add_object(&buffer, name);
     return id != OBJ_ID_INVALID; 
 }
 
@@ -323,15 +324,18 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
     }
 }
 
-void level_state_t::next_turn(const std::vector<command_t> &commands) {
+bool level_state_t::apply_command(const command_t *cmd) {
     if (_initialized == false) {
-        warp_log_e("Cannot simulate next turn, state not spawned.");
-        return;
+        warp_log_e("Cannot apply command, state not spawned.");
+        return false;
     }
-    _events.clear();
-    for (const command_t &command : commands) {
-        update_object(command.object_id, command.command);
+    if (cmd == NULL) {
+        warp_log_e("Cannot apply command, command is null.");
+        return false;
     }
+
+    update_object(cmd->object_id, cmd->command);
+    return true;
 }
 
 void level_state_t::process_real_time_event(const rt_event_t &event) {

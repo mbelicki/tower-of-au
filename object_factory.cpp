@@ -268,9 +268,9 @@ static graphics_comp_t *create_graphics
 }
 
 static controller_comp_t *create_controller
-        (world_t *world, const object_t *obj) {
+        (world_t *world, const object_t *obj, obj_id_t id) {
     const bool confirm_moves = (obj->flags & FOBJ_PLAYER_AVATAR) != 0;
-    return create_character_controller(world, confirm_moves);
+    return create_character_controller(world, id, confirm_moves);
 }
 
 static physics_comp_t *create_physics(world_t *world, const object_t *obj) {
@@ -291,10 +291,12 @@ static physics_comp_t *create_physics(world_t *world, const object_t *obj) {
 }
 
 static entity_t *create_entity
-        (world_t *world, const object_def_t *def, const object_t *obj) {
+        ( world_t *world, const object_def_t *def
+        , const object_t *obj, obj_id_t id
+        ) {
     graphics_comp_t *graphics = create_graphics(world, def);
     physics_comp_t *physics = create_physics(world, obj);
-    controller_comp_t *controller = create_controller(world, obj);
+    controller_comp_t *controller = create_controller(world, obj, id);
 
     entity_t *entity
         = world->create_entity(obj->position, graphics, physics, controller);
@@ -302,11 +304,10 @@ static entity_t *create_entity
     return entity;
 }
 
-static object_t *evaluate_definition
-        ( const object_def_t *def, vec3_t pos, dir_t dir
-        , warp_random_t *rand, world_t *world
+static void evaluate_definition
+        ( object_t *obj, const object_def_t *def
+        , vec3_t pos, dir_t dir, warp_random_t *rand
         ) {
-    object_t *obj = new object_t;
     obj->type = def->type;
     obj->position = pos;
     obj->health = def->health;
@@ -316,30 +317,32 @@ static object_t *evaluate_definition
 
     obj->direction = evaluate_direction(dir, rand);
     obj->flags = evaluate_flags(def);
-
-    obj->entity = create_entity(world, def, obj);
-
-    return obj;
+    //obj->entity = create_entity(world, def, obj);
 }
 
 entity_t *object_factory_t::create_object_entity
-            (const object_t *obj, const warp_tag_t &def_name, world_t *world) {
+            ( const object_t *obj, obj_id_t id
+            , const warp_tag_t &def_name, world_t *world
+            ) {
     const object_def_t *def = get_definition(def_name);
     if (def == NULL) {
         warp_log_e("Couldn't find definition for object: %s.", def_name.text);
         return NULL;
     }
-    return create_entity(world, def, obj);
+    return create_entity(world, def, obj, id);
 }
 
-object_t *object_factory_t::spawn
-        (warp_tag_t name, vec3_t pos, dir_t dir, warp_random_t *rand, world_t *world) {
+bool object_factory_t::spawn
+        ( object_t *buffer, warp_tag_t name, vec3_t pos, dir_t dir
+        , warp_random_t *rand
+        ) {
     const object_def_t *def = get_definition(name);
     if (def == NULL) {
         warp_log_e("Couldn't find definition for object: %s.", name.text);
-        return NULL;
+        return false;
     }
-    return evaluate_definition(def, pos, dir, rand, world);
+    evaluate_definition(buffer, def, pos, dir, rand);
+    return true;
 }
 
 const object_def_t *object_factory_t::get_definition(warp_tag_t name) {
