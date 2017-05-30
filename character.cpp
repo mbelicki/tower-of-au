@@ -364,7 +364,6 @@ class ai_controller_t final : public controller_impl_i {
         void handle_message(const message_t &message) override {
             const messagetype_t type = message.type;
             if (type == CORE_NEXT_TURN) {
-                (void) _id;
                 const level_state_t *st = (level_state_t *) message.data.get_pointer();
                 if (pick_next_command(&_cmd, _id, st, _rand)) {
                     _world->broadcast_message(CORE_AI_COMMAND, (void *)&_cmd);

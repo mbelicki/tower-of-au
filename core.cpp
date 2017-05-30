@@ -32,7 +32,6 @@
 #include "persitence.h"
 #include "text-label.h"
 #include "transition_effect.h"
-#include "objects_ai.h"
 #include "version.h"
 
 using namespace warp;
@@ -250,7 +249,9 @@ class core_controller_t final : public controller_impl_i {
             } else if (_level_state->is_object_idle(player) &&
                         (type == CORE_TRY_MOVE || type == CORE_TRY_SHOOT)) {
                 warp_log_d("player turn");
-                command_t cmd = {player, message};
+                move_dir_t dir = (move_dir_t) message.data.get_int();
+                command_type_t ty = type == CORE_TRY_MOVE ? CMD_TRY_MOVE : CMD_TRY_SHOOT;
+                command_t cmd = {ty, dir, player};
                 _level_state->apply_command(&cmd);
 
                 check_events();

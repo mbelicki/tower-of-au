@@ -167,9 +167,11 @@ static dir_t pick_move_direction
 }
 
 static void fill_command
-        (command_t *command, const obj_id_t id, int type, dir_t dir) {
+        ( command_t *command
+        , const obj_id_t id, command_type_t type, dir_t dir) {
     command->object_id = id;
-    command->command = message_t(type, (int)dir_to_move(dir));
+    command->type = type;
+    command->direction = dir_to_move(dir);
 }
 
 extern bool pick_next_command
@@ -204,12 +206,12 @@ extern bool pick_next_command
     /* try to perform one of the attacks */
     if (can_attack(obj, player)) {
         const vec3_t diff = vec3_sub(player->position, obj->position);
-        fill_command(command, id, CORE_TRY_MOVE, vec3_to_dir(diff));
+        fill_command(command, id, CMD_TRY_MOVE, vec3_to_dir(diff));
         return true;
     } else if (can_shoot(obj, player)) {
         const dir_t shoot_dir = pick_shooting_direction(obj, player, st);
         if (shoot_dir != DIR_NONE) {
-            fill_command(command, id, CORE_TRY_SHOOT, shoot_dir);
+            fill_command(command, id, CMD_TRY_SHOOT, shoot_dir);
             return true;
         }
     } 
@@ -217,7 +219,7 @@ extern bool pick_next_command
     /* if none of the attacks succeeded try to move: */
     const dir_t dir = pick_move_direction(obj, st, rand);
     if (dir != DIR_NONE) {
-        fill_command(command, id, CORE_TRY_MOVE, dir);
+        fill_command(command, id, CMD_TRY_MOVE, dir);
         return true;
     }
 

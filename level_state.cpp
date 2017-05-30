@@ -334,7 +334,7 @@ bool level_state_t::apply_command(const command_t *cmd) {
         return false;
     }
 
-    update_object(cmd->object_id, cmd->command);
+    update_object(cmd);
     return true;
 }
 
@@ -417,23 +417,26 @@ static vec3_t calculate_new_pos(const object_t *obj, move_dir_t dir) {
     return vec3_add(obj->position, step);
 }
 
-void level_state_t::update_object(obj_id_t obj, const message_t &command) {
-    if (obj == OBJ_ID_INVALID) {
+void level_state_t::update_object(const command_t *cmd) {
+    if (cmd == NULL) {
+        warp_log_e("Cannot update null command.");
+        return;
+    }
+    if (cmd->object_id == OBJ_ID_INVALID) {
         warp_log_e("Cannot update invalid object.");
         return;
     }
 
-    const object_t *object = get_object(obj);
-    const messagetype_t type = command.type;
-    if (type == CORE_TRY_MOVE) {
-        move_dir_t dir = (move_dir_t) command.data.get_int();
-        const vec3_t pos = calculate_new_pos(object, dir);
-        handle_move(obj, pos);
-    } else if (type == CORE_TRY_SHOOT) {
-        const move_dir_t direction = (move_dir_t) command.data.get_int();
-        handle_shooting(obj, get_move_direction(direction));
+    const object_t *object = get_object(cmd->object_id);
+    if (cmd->type == CMD_TRY_MOVE) {
+        const vec3_t pos = calculate_new_pos(object, cmd->direction);
+        handle_move(cmd->object_id, pos);
+    } else if (cmd->type == CMD_TRY_SHOOT) {
+        handle_shooting(cmd->object_id, get_move_direction(cmd->direction));
     } else {
-        warp_log_d("Object not updated: unsupported message type: %d.", (int)type);
+        warp_log_d( "Object not updated: unsupported message type: %d."
+                  , (int)cmd->direction
+                  );
     }
 }
 

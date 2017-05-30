@@ -82,10 +82,9 @@ enum command_type_t {
 };
 
 struct command_t {
-    //command_type_t type;
-    //warp_dir_t direction;
+    command_type_t type;
+    move_dir_t direction;
     obj_id_t object_id;
-    warp::message_t command;
 };
 
 enum event_type_t : int {
@@ -148,7 +147,6 @@ class level_state_t {
     
         /* global state changes: */
         void spawn(const level_t *level, warp_random_t *rand);
-        //void next_turn(const std::vector<command_t> &commands);
         bool apply_command(const command_t *cmd);
         void process_real_time_event(const rt_event_t &event);
         void clear();
@@ -164,7 +162,7 @@ class level_state_t {
         const level_t *get_current_level() const { return _level; }
 
     private:
-        void update_object(obj_id_t obj, const warp::message_t &command);
+        void update_object(const command_t *cmd);
         void handle_move(obj_id_t target, warp_vec3_t pos);
         void handle_picking_up(obj_id_t pick_up, obj_id_t character);
         void handle_conversation(obj_id_t npc, obj_id_t player);
