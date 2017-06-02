@@ -121,7 +121,9 @@ class level_state_t {
 
         /* single objects/featues management: */
         obj_id_t add_object(const object_t *obj, const warp_tag_t &def_name);
-        obj_id_t spawn_object(warp_tag_t name, warp_vec3_t pos , warp_random_t *rand);
+        obj_id_t spawn_object( warp_tag_t name, warp_vec3_t pos
+                             , warp_dir_t dir, warp_random_t *rand
+                             );
         void set_object_flag(obj_id_t obj, object_flags_t flag);
 
         feat_id_t spawn_feature(feature_type_t type, size_t target, size_t x, size_t z);

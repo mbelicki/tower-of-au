@@ -357,15 +357,19 @@ class ai_controller_t final : public controller_impl_i {
             _owner = owner;
             _world = world;
             _rand = warp_random_create(209); /* TODO: temporary! */
+            _state_initialized = false;
         }
 
         void update(float, const input_t &) override { }
 
         void handle_message(const message_t &message) override {
-            const messagetype_t type = message.type;
-            if (type == CORE_NEXT_TURN) {
+            if (message.type == CORE_NEXT_TURN) {
                 const level_state_t *st = (level_state_t *) message.data.get_pointer();
-                if (pick_next_command(&_cmd, _id, st, _rand)) {
+                if (_state_initialized == false) {
+                    init_ai_state(&_state, st->get_object(_id));
+                    _state_initialized = true;
+                }
+                if (pick_next_command(&_cmd, _id, &_state, st, _rand)) {
                     _world->broadcast_message(CORE_AI_COMMAND, (void *)&_cmd);
                 }
             }
@@ -377,6 +381,9 @@ class ai_controller_t final : public controller_impl_i {
         warp_random_t *_rand;
         obj_id_t _id;
         command_t _cmd;
+
+        bool _state_initialized;
+        ai_state_t _state;
 };
 
 extern controller_comp_t *create_character_controller

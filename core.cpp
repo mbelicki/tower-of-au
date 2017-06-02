@@ -152,7 +152,7 @@ class core_controller_t final : public controller_impl_i {
             const vec3_t pos = vec3(_portal.tile_x, 0, _portal.tile_z);
             
             if (player == NULL || player->type == OBJ_NONE) {
-                bool added = _level_state->spawn_object(WARP_TAG("player"), pos, _random);
+                bool added = _level_state->spawn_object(WARP_TAG("player"), pos, DIR_NONE, _random);
                 if (added == false) {
                     warp_critical("Failed to spawn player avatar.");
                 }

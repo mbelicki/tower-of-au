@@ -9,9 +9,10 @@
 
 using namespace warp;
 
-extern bool needs_update(obj_id_t id, const level_state_t *st) {
-    return st->has_object_type(id, OBJ_CHARACTER)
-        && (st->has_object_flag(id, FOBJ_PLAYER_AVATAR) == false);
+extern void init_ai_state(ai_state_t *state, const object_t *obj) {
+    state->player_seen = false;
+    state->start_pos = obj->position;
+    state->last_sighting = state->start_pos;
 }
 
 static bool can_attack(const object_t *attacker, const object_t *target) {
@@ -89,12 +90,12 @@ static void shuffle(dir_t *array, size_t n, warp_random_t *rand) {
 }
 
 static dir_t pick_roam_direction
-        ( const object_t &npc, const object_t &other
+        ( const object_t *npc, const object_t *other
         , const level_state_t *state, warp_random_t *rand
         ) {
-    const vec3_t diff = vec3_sub(other.position, npc.position);
+    const vec3_t diff = vec3_sub(other->position, npc->position);
     const dir_t dir = vec3_to_dir(diff);
-    const vec3_t position = vec3_add(npc.position, dir_to_vec3(dir));
+    const vec3_t position = vec3_add(npc->position, dir_to_vec3(dir));
     dir_t directions[4] {
         DIR_X_PLUS, DIR_Z_PLUS, DIR_X_MINUS, DIR_Z_MINUS,
     };
@@ -103,7 +104,7 @@ static dir_t pick_roam_direction
     } else {
         shuffle(directions, 4, rand);
 
-        const vec3_t position = npc.position;
+        const vec3_t position = npc->position;
         for (size_t i = 0; i < 4; i++) {
             const dir_t dir = directions[i];
             const vec3_t target = vec3_add(position, dir_to_vec3(dir));
@@ -112,21 +113,23 @@ static dir_t pick_roam_direction
         }
     }
 
-    return npc.direction;
+    return npc->direction;
+}
+
+static dir_t pick_direction(const object_t *npc, vec3_t pos) {
+    if (vec3_eps_equals(npc->position, pos, 0.01f)) {
+        return DIR_NONE;
+    }
+    return vec3_to_dir(vec3_sub(pos, npc->position));
 }
 
 static move_dir_t dir_to_move(dir_t d) {
     switch (d) {
-        case DIR_Z_MINUS:
-            return MOVE_UP;
-        case DIR_X_MINUS:
-            return MOVE_LEFT;
-        case DIR_Z_PLUS:
-            return MOVE_DOWN;
-        case DIR_X_PLUS:
-            return MOVE_RIGHT;
-        default:
-            return MOVE_NONE;
+        case DIR_Z_MINUS: return MOVE_UP;
+        case DIR_X_MINUS: return MOVE_LEFT;
+        case DIR_Z_PLUS:  return MOVE_DOWN;
+        case DIR_X_PLUS:  return MOVE_RIGHT;
+        default:          return MOVE_NONE;
     }
 }
 
@@ -138,8 +141,31 @@ static bool can_ai_move_to(vec3_t position, const level_state_t *state) {
     return state->can_move_to(position);
 }
 
+static void update_ai
+        (ai_state_t *ai_state, const object_t *obj) {
+    if (vec3_eps_equals(obj->position, ai_state->last_sighting, 0.01f)) {
+        ai_state->player_seen = false;
+    }
+}
+
+static void look_ahead
+        (ai_state_t *ai_state, const object_t *obj, const level_state_t* st) {
+    const int sight_range = 5;
+    const vec3_t d = dir_to_vec3(obj->direction);
+    for (int i = 0; i < sight_range; i++) {
+        const vec3_t p = vec3_add(obj->position, vec3_scale(d, i));
+        const obj_id_t id = st->object_at_position(p);
+        if (st->has_object_flag(id, FOBJ_PLAYER_AVATAR)) {
+            ai_state->player_seen = true;
+            ai_state->last_sighting = p;
+        }
+    }
+}
+
 static dir_t pick_move_direction
-        (const object_t *obj, const level_state_t* state, warp_random_t *rand) {
+        ( ai_state_t *ai_state, const object_t *obj
+        , const level_state_t* state, warp_random_t *rand
+        ) {
     if (obj->flags & FOBJ_NPCMOVE_STILL) {
         return DIR_NONE;
     }
@@ -153,10 +179,14 @@ static dir_t pick_move_direction
         if (change_dir || obstacle_ahead) {
             obj_id_t player_id = state->find_player();
             const object_t *player = state->get_object(player_id);
-            dir = pick_roam_direction(*obj, *player, state, rand);
+            dir = pick_roam_direction(obj, player, state, rand);
         }
     } else if (obj->flags & FOBJ_NPCMOVE_SENTERY) {
-
+        if (ai_state->player_seen) {
+            dir = pick_direction(obj, ai_state->last_sighting);  
+        } else {
+            dir = pick_direction(obj, ai_state->start_pos);
+        }
     } else if (obj->flags & FOBJ_NPCMOVE_LINE) {
         if (obstacle_ahead) {
             dir = opposite_dir(dir);
@@ -175,7 +205,7 @@ static void fill_command
 }
 
 extern bool pick_next_command
-        ( command_t *command, obj_id_t id
+        ( command_t *command, obj_id_t id, ai_state_t *ai_state
         , const level_state_t* st, warp_random_t *rand
         ) {
     if (command == NULL) {
@@ -190,8 +220,7 @@ extern bool pick_next_command
         warp_log_e("Cannot pick command for invalid object.");
         return false;
     }
-    if ((st->is_object_valid(id) == false)
-            || (needs_update(id, st) == false)) {
+    if (st->is_object_valid(id) == false) {
         return false;
     }
 
@@ -214,10 +243,11 @@ extern bool pick_next_command
             fill_command(command, id, CMD_TRY_SHOOT, shoot_dir);
             return true;
         }
-    } 
-
+    }
+    update_ai(ai_state, obj);
+    look_ahead(ai_state, obj, st);
     /* if none of the attacks succeeded try to move: */
-    const dir_t dir = pick_move_direction(obj, st, rand);
+    const dir_t dir = pick_move_direction(ai_state, obj, st, rand);
     if (dir != DIR_NONE) {
         fill_command(command, id, CMD_TRY_MOVE, dir);
         return true;

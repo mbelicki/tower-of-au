@@ -126,6 +126,13 @@ void level_state_t::place_object_at(obj_id_t id, size_t x, size_t z) {
     _obj_placement[x + _width * z] = id;
 }
 
+static void change_direction(object_t *obj, dir_t dir) {
+    if (obj->direction != dir && obj->type != OBJ_BOULDER) {
+        obj->direction = dir;
+        obj->entity->receive_message(CORE_DO_ROTATE, (int)dir);
+    }
+}
+
 obj_id_t level_state_t::add_object
         (const object_t *obj, const warp_tag_t &def_name) {
     const size_t x = round(obj->position.x);
@@ -149,11 +156,12 @@ obj_id_t level_state_t::add_object
 }
 
 obj_id_t level_state_t::spawn_object
-        (warp_tag_t name, vec3_t pos, warp_random_t *rand) {
+        (warp_tag_t name, vec3_t pos, dir_t dir, warp_random_t *rand) {
     object_t buffer;
     memset(&buffer, 0, sizeof buffer);
     _object_factory->spawn(&buffer, name, pos, DIR_Z_PLUS, rand);
     obj_id_t id = add_object(&buffer, name);
+    change_direction(get_mutable_object(id), dir);
     return id != OBJ_ID_INVALID; 
 }
 
@@ -261,13 +269,6 @@ bool level_state_t::is_object_valid(obj_id_t obj) const {
     return maybe_data != NULL;
 }
 
-static void change_direction(object_t *obj, dir_t dir) {
-    if (obj->direction != dir && obj->type != OBJ_BOULDER) {
-        obj->direction = dir;
-        obj->entity->receive_message(CORE_DO_ROTATE, (int)dir);
-    }
-}
-
 void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
     if (level == NULL) {
         warp_log_e("Cannot spawn objects, null level.");
@@ -309,7 +310,7 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
                 const float r = warp_random_float(rand);
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
-                    spawn_object(tile->object_id, pos, rand);
+                    spawn_object(tile->object_id, pos, tile->object_dir, rand);
                     //if (obj != NULL) {
                     //    change_direction(obj, tile->object_dir);
                     //    _objects[id] = obj;
