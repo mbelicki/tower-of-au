@@ -311,10 +311,6 @@ void level_state_t::spawn(const level_t *level, warp_random_t *rand) {
                 if (r <= tile->spawn_probablity) {
                     const vec3_t pos = vec3(i, 0, j);
                     spawn_object(tile->object_id, pos, tile->object_dir, rand);
-                    //if (obj != NULL) {
-                    //    change_direction(obj, tile->object_dir);
-                    //    _objects[id] = obj;
-                    //}
                 }
             }
             if (tile->feature != FEAT_NONE) {
@@ -428,12 +424,16 @@ void level_state_t::update_object(const command_t *cmd) {
         return;
     }
 
-    const object_t *object = get_object(cmd->object_id);
-    if (cmd->type == CMD_TRY_MOVE) {
+    const obj_id_t id = cmd->object_id;
+    const object_t *object = get_object(id);
+    const dir_t dir = get_move_direction(cmd->direction);
+    if (cmd->type == CMD_MOVE) {
         const vec3_t pos = calculate_new_pos(object, cmd->direction);
-        handle_move(cmd->object_id, pos);
-    } else if (cmd->type == CMD_TRY_SHOOT) {
-        handle_shooting(cmd->object_id, get_move_direction(cmd->direction));
+        handle_move(id, pos);
+    } else if (cmd->type == CMD_ROTATE) {
+        change_direction(get_mutable_object(id), dir);
+    } else if (cmd->type == CMD_SHOOT) {
+        handle_shooting(id, dir);
     } else {
         warp_log_d( "Object not updated: unsupported message type: %d."
                   , (int)cmd->direction

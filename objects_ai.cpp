@@ -11,6 +11,7 @@ using namespace warp;
 
 extern void init_ai_state(ai_state_t *state, const object_t *obj) {
     state->player_seen = false;
+    state->start_dir = obj->direction;
     state->start_pos = obj->position;
     state->last_sighting = state->start_pos;
 }
@@ -148,17 +149,37 @@ static void update_ai
     }
 }
 
+static bool can_see_through(vec3_t pos, const level_t *level) {
+    const int x = round(pos.x);
+    const int z = round(pos.z);
+    const tile_t *tile = level->get_tile_at(x, z);
+    /* TODO: this test is tile is walkable, there should be a separate
+     * see-through flag for tiles */
+    if (tile == NULL || tile->is_walkable == false) {
+        return false;
+    }
+    return true;
+}
+
 static void look_ahead
         (ai_state_t *ai_state, const object_t *obj, const level_state_t* st) {
-    const int sight_range = 5;
+    const level_t *level = st->get_current_level();
+    const int sight_range = level->get_width();
     const vec3_t d = dir_to_vec3(obj->direction);
-    for (int i = 0; i < sight_range; i++) {
+    for (int i = 1; i < sight_range; i++) {
         const vec3_t p = vec3_add(obj->position, vec3_scale(d, i));
-        const obj_id_t id = st->object_at_position(p);
-        if (st->has_object_flag(id, FOBJ_PLAYER_AVATAR)) {
-            ai_state->player_seen = true;
-            ai_state->last_sighting = p;
+        if (can_see_through(p, level) == false) {
+            return;
         }
+        const obj_id_t id = st->object_at_position(p);
+        if (st->has_object_flag(id, FOBJ_PLAYER_AVATAR) == false) {
+            /* not a player, blocks vision, no need to scan further */
+            continue;
+        }
+        /* a player otherwise */
+        ai_state->player_seen = true;
+        ai_state->last_sighting = p;
+        return;
     }
 }
 
@@ -194,6 +215,14 @@ static dir_t pick_move_direction
     }
 
     return dir;
+}
+
+static dir_t pick_rotate_direction(ai_state_t *ai_state, const object_t *obj) {
+    if (obj->flags & FOBJ_NPCMOVE_SENTERY
+            && vec3_eps_equals(obj->position, ai_state->start_pos, 0.01f)) {
+        return ai_state->start_dir;
+    }
+    return DIR_NONE;
 }
 
 static void fill_command
@@ -235,21 +264,26 @@ extern bool pick_next_command
     /* try to perform one of the attacks */
     if (can_attack(obj, player)) {
         const vec3_t diff = vec3_sub(player->position, obj->position);
-        fill_command(command, id, CMD_TRY_MOVE, vec3_to_dir(diff));
+        fill_command(command, id, CMD_MOVE, vec3_to_dir(diff));
         return true;
     } else if (can_shoot(obj, player)) {
         const dir_t shoot_dir = pick_shooting_direction(obj, player, st);
         if (shoot_dir != DIR_NONE) {
-            fill_command(command, id, CMD_TRY_SHOOT, shoot_dir);
+            fill_command(command, id, CMD_SHOOT, shoot_dir);
             return true;
         }
     }
     update_ai(ai_state, obj);
     look_ahead(ai_state, obj, st);
     /* if none of the attacks succeeded try to move: */
-    const dir_t dir = pick_move_direction(ai_state, obj, st, rand);
-    if (dir != DIR_NONE) {
-        fill_command(command, id, CMD_TRY_MOVE, dir);
+    const dir_t move_dir = pick_move_direction(ai_state, obj, st, rand);
+    if (move_dir != DIR_NONE) {
+        fill_command(command, id, CMD_MOVE, move_dir);
+        return true;
+    }
+    const dir_t rot_dir = pick_rotate_direction(ai_state, obj);
+    if (rot_dir != DIR_NONE) {
+        fill_command(command, id, CMD_ROTATE, rot_dir);
         return true;
     }
 

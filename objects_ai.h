@@ -4,6 +4,7 @@
 
 struct ai_state_t {
     bool player_seen;
+    warp_dir_t start_dir;
     warp_vec3_t start_pos;
     warp_vec3_t last_sighting;
 };

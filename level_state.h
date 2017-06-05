@@ -77,8 +77,9 @@ typedef warp_pool_id_t feat_id_t;
 #define FEAT_ID_INVALID WARP_POOL_ID_INVALID
 
 enum command_type_t {
-    CMD_TRY_MOVE,
-    CMD_TRY_SHOOT
+    CMD_MOVE,
+    CMD_ROTATE,
+    CMD_SHOOT
 };
 
 struct command_t {
