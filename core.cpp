@@ -259,6 +259,7 @@ class core_controller_t final : public controller_impl_i {
             } else if (type == CORE_AI_COMMAND) {
                 const command_t *cmd = (command_t *) message.data.get_pointer();
                 _level_state->apply_command(cmd);
+                check_events();
             }
         }
 
@@ -359,7 +360,7 @@ class core_controller_t final : public controller_impl_i {
                 } else if (type == EVENT_OBJECT_HURT) {
                     emit_speech(obj, get_pain_text());
                 } else if (type == EVENT_OBJECT_KILLED) {
-                    if ((obj->flags & FOBJ_PLAYER_AVATAR) != 0) {
+                    if (obj->flags & FOBJ_PLAYER_AVATAR) {
                         change_region(&_portal, true);
                     }
                 } else if (type == EVENT_PLAYER_ACTIVATED_TERMINAL) {
