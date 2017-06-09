@@ -341,7 +341,6 @@ void level_state_t::process_real_time_event(const rt_event_t &event) {
         return;
     }
 
-    //_events.clear();
     if (event.type == RT_EVENT_BULETT_HIT) {
         const vec3_t target_pos = event.value.get_vec3();
         obj_id_t object = object_at_position(target_pos);
@@ -487,7 +486,9 @@ void level_state_t::handle_move(obj_id_t target, vec3_t pos) {
 }
 
 static int calculate_damage(const object_t *target) {
-    return target->type == OBJ_BOULDER ? 0 : 1;
+    const bool not_damaged = target->type == OBJ_BOULDER
+                          || target->flags & FOBJ_KILLS_ON_TOUCH;
+    return not_damaged ? 0 : 1;
 }
 
 void level_state_t::handle_picking_up(obj_id_t pick_up, obj_id_t character) {
@@ -552,18 +553,15 @@ void level_state_t::handle_attack(obj_id_t target, obj_id_t attacker) {
         warp_log_e("Cannot handle attack, invalid target.");
         return;
     }
-    //if (attacker == OBJ_ID_INVALID) { 
-    //    warp_log_e("Cannot handle attack, invalid attacker.");
-    //    return;
-    //}
     
     if (has_object_flag(attacker, FOBJ_FRIENDLY) 
             && has_object_flag(target, FOBJ_PLAYER_AVATAR)) {
         return;
     }
 
-    const bool attacker_can_push = has_object_flag(attacker, FOBJ_CAN_PUSH);
-    const bool target_is_boulder = has_object_type(target, OBJ_BOULDER);
+    const bool attacker_can_push    = has_object_flag(attacker, FOBJ_CAN_PUSH);
+    const bool target_is_boulder    = has_object_type(target, OBJ_BOULDER);
+    const bool target_kills_touched = has_object_flag(target, FOBJ_KILLS_ON_TOUCH);
 
     const object_t *target_obj   = get_object(target);
     const object_t *attacker_obj = get_object(attacker);
@@ -578,12 +576,21 @@ void level_state_t::handle_attack(obj_id_t target, obj_id_t attacker) {
     if (target_is_boulder) {
         can_push_back = can_push_back && attacker_can_push;
     }
+    if (target_kills_touched) {
+        can_push_back = false;
+    }
 
     const int damage = calculate_damage(target_obj);
     const bool alive = hurt_object(target, damage);
 
     if (alive && can_push_back) {
         move_object(target, push_back, false);
+    }
+
+    if (target_kills_touched && attacker_obj != NULL) {
+        attacker_obj->entity->receive_message(CORE_DO_ATTACK, original_position);
+        hurt_object(attacker, attacker_obj->health);
+        return;
     }
 
     if (attacker_obj != NULL) {

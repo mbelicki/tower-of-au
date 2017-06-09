@@ -34,6 +34,7 @@ struct object_def_t {
     bool          can_push;
     bool          is_player;
     bool          is_friendly;
+    bool          kills_on_touch;
 
     warp_str_t    mesh_name;
     warp_str_t    texture_name;
@@ -121,16 +122,17 @@ static void parse_definition(JSON_Object *object, warp_map_t *objects) {
 
     const warp_tag_t name = WARP_TAG(json_object_get_string(object, "name"));
     object_def_t def;
-    def.type          = parse_type(object);
-    def.movement_type = parse_movement(object);
-    def.health        = parse_int_property(object, "health", 1);
-    def.max_health    = parse_int_property(object, "max_health", def.health);
-    def.ammo          = parse_int_property(object, "ammo", 0);
-    def.can_shoot     = parse_bool_flag(object, "canShoot");
-    def.can_rotate    = parse_bool_flag(object, "canRotate");
-    def.can_push      = parse_bool_flag(object, "canPush");
-    def.is_player     = parse_bool_flag(object, "playerAvatar");
-    def.is_friendly   = parse_bool_flag(object, "friendly");
+    def.type           = parse_type(object);
+    def.movement_type  = parse_movement(object);
+    def.health         = parse_int_property(object, "health", 1);
+    def.max_health     = parse_int_property(object, "max_health", def.health);
+    def.ammo           = parse_int_property(object, "ammo", 0);
+    def.can_shoot      = parse_bool_flag(object, "canShoot");
+    def.can_rotate     = parse_bool_flag(object, "canRotate");
+    def.can_push       = parse_bool_flag(object, "canPush");
+    def.is_player      = parse_bool_flag(object, "playerAvatar");
+    def.is_friendly    = parse_bool_flag(object, "friendly");
+    def.kills_on_touch = parse_bool_flag(object, "killsOnTouch");
     
     parse_graphics(&def, object);
 
@@ -256,6 +258,9 @@ static object_flags_t evaluate_flags(const object_def_t *def) {
     if (def->is_friendly) {
         flags |= FOBJ_FRIENDLY;
     }
+    if (def->kills_on_touch) {
+        flags |= FOBJ_KILLS_ON_TOUCH;
+    }
     flags |= movement_to_flag(def->movement_type);
     return flags;
 }
@@ -317,7 +322,6 @@ static void evaluate_definition
 
     obj->direction = evaluate_direction(dir, rand);
     obj->flags = evaluate_flags(def);
-    //obj->entity = create_entity(world, def, obj);
 }
 
 entity_t *object_factory_t::create_object_entity

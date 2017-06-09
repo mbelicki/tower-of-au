@@ -33,6 +33,7 @@ enum object_flags_t {
     FOBJ_CAN_ROTATE      =  64,
     FOBJ_CAN_PUSH        = 128,
     FOBJ_FRIENDLY        = 256,
+    FOBJ_KILLS_ON_TOUCH  = 512,
 };
 
 WARP_ENABLE_FLAGS(object_flags_t)

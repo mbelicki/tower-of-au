@@ -138,6 +138,14 @@
             "spawnRate" : 1.0
         },
         {
+            "symbol" : "*",
+            "walkable" : true,
+            "object" : "bladeOfDeath",
+            "objectDirection" : "x_plus",
+            "graphics" : "grass",
+            "spawnRate" : 1.0
+        },
+        {
             "symbol" : "!",
             "walkable" : true,
             "object" : "weak_sentery",
@@ -245,7 +253,7 @@
                 "R### # #     ",
                 "HR   # # #  L",
                 "R    #       ",
-                "R           l",
+                "R   *       l",
                 "R   lHR     l",
                 "R  gHHHH  gHH"
             ]

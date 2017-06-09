@@ -130,6 +130,18 @@
             }
         },
         {
+            "name" : "bladeOfDeath",
+            "movementType" : "line",
+            "canRotate" : false,
+            "type" : "character",
+            "killsOnTouch" : true,
+            "health" : 3,
+            "graphics" : {
+                "mesh" : "boulder.obj",
+                "texture" : "red.png"
+            }
+        },
+        {
             "name" : "hp-pickup",
             "type" : "pick-up",
             "health" : 1,
