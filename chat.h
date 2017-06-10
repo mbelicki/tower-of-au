@@ -32,6 +32,7 @@ typedef struct chat_entry {
 
 typedef struct chat {
     warp_array_t entries;
+    warp_str_t default_portrait;
 } chat_t;
 
 const chat_entry_t *get_start_entry

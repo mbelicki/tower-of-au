@@ -131,6 +131,22 @@ extern entity_t *create_ui_background(world_t *world, vec4_t color) {
     return entity;
 }
 
+extern entity_t *create_ui_image
+        ( warp::world_t *world, warp_vec2_t pos, warp_vec2_t size
+        , const char *tex
+        ) {
+    graphics_comp_t *graphics
+            = create_button_graphics(world, size, tex, vec4(1, 1, 1, 1));
+    if (graphics == NULL) {
+        warp_log_e("Failed to create button graphics.");
+        return NULL;
+    }
+    const vec3_t position = vec3(pos.x, pos.y, 8);
+    entity_t *entity = world->create_entity(position, graphics, NULL, NULL);
+    entity->set_tag(WARP_TAG("image"));
+    return entity;
+}
+
 extern entity_t *create_button
         ( world_t *world, vec2_t pos, vec2_t size
         , std::function<void(void)> handler, const char *tex

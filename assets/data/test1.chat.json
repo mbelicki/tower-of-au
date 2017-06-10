@@ -1,4 +1,5 @@
 {
+    "defaultPortrait" : "red.png",
     "entries" : [
         {
             "canStart" : true,

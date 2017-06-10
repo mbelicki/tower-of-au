@@ -422,6 +422,12 @@ static warp_result_t parse_entry_side_effect
 static warp_result_t parse(chat_t *chat, const JSON_Object *root) {
     chat->entries = warp_array_create_typed(chat_entry_t, 16, destroy_entry);
 
+    const char *portrait = json_object_get_string(root, "defaultPortrait");
+    if (portrait == NULL) {
+        portrait = "missing.png";
+    }
+    chat->default_portrait = WARP_STR(portrait);
+
     const JSON_Array *entries = json_object_get_array(root, "entries");
     const size_t count = json_array_get_count(entries);
     for (size_t i = 0; i < count; i++) {

@@ -453,6 +453,7 @@ class core_controller_t final : public controller_impl_i {
             }
             _world->destroy_later(_conversation.fader);
             _world->destroy_later(_conversation.text);
+            _world->destroy_later(_conversation.portrait);
 
             _conversation.fader = create_fade_circle(_world, 700, 1.0f, false);
             _conversation.fader->receive_message(MSG_GRAPHICS_RECOLOR, vec4(0, 0, 0, 0.7f));
@@ -496,6 +497,10 @@ class core_controller_t final : public controller_impl_i {
             _conversation.text->receive_message(MSG_PHYSICS_MOVE, vec3(-130 + 16, -64, 8));
             _conversation.text->receive_message(CORE_SHOW_POINTER_TEXT, (void *)message);
             _conversation.text->receive_message(MSG_PHYSICS_SCALE, vec3(1.6f, 1.6f, 1));
+
+            const char *portrait_tex = warp_str_value(&_conversation.chat->default_portrait);
+            _conversation.portrait =
+                create_ui_image(_world, vec2(-300, -128), vec2(256, 512), portrait_tex);
             
             chat_entry_evaluate_side_effects(start, &_facts);
             create_conversation_buttons(start);

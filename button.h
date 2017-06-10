@@ -32,3 +32,6 @@ warp::entity_t *create_text_button
     , std::function<void(void)> handler, const char *text
     , warp_vec4_t background_color
     );
+
+warp::entity_t *create_ui_image
+    (warp::world_t *world, warp_vec2_t pos, warp_vec2_t size, const char *tex);
