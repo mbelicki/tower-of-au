@@ -289,6 +289,30 @@ static void prase_level_data
     }
 }
 
+static void parse_level_decorations(JSON_Array *decors, decoration_t *ds) {
+    for (size_t i = 0; i < json_array_get_count(decors); i++) {
+        JSON_Object *decor = json_array_get_object(decors, i);
+        decoration_t *d = ds + i;
+        transforms_init(&d->transforms);
+
+        d->graphics_id = WARP_TAG(json_object_get_string(decor, "graphics"));
+
+        vec3_t position;
+        position.x = json_object_dotget_number(decor, "position.x");
+        position.y = json_object_dotget_number(decor, "position.y");
+        position.z = json_object_dotget_number(decor, "position.z");
+
+        vec3_t rotation;
+        rotation.x = json_object_dotget_number(decor, "rotation.x");
+        rotation.y = json_object_dotget_number(decor, "rotation.y");
+        rotation.z = json_object_dotget_number(decor, "rotation.z");
+
+        const quat_t rot = quat_from_euler(rotation.x, rotation.y, rotation.z);
+        transforms_change_position(&d->transforms, position);
+        transforms_change_rotation(&d->transforms, rot);
+    }
+}
+
 static void parse_level
         ( level_t **parsed, JSON_Object *level
         , const std::map<char, tile_t> &global_map
@@ -316,7 +340,16 @@ static void parse_level
     tile_t tiles[width * height];
     prase_level_data(tiles, width, height, data, mapper);
 
-    *parsed = new level_t(tiles, width, height);
+    size_t decors_count = 0;
+    decoration_t *decorations = NULL;
+    JSON_Array *decors = json_object_get_array(level, "decorations");
+    if (decors) { 
+        decors_count = json_array_get_count(decors);
+        decorations = new decoration_t[decors_count];
+        parse_level_decorations(decors, decorations);
+    }
+
+    *parsed = new level_t(tiles, width, height, decorations, decors_count);
 }
 
 static void add_graphics(region_t *region, JSON_Array *graphics) {

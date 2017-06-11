@@ -1,6 +1,7 @@
 #pragma once
 
 #include "warp/math/vec3.h"
+#include "warp/math/transforms.h"
 #include "warp/utils/tag.h"
 #include "warp/utils/directions.h"
 
@@ -35,11 +36,18 @@ struct tile_t {
     warp_tag_t graphics_id;
 };
 
+struct decoration_t {
+    warp_tag_t graphics_id;
+    warp_transforms_t transforms;
+};
+
 class region_t;
 
 class level_t {
     public:
-        level_t(const tile_t *tiles, size_t width, size_t height);
+        level_t( const tile_t *tiles, size_t width, size_t height  
+               , const decoration_t *decors, size_t decors_count
+               );
         ~level_t();
 
         void initialize(warp::world_t *world, const region_t *owner);
@@ -65,8 +73,10 @@ class level_t {
         
         size_t _width;
         size_t _height;
+        size_t _decors_count;
 
         tile_t *_tiles;
+        decoration_t *_decors;
         warp::entity_t *_entity;
 };
 

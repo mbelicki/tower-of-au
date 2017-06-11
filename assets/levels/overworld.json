@@ -256,6 +256,13 @@
                 "R   *       l",
                 "R   lHR     l",
                 "R  gHHHH  gHH"
+            ],
+            "decorations" : [
+                {
+                    "graphics" : "grass",
+                    "position" : { "x" : 7, "y" : 1.02, "z" : 5 },
+                    "rotation": { "x" : 0, "y" : -3.14, "z" : 0 }
+                }
             ]
         },
         {

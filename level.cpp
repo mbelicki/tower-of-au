@@ -13,22 +13,30 @@
 
 using namespace warp;
 
-level_t::level_t(const tile_t *tiles, size_t width, size_t height) 
+level_t::level_t( const tile_t *tiles, size_t width, size_t height
+                , const decoration_t *decors, size_t decors_count
+                ) 
         : _initialized(false)
         , _width(width)
         , _height(height)
-        , _tiles(nullptr) 
-        , _entity(nullptr) {
+        , _decors_count(decors_count)
+        , _tiles(NULL) 
+        , _decors(NULL) 
+        , _entity(NULL) {
     const size_t tiles_count = _width * _height;
-    /* because memmove does not interact well with C++ constructors and
-     * destructors */
-    _tiles = new (std::nothrow) tile_t[tiles_count];
-    for (size_t i = 0; i < tiles_count; i++)
-        _tiles[i] = tiles[i];
+    const size_t tile_size = sizeof *_tiles;
+    _tiles = (tile_t *) calloc(tiles_count, tile_size);
+    memmove(_tiles, tiles, tiles_count * tile_size);
+
+    if (decors) {
+        _decors = (decoration_t *) calloc(_decors_count, sizeof *_decors);
+        memmove(_decors, decors, _decors_count * sizeof *_decors);
+    }
 }
 
 level_t::~level_t() {
-    delete [] _tiles;
+    free(_tiles);
+    free(_decors);
 }
 
 void level_t::set_display_position(const vec3_t pos) {
@@ -82,28 +90,37 @@ bool level_t::scan_if_all
     return accumulator;
 }
 
+static void append_graphics
+        ( mesh_builder_t *builder
+        , resources_t *res
+        , const warp_tag_t *name
+        , const transforms_t *transforms
+        , const region_t *owner
+        ) {
+    const tile_graphics_t *graphics = owner->get_tile_graphics(*name);
+    if (graphics == NULL) {
+        warp_log_e("Failed to get tile graphics with id: %s.", name->text);
+        return;
+    }
+    const char *mesh_name = warp_str_value(&graphics->mesh);
+    const res_id_t id = warp_resources_load(res, mesh_name);
+    mesh_builder_append(builder, id, transforms);
+}
+
 static void append_tile
         ( mesh_builder_t *builder
         , resources_t *res
-        , const tile_t &tile
+        , const tile_t *tile
         , size_t x, size_t y
         , const region_t *owner
         ) {
     transforms_t transforms;
     transforms_init(&transforms);
     transforms_change_position(&transforms, vec3(x, 0, y));
-    if (tile.is_stairs || tile.is_walkable) {
+    if (tile->is_stairs || tile->is_walkable) {
         transforms_change_rotation(&transforms, quat_from_euler(0, PI, 0));
     }
-
-    const tile_graphics_t *graphics = owner->get_tile_graphics(tile.graphics_id);
-    if (graphics == NULL) {
-        warp_log_e("Failed to get tile graphics with id: %s.", tile.graphics_id.text);
-        return;
-    }
-    const char *mesh_name = warp_str_value(&graphics->mesh);
-    const res_id_t id = warp_resources_load(res, mesh_name);
-    mesh_builder_append(builder, id, &transforms);
+    append_graphics(builder, res, &tile->graphics_id, &transforms, owner);
 }
 
 static int level_mesh_numer = 0;
@@ -120,9 +137,16 @@ void level_t::initialize(world_t *world, const region_t *owner) {
 
     for (int j = _height - 1; j >= 0; j--) {
         for (int i = _width - 1; i >= 0; i--) {
-            const size_t index = i + _width * j;
-            append_tile(&builder, res, _tiles[index], i, j, owner);
+            const tile_t *tile = _tiles + (i + _width * j);
+            append_tile(&builder, res, tile, i, j, owner);
         }
+    }
+
+    for (size_t i = 0; i < _decors_count; i++) {
+        const decoration_t *decor = _decors + i;
+        append_graphics( &builder, res
+                       , &decor->graphics_id, &decor->transforms, owner
+                       );
     }
 
     warp_str_t name = warp_str_format("level-%d", level_mesh_numer++);
@@ -186,7 +210,7 @@ extern level_t *generate_test_level() {
 
     tiles[7 + width * 4].feature = FEAT_DOOR;
 
-    return new (std::nothrow) level_t(tiles, width, height);
+    return new (std::nothrow) level_t(tiles, width, height, NULL, 0);
 }
 
 extern level_t *generate_random_level(warp_random_t *random) {
@@ -223,5 +247,5 @@ extern level_t *generate_random_level(warp_random_t *random) {
     tiles[12 + width * 5].is_walkable = true;
     tiles[11 + width * 5].is_walkable = true;
 
-    return new (std::nothrow) level_t(tiles, width, height);
+    return new (std::nothrow) level_t(tiles, width, height, NULL, 0);
 }
